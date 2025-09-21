@@ -1,0 +1,6 @@
+[build]
+target-dir = "./.temp/target/"
+
+[publish]
+target-dir = "./.temp/publish/"
+binaries = ["jvc", "jvc.exe"]

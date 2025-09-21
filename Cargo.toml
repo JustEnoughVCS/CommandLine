@@ -1,0 +1,47 @@
+[package]
+name = "just_enough_vcs_cli"
+edition = "2024"
+
+[dependencies.just_enough_vcs]
+git = "https://github.com/JustEnoughVCS/VersionControl"
+features = ["all"]
+
+[workspace]
+members = ["crates/cli_publisher"]
+
+[workspace.package]
+version = "0.1.0"
+
+[profile.dev]
+opt-level = 0
+debug = true
+split-debuginfo = "unpacked"
+codegen-units = 16
+incremental = true
+lto = false
+panic = "unwind"
+
+[profile.release]
+opt-level = 3
+debug = false
+split-debuginfo = "off"
+codegen-units = 1
+incremental = false
+lto = "fat"
+panic = "abort"
+strip = "symbols"
+
+[dependencies]
+
+# Command Line
+clap = "4.5"
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
+# Async
+tokio = { version = "1", features = ["full"] }
+
+# Color
+colored = "2.0"
