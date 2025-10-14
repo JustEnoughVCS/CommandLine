@@ -1,6 +1,16 @@
 [build]
 target-dir = "./.temp/target/"
 
+[alias]
+dev = "run --manifest-path crates/cli_publisher/Cargo.toml"
+release = "run --manifest-path crates/cli_publisher/Cargo.toml --release"
+
 [publish]
 target-dir = "./.temp/publish/"
-binaries = ["jvc", "jvc.exe"]
+binaries = [
+    "jv",
+    "jv.exe",
+
+    "jvv",
+    "jvv.exe"
+]

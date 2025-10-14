@@ -125,15 +125,15 @@ fn get_array(section: &str, array_name: &str) -> Result<Vec<String>, std::io::Er
 }
 
 /// Get the target directory of the current project
-// By reading the `build.target-dir` configuration item in the `.cargo/config.toml` file
-// Returns the complete path relative to the current directory
+/// By reading the `build.target-dir` configuration item in the `.cargo/config.toml` file
+/// Returns the complete path relative to the current directory
 fn current_target_dir() -> Result<std::path::PathBuf, std::io::Error> {
     get_target_dir("build")
 }
 
 /// Get the publish directory of the current project
-// By reading the `publish.target-dir` configuration item in the `.cargo/config.toml` file
-// Returns the complete path relative to the current directory
+/// By reading the `publish.target-dir` configuration item in the `.cargo/config.toml` file
+/// Returns the complete path relative to the current directory
 fn current_publish_dir() -> Result<std::path::PathBuf, std::io::Error> {
     get_target_dir("publish")
 }

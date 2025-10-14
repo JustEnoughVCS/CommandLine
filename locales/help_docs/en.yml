@@ -1,0 +1,116 @@
+jvv:
+  help: |
+    **JustEnoughVCS Upstream Vault Commands**
+    This program directly creates, manages, and runs JustEnoughVCS upstream vaults.
+    **Tip**: It directly operates on vault data - please operate with caution!
+    * With great power comes great responsibility *
+
+    **Create Vault**:
+      jvv create <VAULT_NAME> - Create a vault in the given directory name
+      jvv init - Create a vault in the current directory
+
+    **Query**:
+      jvv here - Query information about the current directory
+      jvv member list - Query all members
+
+    **Member Management**:
+      jvv member <register/remove> <MEMBER_NAME> - Register or remove members
+
+    **Service**:
+      jvv service listen - Run the server in the current vault
+
+    Additionally, you can use jvv <CMD_NAME> --help to query more detailed help!
+
+  here: |
+    **Query Vault Information Here**
+    Displays different information based on the current directory:
+      - Root *(./)*: Basic vault information
+      - Members *(./members/)*: Members and key registrations
+      - Storage *(./storage/)*: File count and total size
+      - Sheets *(./sheets/)*: Tables and their managers
+
+    **Example**: cd ./target_dir/ && jvv here
+
+  create: |
+    **Create a new vault with the given name**
+    **Usage**: jvv create <VAULT_NAME>
+
+    **Example**: jvv create MyVault
+    Creates a directory named 'MyVault' and initializes a vault inside it.
+
+  init: |
+    **Initialize a vault in the current directory**
+    **Usage**: jvv init
+
+    Uses the current directory's name as the vault name.
+
+  member: |
+    **Member Management**
+    **Usage**: jvv member <register/remove> <MEMBER_NAME>
+
+    Register or remove members based on the given member name.
+
+    It is recommended to use the "snake_case" naming format,
+    as it will be stored in this format in the configuration file
+    **Example**: jvv member register vault_member
+
+    **Query**: jvv member list
+    Equivalent to running `jvv here` in the members directory.
+
+    **Tip**: Does not manage private keys automatically. Keys must be handled manually.
+
+  service: |
+    **Service Management**
+    **Usage**:
+    jvv service listen - Start the vault server in the current vault to accept client connections
+      You can use --no-log to disable log output
+
+  fail:
+    jvcs: "JustEnoughVCS Error: %{err}"
+
+    no_vault_here: No vault found here
+
+    tokio:
+      fs:
+        create_dir: Failed to create directory %{dir}
+        create_dir_all: Failed to create directory %{dir}
+
+    std:
+      current_dir: Failed to get current directory
+      current_dir_name: Failed to get current directory name
+      set_current_dir: Failed to set current directory to %{dir}
+
+    here:
+      cfg_not_found: Could not find vault configuration!
+
+    create:
+      not_empty: Operation denied! The specified directory already exists.
+
+    init:
+      not_empty: Operation denied! The directory is not empty.
+
+    member:
+      register: Failed to create member! Please check if a member with the same name already exists
+      list: Failed to get member ID!
+
+  success:
+    here:
+      root: |
+        Found vault `%{name}`!
+        **Tip**: You can use jvv here --help to learn how to view vault details
+
+    create: Successfully created vault at `%{name}`!
+
+    init: Successfully initialized vault here!
+
+    member:
+      register: Successfully created member `%{member}`!
+      remove: |
+        Successfully removed `%{member}` from the vault!
+        (or they were never here?)
+      list:
+        header: |
+          **Members in the vault:**
+
+        footer: |
+          Total %{num} member(s)

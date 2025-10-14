@@ -1,0 +1,33 @@
+# jvv 的本地化
+jvv_cmd:
+  name:
+    here: "查询此处"
+    create: "创建库"
+    init: "在此处初始化库"
+    member:
+      register: "注册成员"
+      remove: "移除成员"
+      list: "列出成员"
+    service:
+      listen: "监听"
+  description:
+    here: "查询此处库的信息"
+    create: "在子目录中创建指定名称的库"
+    init: "使用当前目录名称创建库"
+    member:
+      register: "将名称添加到成员列表（需要手动存储公钥）"
+      remove: "从成员列表中移除指定名称（不会删除公钥）"
+      list: "列出可通过服务访问当前库的成员"
+    service:
+      listen: "启动此处库的服务以监听客户端连接"
+
+# jv 的本地化
+jv_cmd:
+  name:
+  description:
+
+# utils::help_builder 的模板
+help:
+  header: "帮助: %{raw_name} - %{name}"
+  desc_line: "描述: %{description}"
+  footer: "用法: %{usage_text}"

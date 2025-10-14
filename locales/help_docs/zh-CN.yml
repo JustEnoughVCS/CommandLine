@@ -1,0 +1,112 @@
+jvv:
+  help: |
+    **JustEnoughVCS 上游库命令**
+    该程序直接创建、管理、运行 JustEnoughVCS 的上游库
+    **注意**：它能直接操作库的数据，请谨慎使用！*（能力越大，责任越大）*
+
+    **创建库**：
+      jvv create <名称> - 在给定的目录名称中创建库
+      jvv init - 在当前目录中创建库
+
+    **查询**：
+      jvv here - 查询当前目录的信息
+      jvv member list - 查询所有成员
+
+    **成员管理**：
+      jvv member <register/remove> <成员名称> - 注册或删除成员
+
+    **服务**：
+      jvv service listen - 在当前库中运行服务端
+
+    另外，你可以使用 jvv <命令名称> --help 来查询更详细的帮助！
+
+  here: |
+    **查询此处库的信息**
+    在不同目录执行该命令时会查询不同的信息：
+      1. 当根目录 *(./)* 时：查询库的基本信息
+      2. 当成员目录 *(./members/)* 时：查询库的成员和密钥注册信息
+      3. 当存储目录 *(./storage/)* 时：查询库托管的文件总数量、总大小
+      4. 当表目录 *(./sheets/)* 时：查询库中所有的表和其管理者
+
+    **例如**：cd ./你需要查询的目录/ && jvv here
+
+  create: |
+    **在给定的目录名称中创建库**
+    **使用方法**：jvv create **<库名称>**
+
+    **例如**：jvv create MyVault
+    上述操作会在当前目录创建目录 MyVault，然后在该目录内初始化库
+
+  init: |
+    **在当前目录创建库**
+    **使用方法**：jvv init
+
+    该命令会在当前所在的目录创建库，库名称由当前所在目录名称决定
+
+  member: |
+    **成员管理**
+    **使用方法**：jvv member <register/remove> <成员名称>
+
+    根据给定的 成员名称，注册（若不存在）或移除（若存在）指定成员
+
+    推荐使用 "snake_case" 命名格式，因为在配置文件中将以该格式存储
+    **例如**：jvv member register vault_member
+
+    **查询**：jvv member list
+    该命令的效果和在库的成员目录中执行 jvv here 命令等效
+
+    **注意**：该命令不会影响到库中私钥目录，请手动添加或删除私钥！
+
+  service: |
+    **服务设置相关**
+    **使用方法**：
+    jvv service listen - 在当前库中启动服务器，以接受客户端连接
+      你可以使用 --no-log 来禁用日志输出
+
+  fail:
+    jvcs: JustEnoughVCS 错误：%{err}
+
+    no_vault_here: 此处并没有找到库文件
+
+    tokio:
+      fs:
+        create_dir: 无法创建目录 %{dir}
+        create_dir_all: 无法创建目录 %{dir}
+
+    std:
+      current_dir: 无法获得当前目录
+      current_dir_name: 无法获得当前目录的名称
+      set_current_dir: 无法设置到目录 %{dir}
+
+    here:
+      cfg_not_found: 无法找到库的配置！
+
+    create:
+      not_empty: 禁止的操作！指定的目录已经存在。
+
+    init:
+      not_empty: 禁止的操作！该目录不为空。
+
+    member:
+      register: 创建成员失败！请检查是否存在同名的成员
+      list: 获取成员 ID 失败！
+
+  success:
+    here:
+      root: |
+        找到库 `%{name}`！
+        **提示**：你可以使用 jvv here --help 去了解如何查看库的详细信息
+
+    create: 成功在 `%{name}` 创建库！
+
+    init: 在此处初始化库成功！
+
+    member:
+      register: 创建成员 `%{member}` 成功！
+      remove: 好的， `%{member}` 已不再存在于库中（或本就不在？）！
+      list:
+        header: |
+          **当前库中的成员：**
+
+        footer: |
+          共 %{num} 个成员

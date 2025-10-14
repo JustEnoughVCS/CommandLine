@@ -1,0 +1,33 @@
+# Localization for jvv
+jvv_cmd:
+  name:
+    here: "Query here"
+    create: "Create vault"
+    init: "Initialize vault here"
+    member:
+      register: "Register member"
+      remove: "Remove member"
+      list: "List members"
+    service:
+      listen: "Listen"
+  description:
+    here: "Query information about the vault here"
+    create: "Create a vault with given name in subdirectory"
+    init: "Create a vault with current directory name"
+    member:
+      register: "Add a name to member list (need to manually store public key)"
+      remove: "Remove given name from member list (won't delete public key)"
+      list: "List members who can access current vault through service"
+    service:
+      listen: "Start service for vault here to listen for client connections"
+
+# Localization for jv
+jv_cmd:
+  name:
+  description:
+
+# utils::help_builder template
+help:
+  header: "Help: %{raw_name} - %{name}"
+  desc_line: "Description: %{description}"
+  footer: "Usage: %{usage_text}"
