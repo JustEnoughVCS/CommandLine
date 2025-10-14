@@ -38,8 +38,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 continue;
             }
 
-            if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
-                if publish_binaries.contains(&file_name.to_string()) {
+            if let Some(file_name) = path.file_name().and_then(|n| n.to_str())
+                && publish_binaries.contains(&file_name.to_string()) {
                     let parent_dir_name = path
                         .parent()
                         .and_then(|p| p.file_name())
@@ -62,7 +62,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     std::fs::copy(&path, &dest_path)?;
                     copied_files += 1;
                 }
-            }
         }
     }
 

@@ -179,7 +179,7 @@ async fn main() {
         JustEnoughVcsCommand::Member(member_manage) => {
             let vault_cfg = VaultConfig::read()
                 .await
-                .expect(t!("jvv.fail.no_vault_here").trim());
+                .unwrap_or_else(|_| panic!("{}", t!("jvv.fail.no_vault_here").trim().to_string()));
 
             let vault = match Vault::init_current_dir(vault_cfg) {
                 Some(vault) => vault,
@@ -251,7 +251,7 @@ async fn jvv_here(_args: HereArgs) {
 
     let vault_cfg = VaultConfig::read()
         .await
-        .expect(t!("jvv.fail.here.cfg_not_found").trim());
+        .unwrap_or_else(|_| panic!("{}", t!("jvv.fail.here.cfg_not_found").trim().to_string()));
 
     // Get vault name
     let vault_name = vault_cfg.vault_name();
@@ -261,8 +261,9 @@ async fn jvv_here(_args: HereArgs) {
 }
 
 async fn jvv_init(_args: InitVaultArgs) {
-    let current_dir = std::env::current_dir().expect(t!("jvv.fail.std.current_dir").trim());
-    if !current_dir.read_dir().unwrap().next().is_none() {
+    let current_dir = std::env::current_dir()
+        .unwrap_or_else(|_| panic!("{}", t!("jvv.fail.std.current_dir").trim().to_string()));
+    if current_dir.read_dir().unwrap().next().is_some() {
         eprintln!("{}", t!("jvv.fail.init.not_empty"));
         return;
     }
@@ -270,7 +271,7 @@ async fn jvv_init(_args: InitVaultArgs) {
     // Setup vault
     let vault_name = current_dir
         .file_name()
-        .expect(t!("jvv.fail.std.current_dir_name").trim())
+        .unwrap_or_else(|| panic!("{}", t!("jvv.fail.std.current_dir_name").trim().to_string()))
         .to_string_lossy()
         .to_string();
     let vault_name = pascal_case!(vault_name);
@@ -303,11 +304,12 @@ async fn jvv_init(_args: InitVaultArgs) {
 }
 
 async fn jvv_create(args: CreateVaultArgs) {
-    let current_dir = std::env::current_dir().expect(t!("jvv.fail.std.current_dir").trim());
+    let current_dir = std::env::current_dir()
+        .unwrap_or_else(|_| panic!("{}", t!("jvv.fail.std.current_dir").trim().to_string()));
     let target_dir = current_dir.join(args.vault_name.clone());
 
     // Create directory
-    if let Err(_) = fs::create_dir_all(&target_dir).await {
+    if fs::create_dir_all(&target_dir).await.is_err() {
         eprintln!(
             "{}",
             t!(
@@ -318,7 +320,7 @@ async fn jvv_create(args: CreateVaultArgs) {
         return;
     }
 
-    if !target_dir.read_dir().unwrap().next().is_none() {
+    if target_dir.read_dir().unwrap().next().is_some() {
         eprintln!("{}", t!("jvv.fail.create.not_empty"));
         return;
     }
@@ -331,7 +333,7 @@ async fn jvv_create(args: CreateVaultArgs) {
     }
 
     // Enter target_dir
-    if let Err(_) = set_current_dir(&target_dir) {
+    if set_current_dir(&target_dir).is_err() {
         eprintln!(
             "{}",
             t!(
@@ -391,7 +393,9 @@ async fn jvv_member_remove(vault: Vault, args: MemberRemoveArgs) {
 
 async fn jvv_member_list(vault: Vault, _args: MemberListArgs) {
     // Get id list
-    let ids = vault.member_ids().expect(t!("jvv.fail.member.list").trim());
+    let ids = vault
+        .member_ids()
+        .unwrap_or_else(|_| panic!("{}", t!("jvv.fail.member.list").trim().to_string()));
 
     // Print header
     println!("{}", md(t!("jvv.success.member.list.header")));
