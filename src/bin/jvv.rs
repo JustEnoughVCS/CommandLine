@@ -1,7 +1,6 @@
-use std::{env::set_current_dir, path::Path};
+use std::env::set_current_dir;
 
 use clap::{Parser, Subcommand};
-use env_logger::{Builder, Target};
 use just_enough_vcs::{
     utils::{
         cfg_file::config::ConfigFile,
@@ -17,8 +16,10 @@ use just_enough_vcs::{
         },
     },
 };
-use just_enough_vcs_cli::utils::{lang_selector::current_locales, md_colored::md};
-use log::LevelFilter;
+use just_enough_vcs_cli::utils::{
+    build_env_logger::build_env_logger, lang_selector::current_locales, md_colored::md,
+};
+use log::info;
 use rust_i18n::{set_locale, t};
 use tokio::fs::{self};
 
@@ -147,7 +148,12 @@ struct ListenArgs {
 
 #[tokio::main]
 async fn main() {
+    // Init i18n
     set_locale(&current_locales());
+
+    // Init colored
+    #[cfg(windows)]
+    colored::control::set_virtual_terminal(true).unwrap();
 
     let Ok(parser) = JustEnoughVcsVault::try_parse() else {
         println!("{}", md(t!("jvv.help")));
@@ -418,21 +424,28 @@ async fn jvv_service_listen(args: ListenArgs) {
     };
 
     if !args.no_log {
-        build_env_logger(current_vault.join("log.txt"));
+        let logs_dir = current_vault.join("logs");
+        if let Err(_) = fs::create_dir_all(&logs_dir).await {
+            eprintln!(
+                "{}",
+                t!(
+                    "jvv.fail.tokio.fs.create_dir",
+                    dir = logs_dir.to_string_lossy()
+                )
+            );
+            return;
+        }
+        let now = chrono::Local::now();
+        let log_filename = format!("log_{}.txt", now.format("%Y.%m.%d-%H:%M:%S"));
+        build_env_logger(logs_dir.join(log_filename));
+        info!(
+            "{}",
+            t!(
+                "jvv.success.service.listen",
+                path = current_vault.file_name().unwrap().display()
+            )
+        )
     }
 
     let _ = server_entry(current_vault).await;
-}
-
-fn build_env_logger(log_path: impl AsRef<Path>) {
-    let mut builder = Builder::from_default_env();
-    builder
-        .filter_level(LevelFilter::Info)
-        .target(Target::Stdout);
-
-    let log_file = std::fs::File::create(log_path).expect("Failed to create log file");
-    builder
-        .filter_module("just_enough_vcs", LevelFilter::Trace)
-        .target(Target::Pipe(Box::new(log_file)))
-        .init();
 }
