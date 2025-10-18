@@ -2,8 +2,7 @@
 target-dir = "./.temp/target/"
 
 [alias]
-dev = "run --manifest-path crates/cli_publisher/Cargo.toml"
-release = "run --manifest-path crates/cli_publisher/Cargo.toml --release"
+pub = "run --manifest-path crates/build_helper/Cargo.toml --bin exporter"
 
 [publish]
 target-dir = "./.temp/publish/"
@@ -12,5 +11,8 @@ binaries = [
     "jv.exe",
 
     "jvv",
-    "jvv.exe"
+    "jvv.exe",
+
+    "jvref",
+    "jvref.exe"
 ]
