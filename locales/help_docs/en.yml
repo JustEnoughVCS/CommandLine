@@ -114,3 +114,6 @@ jvv:
 
         footer: |
           Total %{num} member(s)
+
+    service:
+      listen: Listening for client connections in vault `%{path}` ...
