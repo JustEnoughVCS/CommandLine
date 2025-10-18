@@ -2,4 +2,6 @@
 rust_i18n::i18n!("locales", fallback = "en");
 
 #[tokio::main]
-async fn main() {}
+async fn main() {
+    println!("Hello, World!")
+}
