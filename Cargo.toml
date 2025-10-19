@@ -29,9 +29,7 @@ strip = "symbols"
 
 [dependencies]
 # Just Enough VCS
-just_enough_vcs = { git = "https://github.com/JustEnoughVCS/VersionControl", features = [
-    "all",
-] }
+just_enough_vcs = { path = "../VersionControl", features = ["all"] }
 
 # Command Line
 clap = { version = "4.5", features = ["derive"] }
