@@ -8,7 +8,7 @@ use just_enough_vcs::{
     },
     vcs::{
         connection::action_service::server_entry,
-        constants::SERVER_FILE_VAULT,
+        constants::{SERVER_FILE_VAULT, SERVER_FILE_VF_META},
         current::current_vault_path,
         data::{
             member::Member,
@@ -255,15 +255,98 @@ async fn jvv_here(_args: HereArgs) {
         return;
     }
 
-    let vault_cfg = VaultConfig::read()
-        .await
-        .unwrap_or_else(|_| panic!("{}", t!("jvv.fail.here.cfg_not_found").trim().to_string()));
+    let vault_cfg = match VaultConfig::read().await {
+        Ok(cfg) => cfg,
+        Err(_) => {
+            eprintln!("{}", t!("jvv.fail.here.cfg_not_found").trim());
+            return;
+        }
+    };
 
     // Get vault name
-    let vault_name = vault_cfg.vault_name();
+    let vault_name = vault_cfg.vault_name().clone();
+
+    // Get vault
+    let Some(vault) = Vault::init(vault_cfg, current_vault) else {
+        eprintln!("{}", t!("jvv.fail.here.vault_init_failed").trim());
+        return;
+    };
+
+    // Get sheet count
+    let num_sheets = vault.sheets().await.iter().len();
+
+    // Get virtual file count
+    let virtual_file_root = vault.virtual_file_storage_dir();
+    let mut num_vf = 0;
+    let mut total_size = 0;
+
+    if let Ok(mut entries) = fs::read_dir(&virtual_file_root).await {
+        while let Ok(Some(entry)) = entries.next_entry().await {
+            if let Ok(metadata) = entry.metadata().await {
+                if metadata.is_file() {
+                    if entry
+                        .file_name()
+                        .to_string_lossy()
+                        .ends_with(SERVER_FILE_VF_META)
+                    {
+                        num_vf += 1;
+                        total_size += metadata.len();
+                    }
+                }
+            }
+        }
+    }
+
+    // Get member count
+    let num_mem = match vault.member_ids() {
+        Ok(ids) => ids.len(),
+        Err(_) => {
+            eprintln!("{}", t!("jvv.fail.here.member_ids_failed").trim());
+            return;
+        }
+    };
+
+    // Get public key count
+    let mut num_pk = 0;
+    let member_ids = match vault.member_ids() {
+        Ok(ids) => ids,
+        Err(_) => {
+            eprintln!("{}", t!("jvv.fail.here.member_ids_failed").trim());
+            return;
+        }
+    };
+
+    for member_id in member_ids {
+        if vault.member_key_path(&member_id).exists() {
+            num_pk += 1;
+        }
+    }
+
+    // Get reference sheet info
+    let ref_sheet = match vault.sheet(&"ref".to_string()).await {
+        Ok(sheet) => sheet,
+        Err(_) => {
+            eprintln!("{}", t!("jvv.fail.here.ref_sheet_not_found").trim());
+            return;
+        }
+    };
+    let num_ref_sheet_managed_files = ref_sheet.mapping().len();
 
     // Success
-    println!("{}", md(t!("jvv.success.here.root", name = vault_name)))
+    println!(
+        "{}",
+        md(t!(
+            "jvv.success.here.info",
+            name = vault_name,
+            num_sheets = num_sheets,
+            num_vf = num_vf,
+            total_size = total_size,
+            num_mem = num_mem,
+            num_pk = num_pk,
+            num_ref_sheet_managed_files = num_ref_sheet_managed_files,
+            total_size_gb = (total_size as f64) / (1024.0 * 1024.0 * 1024.0)
+        ))
+    )
 }
 
 async fn jvv_init(_args: InitVaultArgs) {
@@ -404,17 +487,44 @@ async fn jvv_member_list(vault: Vault, _args: MemberListArgs) {
         .unwrap_or_else(|_| panic!("{}", t!("jvv.fail.member.list").trim().to_string()));
 
     // Print header
-    println!("{}", md(t!("jvv.success.member.list.header")));
+    println!(
+        "{}",
+        md(t!("jvv.success.member.list.header", num = ids.len()))
+    );
 
     // Print list
     let mut i = 0;
-    for member in ids {
-        println!("{}. {}", i + 1, member);
+    let mut members: Vec<String> = ids.into_iter().collect();
+
+    // Sort members to put "host" first if it exists
+    members.sort_by(|a, b| {
+        if a == "host" {
+            std::cmp::Ordering::Less
+        } else if b == "host" {
+            std::cmp::Ordering::Greater
+        } else {
+            a.cmp(b)
+        }
+    });
+
+    let mut has_pubkey = 0;
+    for member in members {
+        println!("{}. {} {}", i + 1, &member, {
+            // Key registered
+            if vault.member_key_path(&member).exists() {
+                has_pubkey += 1;
+                t!("jvv.success.member.list.status_key_registered")
+            } else {
+                std::borrow::Cow::Borrowed("")
+            }
+        });
         i += 1;
     }
 
-    // Print footer
-    println!("{}", md(t!("jvv.success.member.list.footer", num = i)));
+    println!(
+        "{}",
+        md(t!("jvv.success.member.list.footer", num = has_pubkey))
+    );
 }
 
 async fn jvv_service_listen(args: ListenArgs) {
