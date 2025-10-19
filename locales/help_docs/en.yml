@@ -10,7 +10,7 @@ jvv:
       jvv init - Create a vault in the current directory
 
     **Query**:
-      jvv here - Query information about the current directory
+      jvv here - Query information about the current vault
       jvv member list - Query all members
 
     **Member Management**:
@@ -22,13 +22,7 @@ jvv:
     Additionally, you can use jvv <CMD_NAME> --help to query more detailed help!
 
   here: |
-    **Query Vault Information Here**
-    Displays different information based on the current directory:
-      - Root *(./)*: Basic vault information
-      - Members *(./members/)*: Members and key registrations
-      - Storage *(./storage/)*: File count and total size
-      - Sheets *(./sheets/)*: Tables and their managers
-
+    **Display Vault Information Here**
     **Example**: cd ./target_dir/ && jvv here
 
   create: |
@@ -81,7 +75,15 @@ jvv:
       set_current_dir: Failed to set current directory to %{dir}
 
     here:
-      cfg_not_found: Could not find vault configuration!
+      cfg_not_found:
+        Could not find vault configuration!
+        If you wish to use this directory as a vault, please use jvv init --help to view related help
+
+      vault_init_failed: Failed to initialize vault!
+
+      member_ids_failed: Failed to get member IDs!
+
+      ref_sheet_not_found: Reference sheet `ref` not found, but it should exist!
 
     create:
       not_empty: Operation denied! The specified directory already exists.
@@ -95,9 +97,11 @@ jvv:
 
   success:
     here:
-      root: |
-        Found vault `%{name}`!
-        **Tip**: You can use jvv here --help to learn how to view vault details
+      info: |
+        Found vault *`%{name}`*! (%{num_mem} Members, %{num_pk} registered PubKeys)
+        Managing %{num_sheets} Sheets, %{num_vf} VirtualFiles, total %{total_size_gb} GB
+
+        **Tip**: To start the server, run jvv service listen
 
     create: Successfully created vault at `%{name}`!
 
@@ -110,10 +114,12 @@ jvv:
         (or they were never here?)
       list:
         header: |
-          **Members in the vault:**
+          **There are %{num} member(s) in the current vault:**
 
         footer: |
-          Total %{num} member(s)
+          **Among them, %{num} members have registered PubKeys.**
+
+        status_key_registered: (PubKey Exists)
 
     service:
       listen: Listening for client connections in vault `%{path}` ...

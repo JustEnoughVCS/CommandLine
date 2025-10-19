@@ -9,7 +9,7 @@ jvv:
       jvv init - 在当前目录中创建库
 
     **查询**：
-      jvv here - 查询当前目录的信息
+      jvv here - 查询当前库的信息
       jvv member list - 查询所有成员
 
     **成员管理**：
@@ -21,14 +21,8 @@ jvv:
     另外，你可以使用 jvv <命令名称> --help 来查询更详细的帮助！
 
   here: |
-    **查询此处库的信息**
-    在不同目录执行该命令时会查询不同的信息：
-      1. 当根目录 *(./)* 时：查询库的基本信息
-      2. 当成员目录 *(./members/)* 时：查询库的成员和密钥注册信息
-      3. 当存储目录 *(./storage/)* 时：查询库托管的文件总数量、总大小
-      4. 当表目录 *(./sheets/)* 时：查询库中所有的表和其管理者
-
-    **例如**：cd ./你需要查询的目录/ && jvv here
+    **显示此处库的信息**
+    **例如**：cd ./你需要查询的库/ && jvv here
 
   create: |
     **在给定的目录名称中创建库**
@@ -79,7 +73,15 @@ jvv:
       set_current_dir: 无法设置到目录 %{dir}
 
     here:
-      cfg_not_found: 无法找到库的配置！
+      cfg_not_found: |
+        无法找到库的配置！
+        若您希望将该目录作为库，请使用 jvv init --help 查看相关帮助
+
+      vault_init_failed: 初始化库失败！
+
+      member_ids_failed: 获得成员 ID 失败！
+
+      ref_sheet_not_found: 未找到参照表 `ref`，该参照表理应存在！
 
     create:
       not_empty: 禁止的操作！指定的目录已经存在。
@@ -93,9 +95,11 @@ jvv:
 
   success:
     here:
-      root: |
-        找到库 `%{name}`！
-        **提示**：你可以使用 jvv here --help 去了解如何查看库的详细信息
+      info: |
+        找到库 *`%{name}`*！（%{num_mem} 成员，%{num_pk} 位已注册公钥）
+        其中，管理着 %{num_sheets} 张表，%{num_vf} 个虚拟文件，总共 %{total_size_gb} GB
+
+        **提示**：若要启动服务端，请运行 jvv service listen
 
     create: 成功在 `%{name}` 创建库！
 
@@ -106,10 +110,12 @@ jvv:
       remove: 好的， `%{member}` 已不再存在于库中（或本就不在？）！
       list:
         header: |
-          **当前库中的成员：**
+          **当前库中有 %{num} 名成员：**
 
         footer: |
-          共 %{num} 个成员
+          **其中，有 %{num} 名成员注册了公钥**
+
+        status_key_registered: (公钥存在)
 
     service:
       listen: 正在库 `%{path}` 监听来自客户端的连接 ...
