@@ -99,7 +99,7 @@ jvv:
     here:
       info: |
         Found vault *`%{name}`*! (%{num_mem} Members, %{num_pk} registered PubKeys)
-        Managing %{num_sheets} Sheets, %{num_vf} VirtualFiles, total %{total_size_gb} GB
+        Managing %{num_sheets} Sheets, %{num_vf} VirtualFiles, total %{total_size}
 
         **Tip**: To start the server, run jvv service listen
 
@@ -123,3 +123,208 @@ jvv:
 
     service:
       listen: Listening for client connections in vault `%{path}` ...
+
+jv:
+  help: |
+    **JustEnoughVCS Local Workspace Commands**
+    This program connects to upstream vaults to synchronize and commit changes to local workspace files for collaborative work.
+
+    **Common Aliases**:
+      jv u Download latest information, jv t Track files, jv mv -a Auto-move files, jv in/out Import or export files
+
+    **Create Workspace**:
+      jv create <NAME> - Create a workspace in the given directory name
+      jv init - Create a workspace in the current directory
+
+    **Connect to Upstream Vault**:
+      jv direct <UPSTREAM_ADDRESS> - Direct your workspace to this vault
+      After specifying an upstream vault, your workspace will be *stained*, and you will not be able to connect to vaults with different identifiers
+
+      jv unstain - Unstain your workspace (remove stain identifier), after which the workspace will be unrelated to any upstream vault
+
+    **Account Management**:
+      jv account list - List all accounts on this computer and whether private keys are registered
+      jv account as <ACCOUNT_NAME> - Switch current account
+      jv account add <ACCOUNT_NAME> - Add an account to this computer
+      jv account remove <ACCOUNT_NAME> - Delete this account
+      jv account mvkey <ACCOUNT_NAME> <PRIVATE_KEY_FILE> - Move private key to specified account
+
+    **Information Synchronization**:
+      jv update - Download latest information from upstream workspace
+
+    **Sheet Operations**:
+      jv sheet list - List all sheets in the upstream workspace
+      jv sheet use <SHEET_NAME> - Use the specified sheet to start current work (automatically created if it doesn't exist)
+      jv sheet exit - Exit current work
+
+      jv import <PACKAGE_NAME> - Import files from import area
+      jv import <REFERENCE_SHEET_PATH> - Import files from reference sheet
+      jv export <FILE> <SHEET_NAME> -m <DESCRIPTION> -n <PACKAGE_NAME> - Export specified file package to import area of other sheets
+
+    **File Operations**
+      jv move <FILE> <TO> - Safely rename files
+      jv move auto - Automatically handle local file moves or renames
+      jv track <FILE> - Track and upload files to upstream vault
+
+    **Query Built-in Documentation**
+      jv docs list - List all available documentation
+      jv docs <DOC_NAME> - View content of specified documentation
+      or jv docs <DOC_NAME> -e - Return temporary path of specific documentation for editor opening
+      **Example**: jv docs get-started -e | nano
+
+    You can use jv <COMMAND_NAME> --help to query more detailed help!
+
+    **Tip**: If you need to understand JustEnoughVCS collaboration paradigms, use jv docs get-started
+
+  account: |
+    **Manage Local Accounts**
+    **Usage**:
+    jv account list - List all accounts on this computer and whether private keys are registered
+    jv account as <ACCOUNT_NAME> - Switch current account
+    jv account add <ACCOUNT_NAME> - Add an account to this computer
+    jv account remove <ACCOUNT_NAME> - Delete this account
+    jv account mvkey <ACCOUNT_NAME> <PRIVATE_KEY_FILE> - Move private key to specified account
+
+    Accounts are identity identifiers on the local computer, each account can be associated with different private keys.
+    You need to set up accounts before interacting with upstream vaults.
+
+  sheet: |
+    **Manage File Sheets**
+    **Usage**:
+    jv sheet list - List all sheets in the upstream workspace
+    jv sheet use <SHEET_NAME> - Use the specified sheet to start current work (automatically created if it doesn't exist)
+    jv sheet exit - Exit current work
+
+    Sheets are core concepts in JustEnoughVCS, each sheet represents an independent file collection.
+    You can switch work between different sheets, or export files from one sheet to another.
+
+  create: |
+    **Create Workspace with Specified Name**
+    **Usage**: jv create <WORKSPACE_NAME>
+
+    **Example**: jv create my_workspace
+    Creates a directory named 'my_workspace' in the current directory and initializes a workspace inside it.
+
+    Workspace is your local working environment for file synchronization and version control with upstream vaults.
+
+  init: |
+    **Create Workspace in Current Directory**
+    **Usage**: jv init
+
+    This command creates a workspace in the current directory, with the workspace name determined by the current directory name.
+
+    If the current directory is not empty, this operation will fail. Please ensure you execute this command in an empty directory.
+
+  here: |
+    **Query Directory Information Here**
+    **Usage**: jv here
+
+    Displays detailed information about current directory files, including:
+    - File name, size, version number
+    - Current file holder
+    - Latest version commit information
+
+    This is a quick way to understand the current state of your workspace directory.
+
+  track: |
+    **Track Local Files**
+    **Usage**: jv track <FILE_PATH>
+
+    **Example**: jv track src/main.rs
+    First track - Create and upload the "First Version", then automatically hold them
+    Subsequent tracks - Update files with new versions
+
+    Tracking files is the basic operation of version control, ensuring your changes can be synchronized to the upstream vault.
+
+  hold: |
+    **Hold Files: Obtain File Edit Rights from Upstream Vault**
+    **Usage**: jv hold <FILE_PATH>
+
+    **Example**: jv hold src/lib.rs
+    When you need to edit a file, you must first hold the file's edit rights.
+    After holding a file, other collaborators will not be able to edit the same file simultaneously, avoiding conflicts.
+
+    After editing, remember to track the file to save changes.
+
+  throw: |
+    **Throw Files: Release File Edit Rights from Upstream Vault**
+    **Usage**: jv throw <FILE_PATH>
+
+    **Example**: jv throw src/config.rs
+    When you no longer need to edit a file, you can throw the file's edit rights.
+    After throwing, other collaborators can hold and edit the file.
+
+    If you have made changes to the file but haven't tracked them, throwing will lose those changes.
+
+  move: |
+    **Move Local Files**
+    **Usage**:
+    jv move <SOURCE_FILE> <TARGET_LOCATION> - Safely rename or move files
+    jv move auto - Automatically handle local file moves or renames
+
+    **Example**:
+    jv move old_name.txt new_name.txt
+    jv move src/old_dir/file.rs src/new_dir/file.rs
+    jv move auto
+
+    Safe move operations preserve file version history, while auto-move detects and handles all renames.
+
+  export: |
+    **Export Files to Import Area of Other Sheets**
+    **Usage**: jv export <FILE> <TARGET_SHEET> -m <DESCRIPTION> -n <PACKAGE_NAME>
+
+    **Example**: jv export data.csv analytics -m "Export analysis data" -n "analysis_data"
+    This operation packages the specified files and sends them to the import area of the target sheet.
+
+    Other collaborators can use the jv import command in the target sheet to import these files.
+
+  import: |
+    **Import Files to Current Sheet**
+    **Usage**:
+    jv import <PACKAGE_NAME> - Import files from import area
+    jv import <REFERENCE_SHEET_PATH> - Import files from reference sheet
+
+    **Example**:
+    jv import Player_Import - From import area defined name
+    jv import ref@Data/Player.csv - From reference sheet path
+
+    Import operation copies files from other sheets or import areas to the current workspace.
+
+  direct: |
+    **Direct to Specified Upstream Vault and Stain This Workspace**
+    **Usage**: jv direct <UPSTREAM_VAULT_ADDRESS>
+
+    **Example**: jv direct your_vault.org
+    This operation connects the current workspace to the specified upstream vault and adds a stain identifier to the workspace.
+
+    After staining, the workspace will only be able to interact with vaults of the specified identifier, ensuring data consistency.
+
+  unstain: |
+    **Unstain This Workspace**
+    **Usage**: jv unstain
+
+    **DANGER ZONE**: This operation removes the workspace's stain identifier, after which the workspace will be disconnected from the upstream vault.
+
+    After unstaining, the workspace will no longer be associated with any specific vault and can be reconnected to other vaults.
+    However, please note that this may cause data synchronization issues, use with caution.
+
+  update: |
+    **Download Latest Information from Upstream Vault**
+    **Usage**: jv update
+
+    This operation synchronizes the latest file status, sheet information, and member information from the upstream vault.
+
+    It is recommended to perform an update operation before starting work to ensure you have the latest working environment.
+
+  docs: |
+    **Query Built-in Documentation**
+    **Usage**:
+    jv docs list - List all available documentation
+    jv docs <DOC_NAME> - View content of specified documentation
+    jv docs <DOC_NAME> -e - Return temporary path of specific documentation for editor opening
+
+    **Example**:
+    jv docs get-started
+    jv docs collaboration -e | nano
+
+    Built-in documentation includes JustEnoughVCS usage guides, collaboration paradigms, and best practices.
