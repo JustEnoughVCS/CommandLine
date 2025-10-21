@@ -8,7 +8,7 @@ use just_enough_vcs::{
     },
     vcs::{
         connection::action_service::server_entry,
-        constants::{SERVER_FILE_VAULT, SERVER_FILE_VF_META},
+        constants::SERVER_FILE_VAULT,
         current::current_vault_path,
         data::{
             member::Member,
@@ -35,11 +35,11 @@ rust_i18n::i18n!("locales/help_docs", fallback = "en");
 )]
 struct JustEnoughVcsVault {
     #[command(subcommand)]
-    command: JustEnoughVcsCommand,
+    command: JustEnoughVcsVaultCommand,
 }
 
 #[derive(Subcommand, Debug)]
-enum JustEnoughVcsCommand {
+enum JustEnoughVcsVaultCommand {
     /// Get vault info in the current directory
     Here(HereArgs),
 
@@ -161,28 +161,28 @@ async fn main() {
     };
 
     match parser.command {
-        JustEnoughVcsCommand::Here(here_args) => {
+        JustEnoughVcsVaultCommand::Here(here_args) => {
             if here_args.help {
                 println!("{}", md(t!("jvv.here")));
                 return;
             }
             jvv_here(here_args).await;
         }
-        JustEnoughVcsCommand::Create(create_vault_args) => {
+        JustEnoughVcsVaultCommand::Create(create_vault_args) => {
             if create_vault_args.help {
                 println!("{}", md(t!("jvv.create")));
                 return;
             }
             jvv_create(create_vault_args).await;
         }
-        JustEnoughVcsCommand::Init(init_vault_args) => {
+        JustEnoughVcsVaultCommand::Init(init_vault_args) => {
             if init_vault_args.help {
                 println!("{}", md(t!("jvv.init")));
                 return;
             }
             jvv_init(init_vault_args).await;
         }
-        JustEnoughVcsCommand::Member(member_manage) => {
+        JustEnoughVcsVaultCommand::Member(member_manage) => {
             let vault_cfg = VaultConfig::read()
                 .await
                 .unwrap_or_else(|_| panic!("{}", t!("jvv.fail.no_vault_here").trim().to_string()));
@@ -226,7 +226,7 @@ async fn main() {
                 }
             }
         }
-        JustEnoughVcsCommand::Service(service_manage) => match service_manage {
+        JustEnoughVcsVaultCommand::Service(service_manage) => match service_manage {
             ServiceManage::Listen(listen_args) => {
                 if listen_args.help {
                     println!("{}", md(t!("jvv.service")));
@@ -284,14 +284,8 @@ async fn jvv_here(_args: HereArgs) {
         while let Ok(Some(entry)) = entries.next_entry().await {
             if let Ok(metadata) = entry.metadata().await {
                 if metadata.is_file() {
-                    if entry
-                        .file_name()
-                        .to_string_lossy()
-                        .ends_with(SERVER_FILE_VF_META)
-                    {
-                        num_vf += 1;
-                        total_size += metadata.len();
-                    }
+                    num_vf += 1;
+                    total_size += metadata.len();
                 }
             }
         }
@@ -332,6 +326,21 @@ async fn jvv_here(_args: HereArgs) {
     };
     let num_ref_sheet_managed_files = ref_sheet.mapping().len();
 
+    let total_size_str = if total_size < 1024 {
+        format!("{} B", total_size)
+    } else if total_size < 1024 * 1024 {
+        format!("{:.2} KB", total_size as f64 / 1024.0)
+    } else if total_size < 1024 * 1024 * 1024 {
+        format!("{:.2} MB", total_size as f64 / (1024.0 * 1024.0))
+    } else if total_size < 1024 * 1024 * 1024 * 1024 {
+        format!("{:.2} GB", total_size as f64 / (1024.0 * 1024.0 * 1024.0))
+    } else {
+        format!(
+            "{:.2} TB",
+            total_size as f64 / (1024.0 * 1024.0 * 1024.0 * 1024.0)
+        )
+    };
+
     // Success
     println!(
         "{}",
@@ -340,11 +349,10 @@ async fn jvv_here(_args: HereArgs) {
             name = vault_name,
             num_sheets = num_sheets,
             num_vf = num_vf,
-            total_size = total_size,
             num_mem = num_mem,
             num_pk = num_pk,
             num_ref_sheet_managed_files = num_ref_sheet_managed_files,
-            total_size_gb = (total_size as f64) / (1024.0 * 1024.0 * 1024.0)
+            total_size = total_size_str
         ))
     )
 }
