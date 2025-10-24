@@ -119,7 +119,7 @@ jvv:
         footer: |
           **Among them, %{num} members have registered PubKeys.**
 
-        status_key_registered: (PubKey Exists)
+        status_key_registered: (Registered)
 
     service:
       listen: Listening for client connections in vault `%{path}` ...
@@ -147,7 +147,7 @@ jv:
       jv account as <ACCOUNT_NAME> - Switch current account
       jv account add <ACCOUNT_NAME> - Add an account to this computer
       jv account remove <ACCOUNT_NAME> - Delete this account
-      jv account mvkey <ACCOUNT_NAME> <PRIVATE_KEY_FILE> - Move private key to specified account
+      jv account movekey <ACCOUNT_NAME> <PRIVATE_KEY_FILE> - Move private key to specified account
 
     **Information Synchronization**:
       jv update - Download latest information from upstream workspace
@@ -183,7 +183,7 @@ jv:
     jv account as <ACCOUNT_NAME> - Switch current account
     jv account add <ACCOUNT_NAME> - Add an account to this computer
     jv account remove <ACCOUNT_NAME> - Delete this account
-    jv account mvkey <ACCOUNT_NAME> <PRIVATE_KEY_FILE> - Move private key to specified account
+    jv account movekey <ACCOUNT_NAME> <PRIVATE_KEY_FILE> - Move private key to specified account
 
     Accounts are identity identifiers on the local computer, each account can be associated with different private keys.
     You need to set up accounts before interacting with upstream vaults.
@@ -329,11 +329,14 @@ jv:
 
     Built-in documentation includes JustEnoughVCS usage guides, collaboration paradigms, and best practices.
 
-    fail:
-      parse:
-        str_to_sockaddr: |
-          Could not recognize *`%{str}`* as an IP address
-          This is a problem with your input syntax! Please check **the content you entered**
+  fail:
+    path_not_found: |
+      The directory `%{path}` cannot be found!
+
+    parse:
+      str_to_sockaddr: |
+        Could not recognize *`%{str}`* as an IP address
+        This is a problem with your input syntax! Please check **the content you entered**
 
     action_operation_fail:
       main: |
@@ -374,3 +377,39 @@ jv:
         If you are the **administrator** and confirm this issue affects server operation, please:
         1. Check if your JustEnoughVCS server is up to date
         2. Submit an Issue at the JustEnoughVCS Git Repository
+
+    account:
+      no_user_dir: Cannot find user directory!
+      add: Failed to add account `%{account}`, please check if the account already exists.
+      remove: Failed to remove account `%{account}`, please check if the account exists.
+      list: Failed to get account list!
+      not_found: Cannot find account `%{account}`!
+
+    init_create_dir_not_empty: |
+      The current directory is not empty!
+      If you are certain you want to create here, please use --force to force execution!
+
+    create: Failed to create local workspace!
+    init: Failed to create workspace here!
+    get_current_dir: Failed to get current directory!
+
+    workspace_not_found: |
+      Local workspace not found! Please use this command within a local workspace
+      If you wish to use this directory as a local workspace, please use jv init
+
+    read_cfg: Failed to read local workspace configuration file!
+    write_cfg: Failed to write changes to local workspace configuration file!
+
+  success:
+    account:
+      as: Successfully switched this workspace's account to `%{account}`
+      add: Successfully added account `%{account}`!
+      remove: Successfully removed account `%{account}`!
+      list:
+        header: |
+          **There are %{num} account(s) on this computer:**
+
+        status_has_key: (Registered)
+      move_key: Successfully moved the private key to the account directory!
+    create: Successfully created local workspace!
+    init: Successfully created workspace here!

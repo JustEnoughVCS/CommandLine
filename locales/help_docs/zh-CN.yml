@@ -143,7 +143,7 @@ jv:
       jv account as <账户名称> - 切换当前账户
       jv account add <账户名称> - 为当前计算机添加账户
       jv account remove <账户名称> - 删除该账户
-      jv account mvkey <账户名称> <私钥文件> - 移动私钥到指定账户
+      jv account movekey <账户名称> <私钥文件> - 移动私钥到指定账户
 
     **信息同步**：
       jv update - 从上游工作区下载最新的信息
@@ -179,7 +179,7 @@ jv:
     jv account as <账户名称> - 切换当前账户
     jv account add <账户名称> - 为当前计算机添加账户
     jv account remove <账户名称> - 删除该账户
-    jv account mvkey <账户名称> <私钥文件> - 移动私钥到指定账户
+    jv account movekey <账户名称> <私钥文件> - 移动私钥到指定账户
 
     账户是本地计算机上的身份标识，每个账户可以关联不同的私钥
     您需要先设置账户才能与上游库进行交互
@@ -340,6 +340,9 @@ jv:
     内建文档包含 JustEnoughVCS 的使用指南、协作范式和最佳实践
 
   fail:
+    path_not_found: |
+      您给出的目录 `%{path}` 无法找到！
+
     parse:
       str_to_sockaddr: |
         无法将 *`%{str}`* 识别为IP地址
@@ -383,3 +386,40 @@ jv:
         若您作为 **管理员**，在确认该问题影响服务器运作，请
         1. 检查您的 JustEnoughVCS 服务端是否最新
         2. 前往 JustEnoughVCS 所在的 Git 版本库提交 Issue
+
+    account:
+      no_user_dir: 无法找到用户目录！
+      add: 添加账户 `%{account}` 失败，请检查账户是否已存在。
+      remove: 删除账户 `%{account}` 失败，请检查账户是否存在。
+      list: 获取账户列表失败！
+      move_key: 将该私钥移动至账户目录失败！
+      not_found: 无法找到账户 `%{account}`!
+
+    init_create_dir_not_empty: |
+      当前目录并不是空的！
+      若您确实确定在此处创建，请使用 --force 来强制执行！
+
+    create: 创建本地工作区失败！
+    init: 在此处创建本地工作区失败！
+    get_current_dir: 无法获得当前目录！
+
+    workspace_not_found: |
+      无法找到本地工作区！请在本地工作区内使用该命令
+      若您希望将该目录作为本地工作区，请使用 jv init
+
+    read_cfg: 无法读取本地工作区的配置文件！
+    write_cfg: 无法将修改写入本地工作区的配置文件！
+
+  success:
+    account:
+      as: 成功将此工作区的账户切换至 `%{account}`
+      add: 成功添加账户 `%{account}`！
+      remove: 成功删除账户 `%{account}`！
+      list:
+        header: |
+          **当前计算机上有 %{num} 个账户：**
+
+        status_has_key: (已注册私钥)
+      move_key: 成功将该私钥移动至账户目录！
+    create: 成功创建本地工作区！
+    init: 成功在此处创建工作区！
