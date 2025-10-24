@@ -153,7 +153,10 @@ async fn main() {
 
     // Init colored
     #[cfg(windows)]
-    colored::control::set_virtual_terminal(true).unwrap();
+    if let Err(err) = colored::control::set_virtual_terminal(true) {
+        eprintln!("{}", t!("jvv.fail.colored_control", err = err.to_string()));
+        return;
+    }
 
     let Ok(parser) = JustEnoughVcsVault::try_parse() else {
         println!("{}", md(t!("jvv.help")));
@@ -183,9 +186,13 @@ async fn main() {
             jvv_init(init_vault_args).await;
         }
         JustEnoughVcsVaultCommand::Member(member_manage) => {
-            let vault_cfg = VaultConfig::read()
-                .await
-                .unwrap_or_else(|_| panic!("{}", t!("jvv.fail.no_vault_here").trim().to_string()));
+            let vault_cfg = match VaultConfig::read().await {
+                Ok(cfg) => cfg,
+                Err(_) => {
+                    eprintln!("{}", t!("jvv.fail.no_vault_here").trim());
+                    return;
+                }
+            };
 
             let vault = match Vault::init_current_dir(vault_cfg) {
                 Some(vault) => vault,
@@ -358,19 +365,28 @@ async fn jvv_here(_args: HereArgs) {
 }
 
 async fn jvv_init(_args: InitVaultArgs) {
-    let current_dir = std::env::current_dir()
-        .unwrap_or_else(|_| panic!("{}", t!("jvv.fail.std.current_dir").trim().to_string()));
-    if current_dir.read_dir().unwrap().next().is_some() {
-        eprintln!("{}", t!("jvv.fail.init.not_empty"));
-        return;
+    let current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(_) => {
+            eprintln!("{}", t!("jvv.fail.std.current_dir").trim());
+            return;
+        }
+    };
+    if let Ok(mut entries) = current_dir.read_dir() {
+        if entries.next().is_some() {
+            eprintln!("{}", t!("jvv.fail.init.not_empty"));
+            return;
+        }
     }
 
     // Setup vault
-    let vault_name = current_dir
-        .file_name()
-        .unwrap_or_else(|| panic!("{}", t!("jvv.fail.std.current_dir_name").trim().to_string()))
-        .to_string_lossy()
-        .to_string();
+    let vault_name = match current_dir.file_name() {
+        Some(name) => name.to_string_lossy().to_string(),
+        None => {
+            eprintln!("{}", t!("jvv.fail.std.current_dir_name").trim());
+            return;
+        }
+    };
     let vault_name = pascal_case!(vault_name);
 
     if let Err(err) = Vault::setup_vault(current_dir.clone()).await {
@@ -401,8 +417,13 @@ async fn jvv_init(_args: InitVaultArgs) {
 }
 
 async fn jvv_create(args: CreateVaultArgs) {
-    let current_dir = std::env::current_dir()
-        .unwrap_or_else(|_| panic!("{}", t!("jvv.fail.std.current_dir").trim().to_string()));
+    let current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(_) => {
+            eprintln!("{}", t!("jvv.fail.std.current_dir").trim());
+            return;
+        }
+    };
     let target_dir = current_dir.join(args.vault_name.clone());
 
     // Create directory
@@ -417,9 +438,11 @@ async fn jvv_create(args: CreateVaultArgs) {
         return;
     }
 
-    if target_dir.read_dir().unwrap().next().is_some() {
-        eprintln!("{}", t!("jvv.fail.create.not_empty"));
-        return;
+    if let Ok(mut entries) = target_dir.read_dir() {
+        if entries.next().is_some() {
+            eprintln!("{}", t!("jvv.fail.create.not_empty"));
+            return;
+        }
     }
 
     // Setup vault
@@ -490,9 +513,13 @@ async fn jvv_member_remove(vault: Vault, args: MemberRemoveArgs) {
 
 async fn jvv_member_list(vault: Vault, _args: MemberListArgs) {
     // Get id list
-    let ids = vault
-        .member_ids()
-        .unwrap_or_else(|_| panic!("{}", t!("jvv.fail.member.list").trim().to_string()));
+    let ids = match vault.member_ids() {
+        Ok(ids) => ids,
+        Err(_) => {
+            eprintln!("{}", t!("jvv.fail.member.list").trim());
+            return;
+        }
+    };
 
     // Print header
     println!(
@@ -560,7 +587,10 @@ async fn jvv_service_listen(args: ListenArgs) {
             "{}",
             t!(
                 "jvv.success.service.listen",
-                path = current_vault.file_name().unwrap().display()
+                path = match current_vault.file_name() {
+                    Some(name) => name.to_string_lossy(),
+                    None => std::borrow::Cow::Borrowed("unknown"),
+                }
             )
         )
     }
