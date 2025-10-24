@@ -328,3 +328,49 @@ jv:
     jv docs collaboration -e | nano
 
     Built-in documentation includes JustEnoughVCS usage guides, collaboration paradigms, and best practices.
+
+    fail:
+      parse:
+        str_to_sockaddr: |
+          Could not recognize *`%{str}`* as an IP address
+          This is a problem with your input syntax! Please check **the content you entered**
+
+    action_operation_fail:
+      main: |
+        This error is from the JustEnoughVCS core component
+        **Error Message**: %{err}
+
+      type_connection: |
+        Based on the returned error context, this is a **network connection** issue
+        **Please check**:
+        1. Whether your network connection is working properly
+        2. Whether you have permission to connect to this address
+
+      type_auth: |
+        Based on the returned error context, this is a **permission** issue
+        This indicates you don't have sufficient permissions to perform this operation.
+
+      type_fsio: |
+        Based on the returned error context, this is a **file read/write** related issue
+        **Please check**:
+        1. Whether your disk has sufficient space and is operating normally
+        2. Whether your Local Workspace files are being used by other processes
+
+      type_serialize: |
+        Based on the returned error context, this is a **serialization or deserialization** related issue
+        **Please check**
+        1. Whether the parameter format you passed meets the requirements for serialization/deserialization
+        2. Whether this version of JustEnoughVCS client/server supports this type of serialization
+
+      type_other: |
+        Unfortunately, based on the returned context information,
+        this is not an expected error.
+        Please submit an Issue at the JustEnoughVCS Git Repository
+
+        JustEnoughVCS needs your feedback, which will make this project more "JustEnough"
+
+      info_contact_admin: |
+        If necessary, please contact the **administrator** of the Upstream Vault.
+        If you are the **administrator** and confirm this issue affects server operation, please:
+        1. Check if your JustEnoughVCS server is up to date
+        2. Submit an Issue at the JustEnoughVCS Git Repository
