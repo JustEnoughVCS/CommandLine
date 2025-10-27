@@ -61,7 +61,6 @@ jvv:
 
   fail:
     jvcs: "JustEnoughVCS Error: %{err}"
-
     no_vault_here: No vault found here
 
     tokio:
@@ -80,9 +79,7 @@ jvv:
         If you wish to use this directory as a vault, please use jvv init --help to view related help
 
       vault_init_failed: Failed to initialize vault!
-
       member_ids_failed: Failed to get member IDs!
-
       ref_sheet_not_found: Reference sheet `ref` not found, but it should exist!
 
     create:
@@ -94,6 +91,11 @@ jvv:
     member:
       register: Failed to create member! Please check if a member with the same name already exists
       list: Failed to get member ID!
+
+    service:
+      listen_done: |
+        Server forced to close due to error!
+        Error message: %{error}
 
   success:
     here:
@@ -122,7 +124,8 @@ jvv:
         status_key_registered: (Registered)
 
     service:
-      listen: Listening for client connections in vault `%{path}` ...
+      listen_start: Listening for client connections in vault `%{path}` ...
+      listen_done: Server shutdown!
 
 jv:
   help: |

@@ -19,7 +19,7 @@ use just_enough_vcs::{
 use just_enough_vcs_cli::utils::{
     build_env_logger::build_env_logger, lang_selector::current_locales, md_colored::md,
 };
-use log::info;
+use log::{error, info};
 use rust_i18n::{set_locale, t};
 use tokio::fs::{self};
 
@@ -586,7 +586,7 @@ async fn jvv_service_listen(args: ListenArgs) {
         info!(
             "{}",
             t!(
-                "jvv.success.service.listen",
+                "jvv.success.service.listen_start",
                 path = match current_vault.file_name() {
                     Some(name) => name.to_string_lossy(),
                     None => std::borrow::Cow::Borrowed("unknown"),
@@ -595,5 +595,15 @@ async fn jvv_service_listen(args: ListenArgs) {
         )
     }
 
-    let _ = server_entry(current_vault).await;
+    match server_entry(current_vault).await {
+        Ok(_) => {
+            info!("{}", t!("jvv.success.service.listen_done").trim());
+        }
+        Err(e) => {
+            error!(
+                "{}",
+                t!("jvv.fail.service.listen_done", error = e.to_string()).trim()
+            );
+        }
+    }
 }

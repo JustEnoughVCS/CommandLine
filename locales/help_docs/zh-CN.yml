@@ -59,7 +59,6 @@ jvv:
 
   fail:
     jvcs: JustEnoughVCS 错误：%{err}
-
     no_vault_here: 此处并没有找到库文件
 
     tokio:
@@ -78,9 +77,7 @@ jvv:
         若您希望将该目录作为库，请使用 jvv init --help 查看相关帮助
 
       vault_init_failed: 初始化库失败！
-
       member_ids_failed: 获得成员 ID 失败！
-
       ref_sheet_not_found: 未找到参照表 `ref`，该参照表理应存在！
 
     create:
@@ -93,6 +90,11 @@ jvv:
       register: 创建成员失败！请检查是否存在同名的成员
       list: 获取成员 ID 失败！
 
+    service:
+      listen_done: |
+        服务端被错误强制关闭！
+        错误信息：%{error}
+
   success:
     here:
       info: |
@@ -102,7 +104,6 @@ jvv:
         **提示**：若要启动服务端，请运行 jvv service listen
 
     create: 成功在 `%{name}` 创建库！
-
     init: 在此处初始化库成功！
 
     member:
@@ -118,7 +119,8 @@ jvv:
         status_key_registered: (公钥存在)
 
     service:
-      listen: 正在库 `%{path}` 监听来自客户端的连接 ...
+      listen_start: 正在库 `%{path}` 监听来自客户端的连接 ...
+      listen_done: 服务端运行结束！
 
 jv:
   help: |
