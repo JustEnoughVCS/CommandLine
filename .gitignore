@@ -13,3 +13,6 @@
 
 # All temp directory
 **/.temp/
+
+# Target directory
+/target/
