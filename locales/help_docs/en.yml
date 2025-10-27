@@ -338,8 +338,7 @@ jv:
 
     parse:
       str_to_sockaddr: |
-        Could not recognize *`%{str}`* as an IP address
-        This is a problem with your input syntax! Please check **the content you entered**
+        *`%{str}`* is not a valid IP address, please check your input!
 
     action_operation_fail:
       main: |
@@ -402,6 +401,9 @@ jv:
 
     read_cfg: Failed to read local workspace configuration file!
     write_cfg: Failed to write changes to local workspace configuration file!
+
+    create_socket: Failed to create TCP socket!
+    connection_failed: Failed to connect to target server!
 
   success:
     account:

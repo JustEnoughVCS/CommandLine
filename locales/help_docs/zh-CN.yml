@@ -347,8 +347,7 @@ jv:
 
     parse:
       str_to_sockaddr: |
-        无法将 *`%{str}`* 识别为IP地址
-        这是您的输入语法问题！请检查 **输入的内容**
+        无法将 *`%{str}`* 识别为IP地址，请检查您的输入！
 
     action_operation_fail:
       main: |
@@ -411,6 +410,9 @@ jv:
 
     read_cfg: 无法读取本地工作区的配置文件！
     write_cfg: 无法将修改写入本地工作区的配置文件！
+
+    create_socket: 无法创建 TCP 套接字！
+    connection_failed: 无法连接至目标服务器！
 
   success:
     account:
