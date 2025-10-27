@@ -1,8 +1,10 @@
-use std::{env::current_dir, net::SocketAddr, path::PathBuf, str::FromStr};
+use std::{env::current_dir, net::SocketAddr, path::PathBuf};
 
 use just_enough_vcs::{
-    utils::cfg_file::config::ConfigFile,
+    system::action_system::action::ActionContext,
+    utils::{cfg_file::config::ConfigFile, tcp_connection::instance::ConnectionInstance},
     vcs::{
+        constants::PORT,
         current::current_local_path,
         data::{
             local::{LocalWorkspace, config::LocalConfig},
@@ -14,13 +16,14 @@ use just_enough_vcs::{
 
 use clap::{Parser, Subcommand, arg, command};
 use just_enough_vcs::{
-    system::action_system::action::ActionContext,
     utils::tcp_connection::error::TcpTargetError,
     vcs::{actions::local_actions::proc_set_upstream_vault_action, registry::client_registry},
 };
-use just_enough_vcs_cli::utils::{lang_selector::current_locales, md_colored::md};
+use just_enough_vcs_cli::utils::{
+    lang_selector::current_locales, md_colored::md, socket_addr_helper,
+};
 use rust_i18n::{set_locale, t};
-use tokio::fs;
+use tokio::{fs, net::TcpSocket};
 
 // Import i18n files
 rust_i18n::i18n!("locales", fallback = "en");
@@ -655,7 +658,14 @@ async fn jv_direct(args: DirectArgs) {
             return;
         }
     };
-    let ctx = ActionContext::local();
+
+    let Some(instance) = connect(upstream).await else {
+        // Since connect() function already printed error messages, we only handle the return here
+        return;
+    };
+
+    let ctx = ActionContext::local().insert_instance(instance);
+
     match proc_set_upstream_vault_action(&pool, ctx, upstream).await {
         Err(e) => handle_err(e),
         _ => {}
@@ -740,4 +750,33 @@ fn connection(err: String) -> (ErrorText, ErrorTip, HasTip) {
         md(t!("jv.fail.action_operation_fail.type_connection")).to_string(),
         true,
     )
+}
+
+async fn connect(upstream: SocketAddr) -> Option<ConnectionInstance> {
+    // Create Socket
+    let socket = if upstream.is_ipv4() {
+        match TcpSocket::new_v4() {
+            Ok(socket) => socket,
+            Err(_) => {
+                eprintln!("{}", t!("jv.fail.create_socket").trim());
+                return None;
+            }
+        }
+    } else {
+        match TcpSocket::new_v6() {
+            Ok(socket) => socket,
+            Err(_) => {
+                eprintln!("{}", t!("jv.fail.create_socket").trim());
+                return None;
+            }
+        }
+    };
+
+    // Connect
+    let Ok(stream) = socket.connect(upstream).await else {
+        eprintln!("{}", t!("jv.fail.connection_failed").trim());
+        return None;
+    };
+
+    Some(ConnectionInstance::from(stream))
 }
