@@ -642,7 +642,7 @@ async fn jv_account_move_key(user_dir: UserDirectory, args: MoveKeyToAccountArgs
 
 async fn jv_direct(args: DirectArgs) {
     let pool = client_registry::client_action_pool();
-    let upstream = match SocketAddr::from_str(&args.upstream) {
+    let upstream = match socket_addr_helper::get_socket_addr(&args.upstream, PORT).await {
         Ok(result) => result,
         Err(_) => {
             eprintln!(
