@@ -17,7 +17,7 @@ pub async fn get_socket_addr(
             )
         })?;
 
-        return resolve_to_socket_addr(&host, port).await;
+        return resolve_to_socket_addr(host, port).await;
     }
 
     // No port specified, use default port
@@ -26,15 +26,13 @@ pub async fn get_socket_addr(
 
 /// Parse host and port from address string
 fn parse_host_and_port(address: &str) -> Option<(&str, &str)> {
-    if address.starts_with('[') {
-        if let Some(close_bracket) = address.find(']') {
-            if close_bracket + 1 < address.len() && address.as_bytes()[close_bracket + 1] == b':' {
+    if address.starts_with('[')
+        && let Some(close_bracket) = address.find(']')
+            && close_bracket + 1 < address.len() && address.as_bytes()[close_bracket + 1] == b':' {
                 let host = &address[1..close_bracket];
                 let port = &address[close_bracket + 2..];
                 return Some((host, port));
             }
-        }
-    }
 
     // Handle IPv4 addresses and hostnames with ports
     if let Some(colon_pos) = address.rfind(':') {

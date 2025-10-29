@@ -311,12 +311,11 @@ async fn jvv_here(_args: HereArgs) {
 
     if let Ok(mut entries) = fs::read_dir(&virtual_file_root).await {
         while let Ok(Some(entry)) = entries.next_entry().await {
-            if let Ok(metadata) = entry.metadata().await {
-                if metadata.is_file() {
+            if let Ok(metadata) = entry.metadata().await
+                && metadata.is_file() {
                     num_vf += 1;
                     total_size += metadata.len();
                 }
-            }
         }
     }
 
@@ -394,12 +393,11 @@ async fn jvv_init(_args: InitVaultArgs) {
             return;
         }
     };
-    if let Ok(mut entries) = current_dir.read_dir() {
-        if entries.next().is_some() {
+    if let Ok(mut entries) = current_dir.read_dir()
+        && entries.next().is_some() {
             eprintln!("{}", t!("jvv.fail.init.not_empty"));
             return;
         }
-    }
 
     // Setup vault
     let vault_name = match current_dir.file_name() {
@@ -460,12 +458,11 @@ async fn jvv_create(args: CreateVaultArgs) {
         return;
     }
 
-    if let Ok(mut entries) = target_dir.read_dir() {
-        if entries.next().is_some() {
+    if let Ok(mut entries) = target_dir.read_dir()
+        && entries.next().is_some() {
             eprintln!("{}", t!("jvv.fail.create.not_empty"));
             return;
         }
-    }
 
     // Setup vault
     let vault_name = pascal_case!(args.vault_name);
@@ -617,7 +614,7 @@ async fn jvv_service_listen(args: ListenArgs) {
         )
     }
 
-    let port = if let Some(port) = args.port { port } else { 0 };
+    let port = args.port.unwrap_or_default();
     match server_entry(current_vault, port).await {
         Ok(_) => {
             info!("{}", t!("jvv.success.service.listen_done").trim());
