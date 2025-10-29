@@ -1,9 +1,10 @@
-use std::{env::current_dir, net::SocketAddr, path::PathBuf};
+use std::{env::current_dir, net::SocketAddr, path::PathBuf, process::exit};
 
 use just_enough_vcs::{
     system::action_system::action::ActionContext,
     utils::{cfg_file::config::ConfigFile, tcp_connection::instance::ConnectionInstance},
     vcs::{
+        actions::local_actions::SetUpstreamVaultActionResult,
         constants::PORT,
         current::current_local_path,
         data::{
@@ -20,7 +21,7 @@ use just_enough_vcs::{
     vcs::{actions::local_actions::proc_set_upstream_vault_action, registry::client_registry},
 };
 use just_enough_vcs_cli::utils::{
-    lang_selector::current_locales, md_colored::md, socket_addr_helper,
+    input::confirm_hint_or, lang_selector::current_locales, md_colored::md, socket_addr_helper,
 };
 use rust_i18n::{set_locale, t};
 use tokio::{fs, net::TcpSocket};
@@ -109,10 +110,11 @@ enum AccountManage {
     Help,
 
     /// Register a member to this computer
+    #[command(alias = "+")]
     Add(AccountAddArgs),
 
     /// Remove a account from this computer
-    #[command(alias = "rm")]
+    #[command(alias = "rm", alias = "-")]
     Remove(AccountRemoveArgs),
 
     /// List all accounts in this computer
@@ -266,6 +268,10 @@ struct DirectArgs {
 
     /// Upstream vault address
     upstream: String,
+
+    /// Whether to skip confirmation
+    #[arg(short = 'C', long)]
+    confirm: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -273,6 +279,10 @@ struct UnstainArgs {
     /// Show help information
     #[arg(short, long)]
     help: bool,
+
+    /// Whether to skip confirmation
+    #[arg(short = 'C', long)]
+    confirm: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -644,15 +654,24 @@ async fn jv_account_move_key(user_dir: UserDirectory, args: MoveKeyToAccountArgs
 }
 
 async fn jv_direct(args: DirectArgs) {
+    if !args.confirm {
+        println!(
+            "{}",
+            t!("jv.confirm.direct", upstream = args.upstream).trim()
+        );
+        confirm_hint_or(t!("common.confirm"), || exit(1)).await;
+    }
+
     let pool = client_registry::client_action_pool();
     let upstream = match socket_addr_helper::get_socket_addr(&args.upstream, PORT).await {
         Ok(result) => result,
-        Err(_) => {
+        Err(e) => {
             eprintln!(
                 "{}",
                 md(t!(
                     "jv.fail.parse.str_to_sockaddr",
-                    str = &args.upstream.trim()
+                    str = &args.upstream.trim(),
+                    err = e
                 ))
             );
             return;
@@ -668,12 +687,61 @@ async fn jv_direct(args: DirectArgs) {
 
     match proc_set_upstream_vault_action(&pool, ctx, upstream).await {
         Err(e) => handle_err(e),
-        _ => {}
+        Ok(result) => match result {
+            SetUpstreamVaultActionResult::DirectedAndStained => {
+                println!(
+                    "{}",
+                    md(t!(
+                        "jv.result.direct.directed_and_stained",
+                        upstream = upstream
+                    ))
+                )
+            }
+            SetUpstreamVaultActionResult::AlreadyStained => {
+                eprintln!("{}", md(t!("jv.result.direct.already_stained")))
+            }
+            SetUpstreamVaultActionResult::AuthorizeFailed(e) => {
+                println!(
+                    "{}",
+                    md(t!("jv.result.direct.directed_and_stained", err = e))
+                )
+            }
+        },
     };
 }
 
-async fn jv_unstain(_args: UnstainArgs) {
-    todo!()
+async fn jv_unstain(args: UnstainArgs) {
+    let Some(_local_dir) = current_local_path() else {
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+        return;
+    };
+
+    let Ok(mut local_cfg) = LocalConfig::read().await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return;
+    };
+
+    if !local_cfg.stained() {
+        eprintln!("{}", md(t!("jv.fail.unstain")));
+        return;
+    }
+
+    if !args.confirm {
+        println!(
+            "{}",
+            md(t!("jv.warn.unstain", upstream = local_cfg.vault_addr()))
+        );
+        confirm_hint_or(t!("common.confirm"), || exit(1)).await;
+    }
+
+    local_cfg.unstain();
+
+    let Ok(_) = LocalConfig::write(&local_cfg).await else {
+        eprintln!("{}", t!("jv.fail.write_cfg").trim());
+        return;
+    };
+
+    println!("{}", md(t!("jv.success.unstain")));
 }
 
 async fn jv_docs(_args: DocsArgs) {
@@ -681,75 +749,7 @@ async fn jv_docs(_args: DocsArgs) {
 }
 
 pub fn handle_err(err: TcpTargetError) {
-    let e: Option<(String, String, bool)> = match err {
-        TcpTargetError::Io(err) => Some(fsio(err)),
-        TcpTargetError::File(err) => Some(fsio(err)),
-
-        TcpTargetError::Serialization(err) => Some(serialize(err)),
-
-        TcpTargetError::Authentication(err) => Some(auth(err)),
-
-        TcpTargetError::Network(err) => Some(connection(err)),
-        TcpTargetError::Timeout(err) => Some(connection(err)),
-        TcpTargetError::Protocol(err) => Some(connection(err)),
-
-        _ => Some((
-            err.to_string(),
-            md(t!("jv.fail.action_operation_fail.type_other")),
-            false,
-        )),
-    };
-
-    if let Some((err_text, err_tip, has_tip)) = e {
-        eprintln!(
-            "{}\n{}",
-            md(t!("jv.fail.action_operation_fail.main", err = err_text)),
-            err_tip,
-        );
-
-        if has_tip {
-            eprintln!(
-                "{}",
-                md(t!("jv.fail.action_operation_fail.info_contact_admin"))
-            )
-        }
-    }
-}
-
-type ErrorText = String;
-type ErrorTip = String;
-type HasTip = bool;
-
-fn fsio(err: String) -> (ErrorText, ErrorTip, HasTip) {
-    (
-        err,
-        md(t!("jv.fail.action_operation_fail.type_fsio")).to_string(),
-        true,
-    )
-}
-
-fn serialize(err: String) -> (ErrorText, ErrorTip, HasTip) {
-    (
-        err,
-        md(t!("jv.fail.action_operation_fail.type_serialize")).to_string(),
-        true,
-    )
-}
-
-fn auth(err: String) -> (ErrorText, ErrorTip, HasTip) {
-    (
-        err,
-        md(t!("jv.fail.action_operation_fail.type_auth")).to_string(),
-        true,
-    )
-}
-
-fn connection(err: String) -> (ErrorText, ErrorTip, HasTip) {
-    (
-        err,
-        md(t!("jv.fail.action_operation_fail.type_connection")).to_string(),
-        true,
-    )
+    eprintln!("{}", md(t!("jv.fail.from_just_version_control", err = err)))
 }
 
 async fn connect(upstream: SocketAddr) -> Option<ConnectionInstance> {

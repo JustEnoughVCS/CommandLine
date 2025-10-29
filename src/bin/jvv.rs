@@ -41,32 +41,42 @@ struct JustEnoughVcsVault {
 #[derive(Subcommand, Debug)]
 enum JustEnoughVcsVaultCommand {
     /// Get vault info in the current directory
+    #[command(alias = "-H")]
     Here(HereArgs),
 
     /// Create a new directory and initialize a vault
+    #[command(alias = "-c")]
     Create(CreateVaultArgs),
 
     /// Create a vault in the current directory
+    #[command(alias = "-i")]
     Init(InitVaultArgs),
 
     /// Member manage
-    #[command(subcommand)]
+    #[command(subcommand, alias = "-m")]
     Member(MemberManage),
 
     /// Manage service
     #[command(subcommand)]
     Service(ServiceManage),
+
+    // Short commands
+    #[command(alias = "-l", alias = "listen")]
+    ServiceListen(ListenArgs),
 }
 
 #[derive(Subcommand, Debug)]
 enum MemberManage {
     /// Register a member to the vault
+    #[command(alias = "+")]
     Register(MemberRegisterArgs),
 
     /// Remove a member from the vault
+    #[command(alias = "-")]
     Remove(MemberRemoveArgs),
 
     /// List all members in the vault
+    #[command(alias = "ls")]
     List(MemberListArgs),
 
     /// Show help information
@@ -144,6 +154,10 @@ struct ListenArgs {
     /// Disable logging
     #[arg(short, long)]
     no_log: bool,
+
+    /// Custom port
+    #[arg(short, long)]
+    port: Option<u16>,
 }
 
 #[tokio::main]
@@ -246,6 +260,14 @@ async fn main() {
                 return;
             }
         },
+        // Short commands
+        JustEnoughVcsVaultCommand::ServiceListen(listen_args) => {
+            if listen_args.help {
+                println!("{}", md(t!("jvv.service")));
+                return;
+            }
+            jvv_service_listen(listen_args).await;
+        }
     }
 }
 
@@ -595,7 +617,8 @@ async fn jvv_service_listen(args: ListenArgs) {
         )
     }
 
-    match server_entry(current_vault).await {
+    let port = if let Some(port) = args.port { port } else { 0 };
+    match server_entry(current_vault, port).await {
         Ok(_) => {
             info!("{}", t!("jvv.success.service.listen_done").trim());
         }
