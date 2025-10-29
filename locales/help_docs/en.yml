@@ -1,3 +1,7 @@
+common:
+  confirm: |
+    Confirm to perform the above operation? (Y/n):
+
 jvv:
   help: |
     **JustEnoughVCS Upstream Vault Commands**
@@ -56,8 +60,9 @@ jvv:
   service: |
     **Service Management**
     **Usage**:
-    jvv service listen - Start the vault server in the current vault to accept client connections
-      You can use --no-log to disable log output
+      jvv service listen - Start the server in the current vault
+        You can use --port   to set the listening port,
+                use --no-log to disable log output
 
   fail:
     jvcs: "JustEnoughVCS Error: %{err}"
@@ -332,53 +337,21 @@ jv:
 
     Built-in documentation includes JustEnoughVCS usage guides, collaboration paradigms, and best practices.
 
+  confirm:
+    direct: |
+      Do you want to direct the current local workspace to the upstream vault %{upstream}?
+
   fail:
     path_not_found: |
       The directory `%{path}` cannot be found!
 
     parse:
       str_to_sockaddr: |
-        *`%{str}`* is not a valid IP address, please check your input!
+        Error: %{err}
+        Cannot recognize *`%{str}`* as a valid address, please check your input!
 
-    action_operation_fail:
-      main: |
-        This error is from the JustEnoughVCS core component
-        **Error Message**: %{err}
-
-      type_connection: |
-        Based on the returned error context, this is a **network connection** issue
-        **Please check**:
-        1. Whether your network connection is working properly
-        2. Whether you have permission to connect to this address
-
-      type_auth: |
-        Based on the returned error context, this is a **permission** issue
-        This indicates you don't have sufficient permissions to perform this operation.
-
-      type_fsio: |
-        Based on the returned error context, this is a **file read/write** related issue
-        **Please check**:
-        1. Whether your disk has sufficient space and is operating normally
-        2. Whether your Local Workspace files are being used by other processes
-
-      type_serialize: |
-        Based on the returned error context, this is a **serialization or deserialization** related issue
-        **Please check**
-        1. Whether the parameter format you passed meets the requirements for serialization/deserialization
-        2. Whether this version of JustEnoughVCS client/server supports this type of serialization
-
-      type_other: |
-        Unfortunately, based on the returned context information,
-        this is not an expected error.
-        Please submit an Issue at the JustEnoughVCS Git Repository
-
-        JustEnoughVCS needs your feedback, which will make this project more "JustEnough"
-
-      info_contact_admin: |
-        If necessary, please contact the **administrator** of the Upstream Vault.
-        If you are the **administrator** and confirm this issue affects server operation, please:
-        1. Check if your JustEnoughVCS server is up to date
-        2. Submit an Issue at the JustEnoughVCS Git Repository
+    from_just_version_control: |
+      **Error**: `%{err}` (This error is provided by JustEnoughVCS)
 
     account:
       no_user_dir: Cannot find user directory!
@@ -405,6 +378,14 @@ jv:
     create_socket: Failed to create TCP socket!
     connection_failed: Failed to connect to target server!
 
+    unstain: |
+      The current workspace is not stained, no need to unstain
+
+  warn:
+    unstain: |
+      This operation will disconnect the current workspace from the upstream vault `%{upstream}`
+      If you reconnect to a vault with a mismatched identifier, it will cause serious problems, please operate with caution!
+
   success:
     account:
       as: Successfully switched this workspace's account to `%{account}`
@@ -418,3 +399,21 @@ jv:
       move_key: Successfully moved the private key to the account directory!
     create: Successfully created local workspace!
     init: Successfully created workspace here!
+    unstain: |
+      Successfully unstained!
+      The current workspace no longer belongs to any upstream vault, please direct to a new upstream vault before working
+      **Tip**: Use `jv direct <upstream_vault_address>` to redirect to a new upstream vault
+
+  result:
+    common:
+      authroize_failed: |
+        Authentication failed: %{err}!
+
+    direct:
+      directed_and_stained: |
+        Successfully directed to upstream vault `%{upstream}`!
+        Workspace has been **stained**, ready to start working!
+
+      already_stained: |
+        Current workspace is already stained and cannot be directed to other upstream vaults with different identifiers
+        Please use `jv unstain` to remove the stain first

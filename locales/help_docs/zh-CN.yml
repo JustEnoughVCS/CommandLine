@@ -1,3 +1,7 @@
+common:
+  confirm: |
+    是否执行上述操作？（Y/n）：
+
 jvv:
   help: |
     **JustEnoughVCS 上游库命令**
@@ -55,7 +59,7 @@ jvv:
     **服务设置相关**
     **用法**：
     jvv service listen - 在当前库中启动服务器，以接受客户端连接
-      您可以使用 --no-log 来禁用日志输出
+      您可以使用 --port 来设定监听的端口，使用 --no-log 禁用日志输出
 
   fail:
     jvcs: JustEnoughVCS 错误：%{err}
@@ -341,52 +345,21 @@ jv:
 
     内建文档包含 JustEnoughVCS 的使用指南、协作范式和最佳实践
 
+  confirm:
+    direct: |
+      是否需要将当前本地工作区定向到上游库 %{upstream}？
+
   fail:
     path_not_found: |
       您给出的目录 `%{path}` 无法找到！
 
     parse:
       str_to_sockaddr: |
-        无法将 *`%{str}`* 识别为IP地址，请检查您的输入！
+        错误：%{err}
+        无法将 *`%{str}`* 识别为有效地址，请检查您的输入！
 
-    action_operation_fail:
-      main: |
-        此错误来自 JustEnoughVCS 核心组件
-        **错误信息**：%{err}
-
-      type_connection: |
-        根据返回的错误上下文，这是一个**网络连接**问题
-        **请检查**：
-        1. 您的网络连接是否通畅
-        2. 您是否有权限连接至该地址
-
-      type_auth: |
-        根据返回的错误上下文，这是一个**权限**问题
-        这说明您没有足够的权限去做此项操作。
-
-      type_fsio: |
-        根据返回的错误上下文，这是一个**文件读写**相关的问题
-        **请检查**：
-        1. 您的磁盘是否有足够的空间，并且能正常流畅地运转
-        2. 您的本地工作区文件是否被其他进程占用
-
-      type_serialize: |
-        根据返回的错误上下文，这是一个**序列化或反序列化**相关的问题
-        **请检查**
-        1. 您传入的参数格式是否符合序列化或反序列化的要求
-        2. 该版本的 JustEnoughVCS 客户端/服务端 是否支持该类型的序列化
-
-      type_other: |
-        很遗憾，根据返回的上下文信息，这并不是一个符合预期的错误。
-        请前往 JustEnoughVCS 所在的 Git 版本库提交 Issue
-
-        JustEnoughVCS 需要您的反馈，这会让该项目变得更加 "JustEnough"
-
-      info_contact_admin: |
-        如有必要，请联系上游库的 **管理员**。
-        若您作为 **管理员**，在确认该问题影响服务器运作，请
-        1. 检查您的 JustEnoughVCS 服务端是否最新
-        2. 前往 JustEnoughVCS 所在的 Git 版本库提交 Issue
+    from_just_version_control: |
+      **错误**：`%{err}`（该错误由 JustEnoughVCS 提供）
 
     account:
       no_user_dir: 无法找到用户目录！
@@ -414,6 +387,14 @@ jv:
     create_socket: 无法创建 TCP 套接字！
     connection_failed: 无法连接至目标服务器！
 
+    unstain: |
+      当前工作区并未被染色，无需祛色
+
+  warn:
+    unstain: |
+      此操作将会断开当前工作区与上游库 `%{upstream}` 的关联
+      若重新连接至标识不匹配的库，会导致严重的问题，请谨慎操作！
+
   success:
     account:
       as: 成功将此工作区的账户切换至 `%{account}`
@@ -427,3 +408,20 @@ jv:
       move_key: 成功将该私钥移动至账户目录！
     create: 成功创建本地工作区！
     init: 成功在此处创建工作区！
+    unstain: |
+      成功祛色！
+      当前工作区不再属于任何上游库，请工作前定向至新的上游库
+      **提示**：使用 `jv direct <上游库地址>` 重新定向至新的上游库
+
+  result:
+    common:
+      authroize_failed: 身份认证失败：%{err}！
+
+    direct:
+      directed_and_stained: |
+        成功定向到上游库 `%{upstream}`！
+        工作区已被 **染色**，现可开始工作！
+
+      already_stained: |
+        当前工作区已被染色，无法定向其他不同标识的上游库
+        请先使用 jv unstain 祛色
