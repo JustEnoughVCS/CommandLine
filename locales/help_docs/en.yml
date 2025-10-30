@@ -346,6 +346,10 @@ jv:
       The directory `%{path}` cannot be found!
 
     parse:
+      parser_failed: |
+        Incorrect command input!
+        Please use `jv -h` to view help
+
       str_to_sockaddr: |
         Error: %{err}
         Cannot recognize *`%{str}`* as a valid address, please check your input!

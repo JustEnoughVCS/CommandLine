@@ -312,10 +312,11 @@ async fn jvv_here(_args: HereArgs) {
     if let Ok(mut entries) = fs::read_dir(&virtual_file_root).await {
         while let Ok(Some(entry)) = entries.next_entry().await {
             if let Ok(metadata) = entry.metadata().await
-                && metadata.is_file() {
-                    num_vf += 1;
-                    total_size += metadata.len();
-                }
+                && metadata.is_file()
+            {
+                num_vf += 1;
+                total_size += metadata.len();
+            }
         }
     }
 
@@ -394,10 +395,11 @@ async fn jvv_init(_args: InitVaultArgs) {
         }
     };
     if let Ok(mut entries) = current_dir.read_dir()
-        && entries.next().is_some() {
-            eprintln!("{}", t!("jvv.fail.init.not_empty"));
-            return;
-        }
+        && entries.next().is_some()
+    {
+        eprintln!("{}", t!("jvv.fail.init.not_empty"));
+        return;
+    }
 
     // Setup vault
     let vault_name = match current_dir.file_name() {
@@ -459,10 +461,11 @@ async fn jvv_create(args: CreateVaultArgs) {
     }
 
     if let Ok(mut entries) = target_dir.read_dir()
-        && entries.next().is_some() {
-            eprintln!("{}", t!("jvv.fail.create.not_empty"));
-            return;
-        }
+        && entries.next().is_some()
+    {
+        eprintln!("{}", t!("jvv.fail.create.not_empty"));
+        return;
+    }
 
     // Setup vault
     let vault_name = pascal_case!(args.vault_name);

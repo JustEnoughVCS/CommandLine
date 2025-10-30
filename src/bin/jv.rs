@@ -44,6 +44,9 @@ struct JustEnoughVcsWorkspace {
 
 #[derive(Subcommand, Debug)]
 enum JustEnoughVcsWorkspaceCommand {
+    #[command(alias = "--help", alias = "-h")]
+    Help,
+
     // Member management
     /// Manage your local accounts
     #[command(subcommand, alias = "acc")]
@@ -302,11 +305,15 @@ async fn main() {
     colored::control::set_virtual_terminal(true).unwrap();
 
     let Ok(parser) = JustEnoughVcsWorkspace::try_parse() else {
-        println!("{}", md(t!("jv.help")));
+        println!("{}", md(t!("jv.fail.parse.parser_failed")));
         return;
     };
 
     match parser.command {
+        JustEnoughVcsWorkspaceCommand::Help => {
+            println!("{}", md(t!("jv.help")));
+        }
+
         JustEnoughVcsWorkspaceCommand::Account(account_manage) => {
             let user_dir = match UserDirectory::current_doc_dir() {
                 Some(dir) => dir,

@@ -354,6 +354,10 @@ jv:
       您给出的目录 `%{path}` 无法找到！
 
     parse:
+      parser_failed: |
+        错误的命令输入！
+        请使用 `jv -h` 查看帮助
+
       str_to_sockaddr: |
         错误：%{err}
         无法将 *`%{str}`* 识别为有效地址，请检查您的输入！
