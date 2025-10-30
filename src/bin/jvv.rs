@@ -19,7 +19,7 @@ use just_enough_vcs::{
 use just_enough_vcs_cli::utils::{
     build_env_logger::build_env_logger, lang_selector::current_locales, md_colored::md,
 };
-use log::info;
+use log::{error, info};
 use rust_i18n::{set_locale, t};
 use tokio::fs::{self};
 
@@ -41,32 +41,42 @@ struct JustEnoughVcsVault {
 #[derive(Subcommand, Debug)]
 enum JustEnoughVcsVaultCommand {
     /// Get vault info in the current directory
+    #[command(alias = "-H")]
     Here(HereArgs),
 
     /// Create a new directory and initialize a vault
+    #[command(alias = "-c")]
     Create(CreateVaultArgs),
 
     /// Create a vault in the current directory
+    #[command(alias = "-i")]
     Init(InitVaultArgs),
 
     /// Member manage
-    #[command(subcommand)]
+    #[command(subcommand, alias = "-m")]
     Member(MemberManage),
 
     /// Manage service
     #[command(subcommand)]
     Service(ServiceManage),
+
+    // Short commands
+    #[command(alias = "-l", alias = "listen")]
+    ServiceListen(ListenArgs),
 }
 
 #[derive(Subcommand, Debug)]
 enum MemberManage {
     /// Register a member to the vault
+    #[command(alias = "+")]
     Register(MemberRegisterArgs),
 
     /// Remove a member from the vault
+    #[command(alias = "-")]
     Remove(MemberRemoveArgs),
 
     /// List all members in the vault
+    #[command(alias = "ls")]
     List(MemberListArgs),
 
     /// Show help information
@@ -144,6 +154,10 @@ struct ListenArgs {
     /// Disable logging
     #[arg(short, long)]
     no_log: bool,
+
+    /// Custom port
+    #[arg(short, long)]
+    port: Option<u16>,
 }
 
 #[tokio::main]
@@ -153,7 +167,10 @@ async fn main() {
 
     // Init colored
     #[cfg(windows)]
-    colored::control::set_virtual_terminal(true).unwrap();
+    if let Err(err) = colored::control::set_virtual_terminal(true) {
+        eprintln!("{}", t!("jvv.fail.colored_control", err = err.to_string()));
+        return;
+    }
 
     let Ok(parser) = JustEnoughVcsVault::try_parse() else {
         println!("{}", md(t!("jvv.help")));
@@ -183,9 +200,13 @@ async fn main() {
             jvv_init(init_vault_args).await;
         }
         JustEnoughVcsVaultCommand::Member(member_manage) => {
-            let vault_cfg = VaultConfig::read()
-                .await
-                .unwrap_or_else(|_| panic!("{}", t!("jvv.fail.no_vault_here").trim().to_string()));
+            let vault_cfg = match VaultConfig::read().await {
+                Ok(cfg) => cfg,
+                Err(_) => {
+                    eprintln!("{}", t!("jvv.fail.no_vault_here").trim());
+                    return;
+                }
+            };
 
             let vault = match Vault::init_current_dir(vault_cfg) {
                 Some(vault) => vault,
@@ -239,6 +260,14 @@ async fn main() {
                 return;
             }
         },
+        // Short commands
+        JustEnoughVcsVaultCommand::ServiceListen(listen_args) => {
+            if listen_args.help {
+                println!("{}", md(t!("jvv.service")));
+                return;
+            }
+            jvv_service_listen(listen_args).await;
+        }
     }
 }
 
@@ -282,11 +311,11 @@ async fn jvv_here(_args: HereArgs) {
 
     if let Ok(mut entries) = fs::read_dir(&virtual_file_root).await {
         while let Ok(Some(entry)) = entries.next_entry().await {
-            if let Ok(metadata) = entry.metadata().await {
-                if metadata.is_file() {
-                    num_vf += 1;
-                    total_size += metadata.len();
-                }
+            if let Ok(metadata) = entry.metadata().await
+                && metadata.is_file()
+            {
+                num_vf += 1;
+                total_size += metadata.len();
             }
         }
     }
@@ -358,19 +387,28 @@ async fn jvv_here(_args: HereArgs) {
 }
 
 async fn jvv_init(_args: InitVaultArgs) {
-    let current_dir = std::env::current_dir()
-        .unwrap_or_else(|_| panic!("{}", t!("jvv.fail.std.current_dir").trim().to_string()));
-    if current_dir.read_dir().unwrap().next().is_some() {
+    let current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(_) => {
+            eprintln!("{}", t!("jvv.fail.std.current_dir").trim());
+            return;
+        }
+    };
+    if let Ok(mut entries) = current_dir.read_dir()
+        && entries.next().is_some()
+    {
         eprintln!("{}", t!("jvv.fail.init.not_empty"));
         return;
     }
 
     // Setup vault
-    let vault_name = current_dir
-        .file_name()
-        .unwrap_or_else(|| panic!("{}", t!("jvv.fail.std.current_dir_name").trim().to_string()))
-        .to_string_lossy()
-        .to_string();
+    let vault_name = match current_dir.file_name() {
+        Some(name) => name.to_string_lossy().to_string(),
+        None => {
+            eprintln!("{}", t!("jvv.fail.std.current_dir_name").trim());
+            return;
+        }
+    };
     let vault_name = pascal_case!(vault_name);
 
     if let Err(err) = Vault::setup_vault(current_dir.clone()).await {
@@ -401,8 +439,13 @@ async fn jvv_init(_args: InitVaultArgs) {
 }
 
 async fn jvv_create(args: CreateVaultArgs) {
-    let current_dir = std::env::current_dir()
-        .unwrap_or_else(|_| panic!("{}", t!("jvv.fail.std.current_dir").trim().to_string()));
+    let current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(_) => {
+            eprintln!("{}", t!("jvv.fail.std.current_dir").trim());
+            return;
+        }
+    };
     let target_dir = current_dir.join(args.vault_name.clone());
 
     // Create directory
@@ -417,7 +460,9 @@ async fn jvv_create(args: CreateVaultArgs) {
         return;
     }
 
-    if target_dir.read_dir().unwrap().next().is_some() {
+    if let Ok(mut entries) = target_dir.read_dir()
+        && entries.next().is_some()
+    {
         eprintln!("{}", t!("jvv.fail.create.not_empty"));
         return;
     }
@@ -490,9 +535,13 @@ async fn jvv_member_remove(vault: Vault, args: MemberRemoveArgs) {
 
 async fn jvv_member_list(vault: Vault, _args: MemberListArgs) {
     // Get id list
-    let ids = vault
-        .member_ids()
-        .unwrap_or_else(|_| panic!("{}", t!("jvv.fail.member.list").trim().to_string()));
+    let ids = match vault.member_ids() {
+        Ok(ids) => ids,
+        Err(_) => {
+            eprintln!("{}", t!("jvv.fail.member.list").trim());
+            return;
+        }
+    };
 
     // Print header
     println!(
@@ -559,11 +608,25 @@ async fn jvv_service_listen(args: ListenArgs) {
         info!(
             "{}",
             t!(
-                "jvv.success.service.listen",
-                path = current_vault.file_name().unwrap().display()
+                "jvv.success.service.listen_start",
+                path = match current_vault.file_name() {
+                    Some(name) => name.to_string_lossy(),
+                    None => std::borrow::Cow::Borrowed("unknown"),
+                }
             )
         )
     }
 
-    let _ = server_entry(current_vault).await;
+    let port = args.port.unwrap_or_default();
+    match server_entry(current_vault, port).await {
+        Ok(_) => {
+            info!("{}", t!("jvv.success.service.listen_done").trim());
+        }
+        Err(e) => {
+            error!(
+                "{}",
+                t!("jvv.fail.service.listen_done", error = e.to_string()).trim()
+            );
+        }
+    }
 }

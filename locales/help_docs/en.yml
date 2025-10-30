@@ -1,3 +1,7 @@
+common:
+  confirm: |
+    Confirm to perform the above operation? (Y/n):
+
 jvv:
   help: |
     **JustEnoughVCS Upstream Vault Commands**
@@ -56,12 +60,12 @@ jvv:
   service: |
     **Service Management**
     **Usage**:
-    jvv service listen - Start the vault server in the current vault to accept client connections
-      You can use --no-log to disable log output
+      jvv service listen - Start the server in the current vault
+        You can use --port   to set the listening port,
+                use --no-log to disable log output
 
   fail:
     jvcs: "JustEnoughVCS Error: %{err}"
-
     no_vault_here: No vault found here
 
     tokio:
@@ -80,9 +84,7 @@ jvv:
         If you wish to use this directory as a vault, please use jvv init --help to view related help
 
       vault_init_failed: Failed to initialize vault!
-
       member_ids_failed: Failed to get member IDs!
-
       ref_sheet_not_found: Reference sheet `ref` not found, but it should exist!
 
     create:
@@ -94,6 +96,11 @@ jvv:
     member:
       register: Failed to create member! Please check if a member with the same name already exists
       list: Failed to get member ID!
+
+    service:
+      listen_done: |
+        Server forced to close due to error!
+        Error message: %{error}
 
   success:
     here:
@@ -119,10 +126,11 @@ jvv:
         footer: |
           **Among them, %{num} members have registered PubKeys.**
 
-        status_key_registered: (PubKey Exists)
+        status_key_registered: (Registered)
 
     service:
-      listen: Listening for client connections in vault `%{path}` ...
+      listen_start: Listening for client connections in vault `%{path}` ...
+      listen_done: Server shutdown!
 
 jv:
   help: |
@@ -147,7 +155,7 @@ jv:
       jv account as <ACCOUNT_NAME> - Switch current account
       jv account add <ACCOUNT_NAME> - Add an account to this computer
       jv account remove <ACCOUNT_NAME> - Delete this account
-      jv account mvkey <ACCOUNT_NAME> <PRIVATE_KEY_FILE> - Move private key to specified account
+      jv account movekey <ACCOUNT_NAME> <PRIVATE_KEY_FILE> - Move private key to specified account
 
     **Information Synchronization**:
       jv update - Download latest information from upstream workspace
@@ -183,7 +191,7 @@ jv:
     jv account as <ACCOUNT_NAME> - Switch current account
     jv account add <ACCOUNT_NAME> - Add an account to this computer
     jv account remove <ACCOUNT_NAME> - Delete this account
-    jv account mvkey <ACCOUNT_NAME> <PRIVATE_KEY_FILE> - Move private key to specified account
+    jv account movekey <ACCOUNT_NAME> <PRIVATE_KEY_FILE> - Move private key to specified account
 
     Accounts are identity identifiers on the local computer, each account can be associated with different private keys.
     You need to set up accounts before interacting with upstream vaults.
@@ -328,3 +336,88 @@ jv:
     jv docs collaboration -e | nano
 
     Built-in documentation includes JustEnoughVCS usage guides, collaboration paradigms, and best practices.
+
+  confirm:
+    direct: |
+      Do you want to direct the current local workspace to the upstream vault %{upstream}?
+
+  fail:
+    path_not_found: |
+      The directory `%{path}` cannot be found!
+
+    parse:
+      parser_failed: |
+        Incorrect command input!
+        Please use `jv -h` to view help
+
+      str_to_sockaddr: |
+        Error: %{err}
+        Cannot recognize *`%{str}`* as a valid address, please check your input!
+
+    from_just_version_control: |
+      **Error**: `%{err}` (This error is provided by JustEnoughVCS)
+
+    account:
+      no_user_dir: Cannot find user directory!
+      add: Failed to add account `%{account}`, please check if the account already exists.
+      remove: Failed to remove account `%{account}`, please check if the account exists.
+      list: Failed to get account list!
+      not_found: Cannot find account `%{account}`!
+
+    init_create_dir_not_empty: |
+      The current directory is not empty!
+      If you are certain you want to create here, please use --force to force execution!
+
+    create: Failed to create local workspace!
+    init: Failed to create workspace here!
+    get_current_dir: Failed to get current directory!
+
+    workspace_not_found: |
+      Local workspace not found! Please use this command within a local workspace
+      If you wish to use this directory as a local workspace, please use jv init
+
+    read_cfg: Failed to read local workspace configuration file!
+    write_cfg: Failed to write changes to local workspace configuration file!
+
+    create_socket: Failed to create TCP socket!
+    connection_failed: Failed to connect to target server!
+
+    unstain: |
+      The current workspace is not stained, no need to unstain
+
+  warn:
+    unstain: |
+      This operation will disconnect the current workspace from the upstream vault `%{upstream}`
+      If you reconnect to a vault with a mismatched identifier, it will cause serious problems, please operate with caution!
+
+  success:
+    account:
+      as: Successfully switched this workspace's account to `%{account}`
+      add: Successfully added account `%{account}`!
+      remove: Successfully removed account `%{account}`!
+      list:
+        header: |
+          **There are %{num} account(s) on this computer:**
+
+        status_has_key: (Registered)
+      move_key: Successfully moved the private key to the account directory!
+    create: Successfully created local workspace!
+    init: Successfully created workspace here!
+    unstain: |
+      Successfully unstained!
+      The current workspace no longer belongs to any upstream vault, please direct to a new upstream vault before working
+      **Tip**: Use `jv direct <upstream_vault_address>` to redirect to a new upstream vault
+
+  result:
+    common:
+      authroize_failed: |
+        Authentication failed: %{err}!
+
+    direct:
+      directed_and_stained: |
+        Successfully directed to upstream vault `%{upstream}`!
+        Workspace has been **stained**, ready to start working!
+
+      already_stained: |
+        Current workspace is already stained and cannot be directed to other upstream vaults with different identifiers
+        Please use `jv unstain` to remove the stain first
