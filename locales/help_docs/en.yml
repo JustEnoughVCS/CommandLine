@@ -10,20 +10,20 @@ jvv:
     * With great power comes great responsibility *
 
     **VAULT**:
-      create <NAME>       Create a vault in the given directory name
-      init                Create a vault in the current directory
+      create <NAME> - Create a vault in the given directory name
+      init          - Create a vault in the current directory
 
     **QUERY**:
-      here                Query information about the current vault
+      here - Query information about the current vault
 
     **MEMBERS**:
       member [list|register|remove]
-        list                    List members
-        register <MEMBER_NAME>  Register a member
-        remove   <MEMBER_NAME>  Remove a member
+        list                   - List members
+        register <MEMBER_NAME> - Register a member
+        remove   <MEMBER_NAME> - Remove a member
 
     **SERVICES**:
-      service listen      Run the server
+      service listen - Run the server
 
     Additionally, you can use jvv <CMD_NAME> --help to query more detailed help!
 
@@ -140,48 +140,49 @@ jv:
     This program connects to upstream vaults to synchronize and commit changes to local workspace files for collaborative work.
 
     **ALIASES**:
-      jv u Download latest information, jv t Track files, jv mv -a Auto-move files, jv in/out Import or export files
+      jv u        - Download latest information
+      jv t        - Track files
+      jv mv -a    - Auto-move files
+      jv [in|out] - Import or export files
 
     **WORKSPACE**:
-      create <NAME>      Create workspace
-      init               Create workspace in current directory
+      create <NAME> - Create workspace
+      init          - Create workspace in current directory
 
     **UPSTREAM VAULT**:
-      direct <UPSTREAM>  Direct workspace to upstream vault
-      unstain            Unstain workspace, clear association
+      direct <UPSTREAM> - Direct workspace to upstream vault
+      unstain           - Unstain workspace, clear association
 
     **ACCOUNTS**:
       account [list|as|add|remove|movekey]
-        list                    List accounts
-        as      <ACCOUNT_NAME>  Switch account in workspace
-        add     <ACCOUNT_NAME>  Add account to this computer
-        remove  <ACCOUNT_NAME>  Remove account from computer
-        movekey <ACCOUNT_NAME> <PRIVATE_KEY_FILE>  Move private key file to specified account
+        list                      - List accounts
+        as      <ACCOUNT_NAME>    - Switch account in workspace
+        add     <ACCOUNT_NAME>    - Add account to this computer
+        remove  <ACCOUNT_NAME>    - Remove account from computer
+        movekey <NAME> <KEY_FILE> - Move private key file to specified account
 
     **SYNC**:
-      update  Download latest information
+      update - Download latest information
 
     **SHEETS**:
       sheet [list|use|exit]
-        list  List all sheets
-        use   Use sheet, start work
-        exit  Exit sheet, clear current modifications
+        list - List all sheets
+        use  - Use sheet, start work
+        exit - Exit sheet, clear current modifications
 
     **FILE TRANSFER**
-      import <PACKAGE_NAME>         Import files from import area
-      import <REFERENCE_SHEET_PATH> Import files from reference sheet
-      export <FILE> <SHEET_NAME> -m <DESCRIPTION> -n <PACKAGE_NAME>  Export files to other sheets
+      import <PACKAGE_NAME>         - Import files from import area
+      import <REFERENCE_SHEET_PATH> - Import files from reference sheet
+      export <FILE> <SHEET_NAME> -m <DESCRIPTION> -n <PACKAGE_NAME> - Export files to other sheets
 
     **FILE OPERATIONS**
-      move <FILE> <TO>  Safely rename files
-      move auto         Automatically handle local file moves or renames
-      track <FILE>      Track and upload files to upstream vault
+      move <FILE> <TO> - Safely rename files
+      move auto        - Automatically handle local file moves or renames
+      track <FILE>     - Track and upload files to upstream vault
 
     **DOCUMENTATION**
-      docs list         List all available documentation
-      docs <DOC_NAME>   View content of specified documentation
-      or jv docs <DOC_NAME> -e - Return temporary path of specific documentation for editor opening
-      **Example**: jv docs get-started -e | nano
+      docs list       - List all available documentation
+      docs <DOC_NAME> - View content of specified documentation
 
     You can use jv <COMMAND_NAME> --help to query more detailed help!
 
