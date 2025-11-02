@@ -9,18 +9,20 @@ jvv:
     **注意**：它能直接操作库的数据，请谨慎使用！*（能力越大，责任越大）*
 
     **创建库**：
-      jvv create <名称> - 在给定的目录名称中创建库
-      jvv init - 在当前目录中创建库
+      create <名称>   在给定的目录名称中创建库
+      init            在当前目录中创建库
 
     **查询**：
-      jvv here - 查询当前库的信息
-      jvv member list - 查询所有成员
+      here            查询当前库的信息
 
     **成员管理**：
-      jvv member <register/remove> <成员名称> - 注册或删除成员
+      member [list|register|remove]
+        list                 列出成员
+        register <成员名称>  注册成员
+        remove   <成员名称>  移除成员
 
     **服务**：
-      jvv service listen - 在当前库中运行服务端
+      service listen  运行服务端
 
     另外，您可以使用 jvv <命令名称> --help 来查询更详细的帮助！
 
@@ -134,44 +136,48 @@ jv:
     **常用别名**：
       jv u 下载最新信息，jv t 追踪文件，jv mv -a 自动移动文件，jv in/out 导入或导出文件
 
-    **创建工作区**：
-      jv create <名称> - 在给定名称的目录创建工作区
-      jv init - 在当前目录创建工作区
+    **工作区**：
+      create <名称>      创建工作区
+      init               当前目录创建工作区
 
-    **指向上游库**：
-      jv direct <上游地址> - 将您的工作区指向该库
-      指定上游库后，您的工作区将被 *染色*，此后，您将无法连接至不同标识的库
+    **上游库**：
+      direct <上游地址>  定向到工作区到上游库
 
-      jv unstain - 将您的工作区祛色（移除染色标识），此后该工作区将与上游库无关
+      unstain            祛色工作区，清除关联
 
-    **账户管理**：
-      jv account list - 列出该计算机所有的账户，以及是否注册私钥
-      jv account as <账户名称> - 切换当前账户
-      jv account add <账户名称> - 为当前计算机添加账户
-      jv account remove <账户名称> - 删除该账户
-      jv account movekey <账户名称> <私钥文件> - 移动私钥到指定账户
+    **账户**：
+      account [list|as|add|remove|movekey]
+        list                列出所有账户
+        as      <账户名称>  设置该工作区使用的账户
+
+        add     <账户名称>  为当前计算机添加账户
+        remove  <账户名称>  从计算机删除账户
+
+        movekey <账户名称> <私钥文件>  移动私钥文件到指定账户
 
     **信息同步**：
-      jv update - 从上游工作区下载最新的信息
+      update  下载最新的信息
 
     **表操作**：
-      jv sheet list - 列出上游工作区的所有表
-      jv sheet use <表名称> - 使用指定的表开始当前工作（不存在则自动创建）
-      jv sheet exit - 退出当前工作
+      sheet [list|use|exit]
+        list  列出所有表
+        use   使用表，并开始工作
+        exit  退出表，清除当前修改
 
-      jv import <文件包名称> - 从导入区导入文件
-      jv import <参照表中目录> - 从参照表导入文件
-      jv export <文件> <表名称> -m <描述> -n <文件包名称> - 导出指定的文件包到其他表的导入区
+    **文件传递**
+      import <文件包名称>     从导入区导入文件
+      import <参照表中目录>   从参照表导入文件
+      export <文件> <表名称> -m <描述> -n <文件包名称>  导出文件到其他表
 
     **文件操作**
-      jv move <文件> <到> - 安全地重命名文件
-      jv move auto - 自动处理本地文件的移动或重命名
-      jv track <文件> - 追踪、上传文件到上游库
+      move <文件> <到>  安全地重命名文件
+      move auto         自动处理本地文件的移动或重命名
+      track <文件>      追踪、上传文件到上游库
 
-    **查询内建文档**
-      jv docs list - 列出所有可用的文档
-      jv docs <文档名称> - 查看指定文档的内容
-      或 jv docs <文档名称> -e - 返回特定文档的临时路径以供编辑器打开
+    **内建文档**
+      docs list         列出所有可用的文档
+      docs <文档名称>   查看指定文档的内容
+      或 jv docs <文档名称> -e  返回特定文档的临时路径以供编辑器打开
       **例如**：jv docs get-started -e | nano
 
     您可以使用 jv <命令名称> --help 来查询更详细的帮助！
@@ -394,6 +400,10 @@ jv:
     unstain: |
       当前工作区并未被染色，无需祛色
 
+    not_stained: |
+      当前工作区并未被染色，无法执行下一步操作！
+      **提示**：请先使用 `jv direct <上游地址>` 定向到上游库
+
   warn:
     unstain: |
       此操作将会断开当前工作区与上游库 `%{upstream}` 的关联
@@ -429,3 +439,7 @@ jv:
       already_stained: |
         当前工作区已被染色，无法定向其他不同标识的上游库
         请先使用 jv unstain 祛色
+
+    update:
+      success: |
+        已同步至最新信息！

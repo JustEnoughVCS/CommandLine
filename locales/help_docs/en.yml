@@ -6,22 +6,24 @@ jvv:
   help: |
     **JustEnoughVCS Upstream Vault Commands**
     This program directly creates, manages, and runs JustEnoughVCS upstream vaults.
-    **Tip**: It directly operates on vault data - please operate with caution!
+    **Warning**: It directly operates on vault data - please operate with caution!
     * With great power comes great responsibility *
 
-    **Create Vault**:
-      jvv create <VAULT_NAME> - Create a vault in the given directory name
-      jvv init - Create a vault in the current directory
+    **VAULT**:
+      create <NAME>       Create a vault in the given directory name
+      init                Create a vault in the current directory
 
-    **Query**:
-      jvv here - Query information about the current vault
-      jvv member list - Query all members
+    **QUERY**:
+      here                Query information about the current vault
 
-    **Member Management**:
-      jvv member <register/remove> <MEMBER_NAME> - Register or remove members
+    **MEMBERS**:
+      member [list|register|remove]
+        list                    List members
+        register <MEMBER_NAME>  Register a member
+        remove   <MEMBER_NAME>  Remove a member
 
-    **Service**:
-      jvv service listen - Run the server in the current vault
+    **SERVICES**:
+      service listen      Run the server
 
     Additionally, you can use jvv <CMD_NAME> --help to query more detailed help!
 
@@ -137,46 +139,47 @@ jv:
     **JustEnoughVCS Local Workspace Commands**
     This program connects to upstream vaults to synchronize and commit changes to local workspace files for collaborative work.
 
-    **Common Aliases**:
+    **ALIASES**:
       jv u Download latest information, jv t Track files, jv mv -a Auto-move files, jv in/out Import or export files
 
-    **Create Workspace**:
-      jv create <NAME> - Create a workspace in the given directory name
-      jv init - Create a workspace in the current directory
+    **WORKSPACE**:
+      create <NAME>      Create workspace
+      init               Create workspace in current directory
 
-    **Connect to Upstream Vault**:
-      jv direct <UPSTREAM_ADDRESS> - Direct your workspace to this vault
-      After specifying an upstream vault, your workspace will be *stained*, and you will not be able to connect to vaults with different identifiers
+    **UPSTREAM VAULT**:
+      direct <UPSTREAM>  Direct workspace to upstream vault
+      unstain            Unstain workspace, clear association
 
-      jv unstain - Unstain your workspace (remove stain identifier), after which the workspace will be unrelated to any upstream vault
+    **ACCOUNTS**:
+      account [list|as|add|remove|movekey]
+        list                    List accounts
+        as      <ACCOUNT_NAME>  Switch account in workspace
+        add     <ACCOUNT_NAME>  Add account to this computer
+        remove  <ACCOUNT_NAME>  Remove account from computer
+        movekey <ACCOUNT_NAME> <PRIVATE_KEY_FILE>  Move private key file to specified account
 
-    **Account Management**:
-      jv account list - List all accounts on this computer and whether private keys are registered
-      jv account as <ACCOUNT_NAME> - Switch current account
-      jv account add <ACCOUNT_NAME> - Add an account to this computer
-      jv account remove <ACCOUNT_NAME> - Delete this account
-      jv account movekey <ACCOUNT_NAME> <PRIVATE_KEY_FILE> - Move private key to specified account
+    **SYNC**:
+      update  Download latest information
 
-    **Information Synchronization**:
-      jv update - Download latest information from upstream workspace
+    **SHEETS**:
+      sheet [list|use|exit]
+        list  List all sheets
+        use   Use sheet, start work
+        exit  Exit sheet, clear current modifications
 
-    **Sheet Operations**:
-      jv sheet list - List all sheets in the upstream workspace
-      jv sheet use <SHEET_NAME> - Use the specified sheet to start current work (automatically created if it doesn't exist)
-      jv sheet exit - Exit current work
+    **FILE TRANSFER**
+      import <PACKAGE_NAME>         Import files from import area
+      import <REFERENCE_SHEET_PATH> Import files from reference sheet
+      export <FILE> <SHEET_NAME> -m <DESCRIPTION> -n <PACKAGE_NAME>  Export files to other sheets
 
-      jv import <PACKAGE_NAME> - Import files from import area
-      jv import <REFERENCE_SHEET_PATH> - Import files from reference sheet
-      jv export <FILE> <SHEET_NAME> -m <DESCRIPTION> -n <PACKAGE_NAME> - Export specified file package to import area of other sheets
+    **FILE OPERATIONS**
+      move <FILE> <TO>  Safely rename files
+      move auto         Automatically handle local file moves or renames
+      track <FILE>      Track and upload files to upstream vault
 
-    **File Operations**
-      jv move <FILE> <TO> - Safely rename files
-      jv move auto - Automatically handle local file moves or renames
-      jv track <FILE> - Track and upload files to upstream vault
-
-    **Query Built-in Documentation**
-      jv docs list - List all available documentation
-      jv docs <DOC_NAME> - View content of specified documentation
+    **DOCUMENTATION**
+      docs list         List all available documentation
+      docs <DOC_NAME>   View content of specified documentation
       or jv docs <DOC_NAME> -e - Return temporary path of specific documentation for editor opening
       **Example**: jv docs get-started -e | nano
 
@@ -385,6 +388,10 @@ jv:
     unstain: |
       The current workspace is not stained, no need to unstain
 
+    not_stained: |
+      The current workspace is not stained, cannot perform the next operation!
+      **Tip**: Please first use `jv direct <upstream_address>` to direct to an upstream vault
+
   warn:
     unstain: |
       This operation will disconnect the current workspace from the upstream vault `%{upstream}`
@@ -421,3 +428,7 @@ jv:
       already_stained: |
         Current workspace is already stained and cannot be directed to other upstream vaults with different identifiers
         Please use `jv unstain` to remove the stain first
+
+    update:
+      success: |
+        Synchronized to latest information!
