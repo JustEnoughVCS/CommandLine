@@ -173,7 +173,7 @@ jv:
     **FILE TRANSFER**
       import <PACKAGE_NAME>         - Import files from import area
       import <REFERENCE_SHEET_PATH> - Import files from reference sheet
-      export <FILE> <SHEET_NAME> -m <DESCRIPTION> -n <PACKAGE_NAME> - Export files to other sheets
+      export <FILE> <SHEET_NAME>    - Export files to other sheets
 
     **FILE OPERATIONS**
       move <FILE> <TO> - Safely rename files
