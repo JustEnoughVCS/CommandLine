@@ -4,7 +4,10 @@ use just_enough_vcs::{
     system::action_system::action::ActionContext,
     utils::{cfg_file::config::ConfigFile, tcp_connection::instance::ConnectionInstance},
     vcs::{
-        actions::local_actions::SetUpstreamVaultActionResult,
+        actions::local_actions::{
+            SetUpstreamVaultActionResult, UpdateToLatestInfoResult,
+            proc_update_to_latest_info_action,
+        },
         constants::PORT,
         current::current_local_path,
         data::{
@@ -93,6 +96,9 @@ enum JustEnoughVcsWorkspaceCommand {
     /// Import files from reference sheet or import area
     #[command(alias = "in")]
     Import(ImportFileArgs),
+
+    /// Sync information from upstream vault
+    Update(UpdateArgs),
 
     // Connection management
     /// Direct to an upstream vault and stain this workspace
@@ -258,6 +264,13 @@ struct ExportFileArgs {
 
 #[derive(Parser, Debug)]
 struct ImportFileArgs {
+    /// Show help information
+    #[arg(short, long)]
+    help: bool,
+}
+
+#[derive(Parser, Debug)]
+struct UpdateArgs {
     /// Show help information
     #[arg(short, long)]
     help: bool,
@@ -432,6 +445,13 @@ async fn main() {
                 return;
             }
             jv_import(import_file_args).await;
+        }
+        JustEnoughVcsWorkspaceCommand::Update(update_file_args) => {
+            if update_file_args.help {
+                println!("{}", md(t!("jv.update")));
+                return;
+            }
+            jv_update(update_file_args).await;
         }
         JustEnoughVcsWorkspaceCommand::Direct(direct_args) => {
             if direct_args.help {
@@ -657,6 +677,42 @@ async fn jv_account_move_key(user_dir: UserDirectory, args: MoveKeyToAccountArgs
     {
         Ok(_) => println!("{}", t!("jv.success.account.move_key")),
         Err(_) => eprintln!("{}", t!("jv.fail.account.move_key")),
+    }
+}
+
+async fn jv_update(_update_file_args: UpdateArgs) {
+    let Ok(local_config) = LocalConfig::read().await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return;
+    };
+
+    if !local_config.stained() {
+        eprintln!("{}", md(t!("jv.fail.not_stained")));
+        return;
+    }
+
+    let pool = client_registry::client_action_pool();
+    let upstream = local_config.upstream_addr();
+
+    let Some(instance) = connect(upstream).await else {
+        return;
+    };
+
+    let ctx = ActionContext::local().insert_instance(instance);
+
+    match proc_update_to_latest_info_action(&pool, ctx, ()).await {
+        Err(e) => handle_err(e),
+        Ok(result) => match result {
+            UpdateToLatestInfoResult::Success => {
+                println!("{}", md(t!("jv.result.update.success")));
+            }
+            UpdateToLatestInfoResult::AuthorizeFailed(e) => {
+                println!(
+                    "{}",
+                    md(t!("jv.result.direct.directed_and_stained", err = e))
+                )
+            }
+        },
     }
 }
 
