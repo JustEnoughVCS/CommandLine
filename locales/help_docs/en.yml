@@ -10,11 +10,11 @@ jvv:
     * With great power comes great responsibility *
 
     **VAULT**:
-      create <NAME> - Create a vault in the given directory name
-      init          - Create a vault in the current directory
+      create <NAME>            - Create a vault in the given directory name
+      init                     - Create a vault in the current directory
 
     **QUERY**:
-      here - Query information about the current vault
+      here                     - Query information about the current vault
 
     **MEMBERS**:
       member [list|register|remove]
@@ -23,7 +23,7 @@ jvv:
         remove   <MEMBER_NAME> - Remove a member
 
     **SERVICES**:
-      service listen - Run the server
+      service listen           - Run the server
 
     Additionally, you can use jvv <CMD_NAME> --help to query more detailed help!
 
@@ -128,7 +128,7 @@ jvv:
         footer: |
           **Among them, %{num} members have registered PubKeys.**
 
-        status_key_registered: (Registered)
+        status_key_registered: (REGISTERED)
 
     service:
       listen_start: Listening for client connections in vault `%{path}` ...
@@ -140,35 +140,37 @@ jv:
     This program connects to upstream vaults to synchronize and commit changes to local workspace files for collaborative work.
 
     **ALIASES**:
-      jv u        - Download latest information
-      jv t        - Track files
-      jv mv -a    - Auto-move files
-      jv [in|out] - Import or export files
+      jv u                          - Download latest information
+      jv t                          - Track files
+      jv mv -a                      - Auto-move files
+      jv [in|out]                   - Import or export files
 
     **WORKSPACE**:
-      create <NAME> - Create workspace
-      init          - Create workspace in current directory
+      create <NAME>                 - Create workspace
+      init                          - Create workspace in current directory
 
     **UPSTREAM VAULT**:
-      direct <UPSTREAM> - Direct workspace to upstream vault
-      unstain           - Unstain workspace, clear association
+      direct <UPSTREAM>             - Direct workspace to upstream vault
+      unstain                       - Unstain workspace, clear association
 
     **ACCOUNTS**:
       account [list|as|add|remove|movekey]
-        list                      - List accounts
-        as      <ACCOUNT_NAME>    - Switch account in workspace
-        add     <ACCOUNT_NAME>    - Add account to this computer
-        remove  <ACCOUNT_NAME>    - Remove account from computer
-        movekey <NAME> <KEY_FILE> - Move private key file to specified account
+        list                        - List accounts
+        as      <ACCOUNT_NAME>      - Switch account in workspace
+        add     <ACCOUNT_NAME>      - Add account to this computer
+        remove  <ACCOUNT_NAME>      - Remove account from computer
+        movekey <NAME> <KEY_FILE>   - Move private key file to specified account
 
     **SYNC**:
       update - Download latest information
 
     **SHEETS**:
-      sheet [list|use|exit]
-        list - List all sheets
-        use  - Use sheet, start work
-        exit - Exit sheet, clear current modifications
+      sheet [list|use|exit|make|drop]
+        list                        - List all sheets
+        use                         - Use sheet, start work
+        exit                        - Exit sheet, clear current modifications
+        make                        - Create a new sheet for yourself
+        drop                        - Drop the sheet for others to use
 
     **FILE TRANSFER**
       import <PACKAGE_NAME>         - Import files from import area
@@ -176,13 +178,13 @@ jv:
       export <FILE> <SHEET_NAME>    - Export files to other sheets
 
     **FILE OPERATIONS**
-      move <FILE> <TO> - Safely rename files
-      move auto        - Automatically handle local file moves or renames
-      track <FILE>     - Track and upload files to upstream vault
+      move <FILE> <TO>              - Safely rename files
+      move auto                     - Automatically handle local file moves or renames
+      track <FILE>                  - Track and upload files to upstream vault
 
     **DOCUMENTATION**
-      docs list       - List all available documentation
-      docs <DOC_NAME> - View content of specified documentation
+      docs list                     - List all available documentation
+      docs <DOC_NAME>               - View content of specified documentation
 
     You can use jv <COMMAND_NAME> --help to query more detailed help!
 
@@ -201,11 +203,15 @@ jv:
     You need to set up accounts before interacting with upstream vaults.
 
   sheet: |
-    **Manage File Sheets**
+    **Manage Sheets**
     **Usage**:
     jv sheet list - List all sheets in the upstream workspace
+
     jv sheet use <SHEET_NAME> - Use the specified sheet to start current work (automatically created if it doesn't exist)
     jv sheet exit - Exit current work
+
+    jv sheet make <SHEET_NAME> - Create a new sheet for yourself
+    jv sheet drop <SHEET_NAME> - Drop the sheet for others to use
 
     Sheets are core concepts in JustEnoughVCS, each sheet represents an independent file collection.
     You can switch work between different sheets, or export files from one sheet to another.
@@ -359,7 +365,7 @@ jv:
         Cannot recognize *`%{str}`* as a valid address, please check your input!
 
     from_just_version_control: |
-      **Error**: `%{err}` (This error is provided by JustEnoughVCS)
+      **Error**: `%{err}` (This error is from core call)
 
     account:
       no_user_dir: Cannot find user directory!
@@ -407,7 +413,7 @@ jv:
         header: |
           **There are %{num} account(s) on this computer:**
 
-        status_has_key: (Registered)
+        status_has_key: (REGISTERED)
       move_key: Successfully moved the private key to the account directory!
     create: Successfully created local workspace!
     init: Successfully created workspace here!
@@ -416,12 +422,40 @@ jv:
       The current workspace no longer belongs to any upstream vault, please direct to a new upstream vault before working
       **Tip**: Use `jv direct <upstream_vault_address>` to redirect to a new upstream vault
 
+    sheet:
+      list:
+        your_sheet: |
+          **YOURS**：
+        your_sheet_item: |
+          %{number}. %{name}
+        your_sheet_item_use: |
+          %{number}. %{name} (CURRENT)
+        other_sheet: |
+          **OTHERS**：
+        other_sheet_item: |
+          %{number}. %{name} (AT `%{holder}`)
+        other_sheet_item_no_holder: |
+          %{number}. %{name} (NO HOLDER)
+        tip_has_sheet: |
+          You can use `jv use <SHEET_NAME>` to start working
+        tip_no_sheet: |
+          **YOU HAVE NO SHEETS**
+          You can use `jv sheet make <SHEET_NAME>` to create a new sheet
+
   result:
     common:
       authroize_failed: |
         Authentication failed: %{err}!
+      unknown: |
+        Unknown result!
 
     direct:
+      redirected: |
+        Successfully redirected to upstream vault `%{upstream}`!
+
+      redirect_failed: |
+        Redirection failed: %{err}!
+
       directed_and_stained: |
         Successfully directed to upstream vault `%{upstream}`!
         Workspace has been **stained**, ready to start working!
@@ -430,6 +464,19 @@ jv:
         Current workspace is already stained and cannot be directed to other upstream vaults with different identifiers
         Please use `jv unstain` to remove the stain first
 
+      same_upstream: |
+        Current upstream is the same as given, no need to redirect
+
     update:
       success: |
         Synchronized to latest information!
+
+    sheet:
+      make:
+        success: |
+          Successfully created sheet `%{name}`!
+          Upstream changed，use `jv update` to get the latest information
+        sheet_already_exists: |
+          Sheet `%{name}` already exists!
+        sheet_creation_failed: |
+          Sheet creation failed: `%{error}`

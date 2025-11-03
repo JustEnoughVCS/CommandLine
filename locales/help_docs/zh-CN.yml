@@ -9,11 +9,11 @@ jvv:
     **注意**：它能直接操作库的数据，请谨慎使用！*（能力越大，责任越大）*
 
     **创建库**：
-      create <名称> - 在给定的目录名称中创建库
-      init          - 在当前目录中创建库
+      create <名称>         - 在给定的目录名称中创建库
+      init                  - 在当前目录中创建库
 
     **查询**：
-      here - 查询当前库的信息
+      here                  - 查询当前库的信息
 
     **成员管理**：
       member [list|register|remove]
@@ -22,7 +22,7 @@ jvv:
         remove   <成员名称> - 移除成员
 
     **服务**：
-      service listen - 运行服务端
+      service listen        - 运行服务端
 
     另外，您可以使用 jvv <命令名称> --help 来查询更详细的帮助！
 
@@ -137,12 +137,12 @@ jv:
       jv u 下载最新信息，jv t 追踪文件，jv mv -a 自动移动文件，jv in/out 导入或导出文件
 
     **工作区**：
-      create <名称> - 创建工作区
-      init          - 当前目录创建工作区
+      create <名称>           - 创建工作区
+      init                    - 当前目录创建工作区
 
     **上游库**：
-      direct <上游地址> - 定向到工作区到上游库
-      unstain           - 祛色工作区，清除关联
+      direct <上游地址>       - 定向到工作区到上游库
+      unstain                 - 祛色工作区，清除关联
 
     **账户**：
       account [list|as|add|remove|movekey]
@@ -155,27 +155,29 @@ jv:
         movekey <账户> <私钥> - 移动私钥文件到指定账户
 
     **信息同步**：
-      update - 下载最新的信息
+      update                  - 下载最新的信息
 
     **表操作**：
-      sheet [list|use|exit]
-        list - 列出所有表
-        use  - 使用表，并开始工作
-        exit - 退出表，清除当前修改
+      sheet [list|use|exit|make|drop]
+        list                  - 列出所有表
+        use                   - 使用表，并开始工作
+        exit                  - 退出表，清除当前修改
+        make                  - 创建新表以供自己使用
+        drop                  - 抛弃表以供他人使用
 
     **文件传递**
-      import <文件包名称>    - 从导入区导入文件
-      import <参照表中目录>  - 从参照表导入文件
-      export <文件> <表名称> - 导出文件到其他表
+      import <文件包名称>     - 从导入区导入文件
+      import <参照表中目录>   - 从参照表导入文件
+      export <文件> <表名称>  - 导出文件到其他表
 
     **文件操作**
-      move <文件> <到> - 安全地重命名文件
-      move auto        - 自动处理本地文件的移动或重命名
-      track <文件>     - 追踪、上传文件到上游库
+      move <文件> <到>        - 安全地重命名文件
+      move auto               - 自动处理本地文件的移动或重命名
+      track <文件>            - 追踪、上传文件到上游库
 
     **内建文档**
-      docs list        - 列出所有可用的文档
-      docs <文档名称>  - 查看指定文档的内容
+      docs list               - 列出所有可用的文档
+      docs <文档名称>         - 查看指定文档的内容
 
     您可以使用 jv <命令名称> --help 来查询更详细的帮助！
 
@@ -195,14 +197,18 @@ jv:
 
 
   sheet: |
-    **管理文件表**
+    **管理表**
     **用法**：
     jv sheet list - 列出上游工作区的所有表
+
     jv sheet use <表名称> - 使用指定的表开始当前工作（不存在则自动创建）
     jv sheet exit - 退出当前工作
 
-    表是 JustEnoughVCS 中的核心概念，每个表代表一个独立的文件集合
-    您可以在不同的表之间切换工作，或者将文件从一个表导出到另一个表
+    jv sheet make <表名称> - 为自己创建一张新的表
+    jv sheet drop <表名称> - 将表抛弃，以供其他人使用
+
+    表是 JustEnoughVCS 中的核心概念，每个表代表一块独立的文件集合
+    您可以在不同的表之间切换工作，或者将文件从一张表导出到另一张表
 
 
   create: |
@@ -366,7 +372,7 @@ jv:
         无法将 *`%{str}`* 识别为有效地址，请检查您的输入！
 
     from_just_version_control: |
-      **错误**：`%{err}`（该错误由 JustEnoughVCS 提供）
+      **错误**：`%{err}`（该错误来自核心调用）
 
     account:
       no_user_dir: 无法找到用户目录！
@@ -424,11 +430,39 @@ jv:
       当前工作区不再属于任何上游库，请工作前定向至新的上游库
       **提示**：使用 `jv direct <上游库地址>` 重新定向至新的上游库
 
+    sheet:
+      list:
+        your_sheet: |
+          **你的表**：
+        your_sheet_item: |
+          %{number}. %{name}
+        your_sheet_item_use: |
+          %{number}. %{name}（当前）
+        other_sheet: |
+          **其他表**：
+        other_sheet_item: |
+          %{number}. %{name}（属于 `%{holder}`）
+        other_sheet_item_no_holder: |
+          %{number}. %{name}（无人认领）
+        tip_has_sheet: |
+          你可以使用 `jv use <表名>` 开始工作
+        tip_no_sheet: |
+          **没有可以编辑的表！**
+          你可以使用 `jv sheet make <表名>` 创建一张新表
+
   result:
     common:
       authroize_failed: 身份认证失败：%{err}！
+      unknown: |
+        未知结果！
 
     direct:
+      redirected: |
+        成功重定向到上游库 `%{upstream}`！
+
+      redirect_failed: |
+        重定向失败：%{err}！
+
       directed_and_stained: |
         成功定向到上游库 `%{upstream}`！
         工作区已被 **染色**，现可开始工作！
@@ -437,6 +471,19 @@ jv:
         当前工作区已被染色，无法定向其他不同标识的上游库
         请先使用 jv unstain 祛色
 
+      same_upstream: |
+        当前上游和给出的一致，无需重定向
+
     update:
       success: |
         已同步至最新信息！
+
+    sheet:
+      make:
+        success: |
+          成功创建表 `%{name}`！
+          上游信息已变更，请使用 `jv update` 同步至最新信息
+        sheet_already_exists: |
+          表 `%{name}` 已存在！
+        sheet_creation_failed: |
+          表创建失败：`%{err}`

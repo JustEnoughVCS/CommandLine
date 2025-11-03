@@ -1,17 +1,24 @@
 use std::{env::current_dir, net::SocketAddr, path::PathBuf, process::exit};
 
 use just_enough_vcs::{
-    system::action_system::action::ActionContext,
-    utils::{cfg_file::config::ConfigFile, tcp_connection::instance::ConnectionInstance},
+    system::action_system::{action::ActionContext, action_pool::ActionPool},
+    utils::{
+        cfg_file::config::ConfigFile,
+        string_proc::{self, snake_case},
+        tcp_connection::instance::ConnectionInstance,
+    },
     vcs::{
-        actions::local_actions::{
-            SetUpstreamVaultActionResult, UpdateToLatestInfoResult,
-            proc_update_to_latest_info_action,
+        actions::{
+            local_actions::{
+                SetUpstreamVaultActionResult, UpdateToLatestInfoResult,
+                proc_update_to_latest_info_action,
+            },
+            sheet_actions::{MakeSheetActionResult, proc_make_sheet_action},
         },
         constants::PORT,
         current::current_local_path,
         data::{
-            local::{LocalWorkspace, config::LocalConfig},
+            local::{LocalWorkspace, config::LocalConfig, latest_info::LatestInfo},
             member::Member,
             user::UserDirectory,
         },
@@ -67,7 +74,7 @@ enum JustEnoughVcsWorkspaceCommand {
 
     // Sheet management
     /// Manage sheets in the workspace
-    #[command(subcommand)]
+    #[command(subcommand, alias = "sh")]
     Sheet(SheetManage),
 
     // File management
@@ -98,6 +105,7 @@ enum JustEnoughVcsWorkspaceCommand {
     Import(ImportFileArgs),
 
     /// Sync information from upstream vault
+    #[command(alias = "u")]
     Update(UpdateArgs),
 
     // Connection management
@@ -110,6 +118,16 @@ enum JustEnoughVcsWorkspaceCommand {
     // Other
     /// Query built-in documentation
     Docs(DocsArgs),
+
+    // Lazy commands
+    /// Try exit current sheet
+    Exit,
+
+    /// Try exit current sheet and use another sheet
+    Use(UseArgs),
+
+    /// List all sheets
+    Sheets,
 }
 
 #[derive(Subcommand, Debug)]
@@ -143,6 +161,67 @@ enum SheetManage {
     /// Show help information
     #[command(alias = "--help", alias = "-h")]
     Help,
+
+    /// List all sheets
+    #[command(alias = "ls")]
+    List(SheetListArgs),
+
+    /// Use a sheet
+    Use(SheetUseArgs),
+
+    /// Exit current sheet
+    Exit(SheetExitArgs),
+
+    /// Create a new sheet
+    #[command(alias = "mk")]
+    Make(SheetMakeArgs),
+
+    /// Drop current sheet
+    Drop(SheetDropArgs),
+}
+
+#[derive(Parser, Debug)]
+struct SheetListArgs {
+    /// Show help information
+    #[arg(short, long)]
+    help: bool,
+}
+
+#[derive(Parser, Debug)]
+struct SheetUseArgs {
+    /// Show help information
+    #[arg(short, long)]
+    help: bool,
+
+    /// Sheet name
+    sheet_name: String,
+}
+
+#[derive(Parser, Debug)]
+struct SheetExitArgs {
+    /// Show help information
+    #[arg(short, long)]
+    help: bool,
+}
+
+#[derive(Parser, Debug)]
+struct SheetMakeArgs {
+    /// Show help information
+    #[arg(short, long)]
+    help: bool,
+
+    /// Sheet name
+    sheet_name: String,
+}
+
+#[derive(Parser, Debug)]
+struct SheetDropArgs {
+    /// Show help information
+    #[arg(short, long)]
+    help: bool,
+
+    /// Sheet name
+    sheet_name: String,
 }
 
 #[derive(Parser, Debug)]
@@ -308,6 +387,11 @@ struct DocsArgs {
     help: bool,
 }
 
+#[derive(Parser, Debug)]
+struct UseArgs {
+    sheet_name: String,
+}
+
 #[tokio::main]
 async fn main() {
     // Init i18n
@@ -403,6 +487,11 @@ async fn main() {
                 println!("{}", md(t!("jv.sheet")));
                 return;
             }
+            SheetManage::List(sheet_list_args) => jv_sheet_list(sheet_list_args).await,
+            SheetManage::Use(sheet_use_args) => jv_sheet_use(sheet_use_args).await,
+            SheetManage::Exit(sheet_exit_args) => jv_sheet_exit(sheet_exit_args).await,
+            SheetManage::Make(sheet_make_args) => jv_sheet_make(sheet_make_args).await,
+            SheetManage::Drop(sheet_drop_args) => jv_sheet_drop(sheet_drop_args).await,
         },
         JustEnoughVcsWorkspaceCommand::Track(track_file_args) => {
             if track_file_args.help {
@@ -474,6 +563,18 @@ async fn main() {
             }
             jv_docs(docs_args).await;
         }
+        JustEnoughVcsWorkspaceCommand::Exit => {
+            jv_sheet_exit(SheetExitArgs { help: false }).await;
+        }
+        JustEnoughVcsWorkspaceCommand::Use(use_args) => {
+            jv_sheet_exit(SheetExitArgs { help: false }).await;
+            jv_sheet_use(SheetUseArgs {
+                help: false,
+                sheet_name: use_args.sheet_name,
+            })
+            .await;
+        }
+        JustEnoughVcsWorkspaceCommand::Sheets => jv_sheet_list(SheetListArgs { help: false }).await,
     }
 }
 
@@ -527,6 +628,192 @@ async fn is_directory_empty(path: &PathBuf) -> bool {
 }
 
 async fn jv_here(_args: HereArgs) {
+    todo!()
+}
+
+async fn jv_sheet_list(_args: SheetListArgs) {
+    let Some(_local_dir) = current_local_path() else {
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+        return;
+    };
+
+    let Ok(latest_info) = LatestInfo::read().await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return;
+    };
+
+    let Ok(local_cfg) = LocalConfig::read().await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return;
+    };
+
+    let mut your_sheet_counts = 0;
+    let mut other_sheet_counts = 0;
+
+    // Print your sheets
+    {
+        println!("{}", md(t!("jv.success.sheet.list.your_sheet")));
+        let in_use = local_cfg.sheet_in_use();
+        for sheet in latest_info.my_sheets {
+            if let Some(in_use) = in_use
+                && in_use == &sheet
+            {
+                println!(
+                    "{}",
+                    md(t!(
+                        "jv.success.sheet.list.your_sheet_item_use",
+                        number = your_sheet_counts + 1,
+                        name = sheet
+                    ))
+                );
+            } else {
+                println!(
+                    "{}",
+                    md(t!(
+                        "jv.success.sheet.list.your_sheet_item",
+                        number = your_sheet_counts + 1,
+                        name = sheet
+                    ))
+                );
+            }
+            your_sheet_counts += 1;
+        }
+        println!();
+    }
+
+    // Print other sheets
+    {
+        println!("{}", md(t!("jv.success.sheet.list.other_sheet")));
+        for sheet in latest_info.other_sheets {
+            if let Some(holder) = sheet.holder_name {
+                println!(
+                    "{}",
+                    md(t!(
+                        "jv.success.sheet.list.other_sheet_item",
+                        number = other_sheet_counts + 1,
+                        name = sheet.sheet_name,
+                        holder = holder
+                    ))
+                );
+            } else {
+                println!(
+                    "{}",
+                    md(t!(
+                        "jv.success.sheet.list.other_sheet_item_no_holder",
+                        number = other_sheet_counts + 1,
+                        name = sheet.sheet_name
+                    ))
+                );
+            }
+            other_sheet_counts += 1;
+        }
+        println!();
+    }
+
+    // Print tips
+    {
+        if your_sheet_counts > 0 {
+            println!("{}", md(t!("jv.success.sheet.list.tip_has_sheet")));
+        } else {
+            println!("{}", md(t!("jv.success.sheet.list.tip_no_sheet")));
+        }
+    }
+}
+
+async fn jv_sheet_use(args: SheetUseArgs) {
+    let Some(_local_dir) = current_local_path() else {
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+        return;
+    };
+
+    let Ok(mut local_cfg) = LocalConfig::read().await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return;
+    };
+
+    match local_cfg.use_sheet(args.sheet_name).await {
+        Ok(_) => {
+            let Ok(_) = LocalConfig::write(&local_cfg).await else {
+                eprintln!("{}", t!("jv.fail.write_cfg").trim());
+                return;
+            };
+        }
+        Err(e) => {
+            handle_err(e.into());
+        }
+    }
+}
+
+async fn jv_sheet_exit(_args: SheetExitArgs) {
+    let Some(_local_dir) = current_local_path() else {
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+        return;
+    };
+
+    let Ok(mut local_cfg) = LocalConfig::read().await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return;
+    };
+
+    match local_cfg.exit_sheet().await {
+        Ok(_) => {
+            let Ok(_) = LocalConfig::write(&local_cfg).await else {
+                eprintln!("{}", t!("jv.fail.write_cfg").trim());
+                return;
+            };
+        }
+        Err(e) => {
+            handle_err(e.into());
+        }
+    }
+}
+
+async fn jv_sheet_make(args: SheetMakeArgs) {
+    let sheet_name = snake_case!(args.sheet_name);
+
+    let local_config = match precheck().await {
+        Some(config) => config,
+        None => return,
+    };
+
+    let (pool, ctx) = match build_pool_and_ctx(&local_config).await {
+        Some(result) => result,
+        None => return,
+    };
+
+    match proc_make_sheet_action(&pool, ctx, sheet_name.clone()).await {
+        Ok(r) => match r {
+            MakeSheetActionResult::Success => {
+                eprintln!(
+                    "{}",
+                    md(t!("jv.result.sheet.make.success", name = sheet_name))
+                )
+            }
+            MakeSheetActionResult::AuthorizeFailed(e) => {
+                eprintln!("{}", md(t!("jv.result.common.authroize_failed", err = e)))
+            }
+            MakeSheetActionResult::SheetAlreadyExists => {
+                eprintln!(
+                    "{}",
+                    md(t!(
+                        "jv.result.sheet.make.sheet_already_exists",
+                        name = sheet_name
+                    ))
+                );
+            }
+            MakeSheetActionResult::SheetCreationFailed(e) => {
+                println!(
+                    "{}",
+                    md(t!("jv.result.sheet.make.sheet_creation_failed", err = e))
+                )
+            }
+            MakeSheetActionResult::Unknown => todo!(),
+        },
+        Err(e) => handle_err(e),
+    }
+}
+
+async fn jv_sheet_drop(_args: SheetDropArgs) {
     todo!()
 }
 
@@ -681,24 +968,15 @@ async fn jv_account_move_key(user_dir: UserDirectory, args: MoveKeyToAccountArgs
 }
 
 async fn jv_update(_update_file_args: UpdateArgs) {
-    let Ok(local_config) = LocalConfig::read().await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
-        return;
+    let local_config = match precheck().await {
+        Some(config) => config,
+        None => return,
     };
 
-    if !local_config.stained() {
-        eprintln!("{}", md(t!("jv.fail.not_stained")));
-        return;
-    }
-
-    let pool = client_registry::client_action_pool();
-    let upstream = local_config.upstream_addr();
-
-    let Some(instance) = connect(upstream).await else {
-        return;
+    let (pool, ctx) = match build_pool_and_ctx(&local_config).await {
+        Some(result) => result,
+        None => return,
     };
-
-    let ctx = ActionContext::local().insert_instance(instance);
 
     match proc_update_to_latest_info_action(&pool, ctx, ()).await {
         Err(e) => handle_err(e),
@@ -707,10 +985,7 @@ async fn jv_update(_update_file_args: UpdateArgs) {
                 println!("{}", md(t!("jv.result.update.success")));
             }
             UpdateToLatestInfoResult::AuthorizeFailed(e) => {
-                println!(
-                    "{}",
-                    md(t!("jv.result.direct.directed_and_stained", err = e))
-                )
+                println!("{}", md(t!("jv.result.common.authroize_failed", err = e)))
             }
         },
     }
@@ -760,15 +1035,25 @@ async fn jv_direct(args: DirectArgs) {
                     ))
                 )
             }
+            SetUpstreamVaultActionResult::Redirected => {
+                println!(
+                    "{}",
+                    md(t!("jv.result.direct.redirected", upstream = upstream))
+                )
+            }
             SetUpstreamVaultActionResult::AlreadyStained => {
                 eprintln!("{}", md(t!("jv.result.direct.already_stained")))
             }
             SetUpstreamVaultActionResult::AuthorizeFailed(e) => {
-                println!(
-                    "{}",
-                    md(t!("jv.result.direct.directed_and_stained", err = e))
-                )
+                println!("{}", md(t!("jv.result.common.authroize_failed", err = e)))
             }
+            SetUpstreamVaultActionResult::RedirectFailed(e) => {
+                println!("{}", md(t!("jv.result.direct.redirect_failed", err = e)))
+            }
+            SetUpstreamVaultActionResult::SameUpstream => {
+                println!("{}", md(t!("jv.result.direct.same_upstream")))
+            }
+            _ => {}
         },
     };
 }
@@ -842,4 +1127,32 @@ async fn connect(upstream: SocketAddr) -> Option<ConnectionInstance> {
     };
 
     Some(ConnectionInstance::from(stream))
+}
+
+// Check if the workspace is stained and has a valid configuration
+// Returns LocalConfig if valid, None otherwise
+async fn precheck() -> Option<LocalConfig> {
+    let Ok(local_config) = LocalConfig::read().await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return None;
+    };
+
+    if !local_config.stained() {
+        eprintln!("{}", md(t!("jv.fail.not_stained")));
+        return None;
+    }
+
+    Some(local_config)
+}
+
+// Build action pool and context for upstream communication
+// Returns Some((ActionPool, ActionContext)) if successful, None otherwise
+async fn build_pool_and_ctx(local_config: &LocalConfig) -> Option<(ActionPool, ActionContext)> {
+    let pool = client_registry::client_action_pool();
+    let upstream = local_config.upstream_addr();
+
+    let instance = connect(upstream).await?;
+
+    let ctx = ActionContext::local().insert_instance(instance);
+    Some((pool, ctx))
 }
