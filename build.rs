@@ -5,8 +5,6 @@ const COMPILE_INFO_RS: &str = "./src/data/compile_info.rs";
 const COMPILE_INFO_RS_TEMPLATE: &str = "./src/data/compile_info.rs.template";
 
 fn main() {
-    println!("cargo:rerun-if-changed={}", COMPILE_INFO_RS_TEMPLATE);
-
     let repo_root = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
     if let Err(e) = generate_compile_info(&repo_root) {

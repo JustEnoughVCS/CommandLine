@@ -5,8 +5,7 @@ common:
 jvv:
   version:
     header: |
-      JustEnoughVCS 上游库管理工具
-        当前版本：%{version}
+      JVCS 上游管理工具 - %{version}
 
     compile_info: |
       编译信息：
@@ -142,8 +141,7 @@ jvv:
 jv:
   version:
     header: |
-      JustEnoughVCS 本地工作区命令
-        当前版本：%{version}
+      JustEnoughVCS - %{version}
 
     compile_info: |
       编译信息：

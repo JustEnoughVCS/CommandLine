@@ -5,14 +5,13 @@ common:
 jvv:
   version:
     header: |
-      JustEnoughVCS Upstream Vault Manager
-        VERSION - %{version}
+      JVCS Upstream Manager - %{version}
 
     compile_info: |
       Compile Info
         Compile Date - %{build_time}
-              Target - %{build_target}
-            Platform - %{build_platform} - %{build_toolchain}
+        Target       - %{build_target}
+        Platform     - %{build_platform} - %{build_toolchain}
 
   help: |
     **JustEnoughVCS Upstream Vault Commands**
@@ -148,14 +147,13 @@ jvv:
 jv:
   version:
     header: |
-      JustEnoughVCS
-        VERSION - %{version}
+      JustEnoughVCS - %{version}
 
     compile_info: |
       Compile Info
         Compile Date - %{build_time}
-              Target - %{build_target}
-            Platform - %{build_platform} - %{build_toolchain}
+        Target       - %{build_target}
+        Platform     - %{build_platform} - %{build_toolchain}
 
   help: |
     **JustEnoughVCS**

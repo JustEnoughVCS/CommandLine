@@ -1,6 +1,7 @@
 [package]
 name = "just_enough_vcs_cli"
 edition = "2024"
+build = "build.rs"
 
 [workspace]
 members = ["crates/build_helper"]
