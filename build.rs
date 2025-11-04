@@ -76,20 +76,26 @@ fn get_toolchain() -> String {
 }
 
 fn get_version() -> String {
-    let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
-    let manifest_path = PathBuf::from(manifest_dir).join("Cargo.toml");
+    let cargo_toml_path = std::path::Path::new("Cargo.toml");
+    let cargo_toml_content = match std::fs::read_to_string(cargo_toml_path) {
+        Ok(content) => content,
+        Err(_) => return "unknown".to_string(),
+    };
 
-    if let Ok(contents) = std::fs::read_to_string(&manifest_path) {
-        if let Ok(manifest) = contents.parse::<toml::Value>() {
-            if let Some(package) = manifest.get("package") {
-                if let Some(version) = package.get("version") {
-                    if let Some(version_str) = version.as_str() {
-                        return version_str.to_string();
-                    }
+    let cargo_toml: toml::Value = match toml::from_str(&cargo_toml_content) {
+        Ok(value) => value,
+        Err(_) => return "unknown".to_string(),
+    };
+
+    if let Some(workspace) = cargo_toml.get("workspace") {
+        if let Some(package) = workspace.get("package") {
+            if let Some(version) = package.get("version") {
+                if let Some(version_str) = version.as_str() {
+                    return version_str.to_string();
                 }
             }
         }
     }
 
-    "0.1.0".to_string()
+    "unknown".to_string()
 }

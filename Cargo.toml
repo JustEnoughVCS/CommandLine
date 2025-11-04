@@ -7,7 +7,7 @@ build = "build.rs"
 members = ["crates/build_helper"]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.0-dev"
 
 [profile.dev]
 opt-level = 0
