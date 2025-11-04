@@ -12,7 +12,4 @@ binaries = [
 
     "jvv",
     "jvv.exe",
-
-    "jvref",
-    "jvref.exe"
 ]
