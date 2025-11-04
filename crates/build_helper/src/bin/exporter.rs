@@ -6,11 +6,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("     {} `.cargo/cargo.toml`", "Reading".green().bold());
 
     let start_time = std::time::Instant::now();
-    let mut copied_files = 0;
 
     let target_dir = current_target_dir().expect("Failed to get target directory");
     let publish_dir = current_publish_dir().expect("Failed to get publish directory");
     let publish_binaries = publish_binaries().expect("Failed to get publish binaries");
+
+    // Final, export binaries to publish directory
+    let copied_files = export(target_dir, publish_dir, publish_binaries)?;
+
+    let duration = start_time.elapsed();
+    println!();
+    println!(
+        "Done (in {:.1}s) Publish {} {}",
+        duration.as_secs_f32(),
+        copied_files,
+        if copied_files == 1 { "file" } else { "files" }
+    );
+
+    Ok(())
+}
+
+/// Export binaries to publish directory
+fn export(
+    target_dir: std::path::PathBuf,
+    publish_dir: std::path::PathBuf,
+    publish_binaries: Vec<String>,
+) -> Result<usize, Box<dyn std::error::Error>> {
+    let mut copied_files = 0;
 
     if publish_dir.exists() {
         std::fs::remove_dir_all(&publish_dir)?;
@@ -39,42 +61,34 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             if let Some(file_name) = path.file_name().and_then(|n| n.to_str())
-                && publish_binaries.contains(&file_name.to_string()) {
-                    let parent_dir_name = path
-                        .parent()
-                        .and_then(|p| p.file_name())
-                        .and_then(|n| n.to_str())
-                        .unwrap_or("");
+                && publish_binaries.contains(&file_name.to_string())
+            {
+                let parent_dir_name = path
+                    .parent()
+                    .and_then(|p| p.file_name())
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("");
 
-                    let dest_path = publish_dir.join(parent_dir_name).join(file_name);
+                let dest_path = publish_dir.join(parent_dir_name).join(file_name);
 
-                    if let Some(parent) = dest_path.parent() {
-                        std::fs::create_dir_all(parent)?;
-                    }
-
-                    println!(
-                        "        {} `{}/{}` ({})",
-                        "Copy".green().bold(),
-                        parent_dir_name,
-                        file_name,
-                        path.display()
-                    );
-                    std::fs::copy(&path, &dest_path)?;
-                    copied_files += 1;
+                if let Some(parent) = dest_path.parent() {
+                    std::fs::create_dir_all(parent)?;
                 }
+
+                println!(
+                    "        {} `{}/{}` ({})",
+                    "Copy".green().bold(),
+                    parent_dir_name,
+                    file_name,
+                    path.display()
+                );
+                std::fs::copy(&path, &dest_path)?;
+                copied_files += 1;
+            }
         }
     }
 
-    let duration = start_time.elapsed();
-    println!();
-    println!(
-        "Done (in {:.1}s) Publish {} {}",
-        duration.as_secs_f32(),
-        copied_files,
-        if copied_files == 1 { "file" } else { "files" }
-    );
-
-    Ok(())
+    Ok(copied_files)
 }
 
 /// Get a target directory from the cargo config

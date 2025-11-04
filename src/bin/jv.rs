@@ -30,8 +30,11 @@ use just_enough_vcs::{
     utils::tcp_connection::error::TcpTargetError,
     vcs::{actions::local_actions::proc_set_upstream_vault_action, registry::client_registry},
 };
-use just_enough_vcs_cli::utils::{
-    input::confirm_hint_or, lang_selector::current_locales, md_colored::md, socket_addr_helper,
+use just_enough_vcs_cli::{
+    data::compile_info::CompileInfo,
+    utils::{
+        input::confirm_hint_or, lang_selector::current_locales, md_colored::md, socket_addr_helper,
+    },
 };
 use rust_i18n::{set_locale, t};
 use tokio::{fs, net::TcpSocket};
@@ -54,6 +57,11 @@ struct JustEnoughVcsWorkspace {
 
 #[derive(Subcommand, Debug)]
 enum JustEnoughVcsWorkspaceCommand {
+    /// Version information
+    #[command(alias = "--version", alias = "-v")]
+    Version(VersionArgs),
+
+    /// Display help information
     #[command(alias = "--help", alias = "-h")]
     Help,
 
@@ -128,6 +136,12 @@ enum JustEnoughVcsWorkspaceCommand {
 
     /// List all sheets
     Sheets,
+}
+
+#[derive(Parser, Debug)]
+struct VersionArgs {
+    #[arg(short = 'C', long = "compile-info")]
+    compile_info: bool,
 }
 
 #[derive(Subcommand, Debug)]
@@ -407,6 +421,27 @@ async fn main() {
     };
 
     match parser.command {
+        JustEnoughVcsWorkspaceCommand::Version(version_args) => {
+            let compile_info = CompileInfo::default();
+            println!(
+                "{}",
+                md(t!("jv.version.header", version = compile_info.cli_version))
+            );
+
+            if version_args.compile_info {
+                println!(
+                    "\n{}",
+                    md(t!(
+                        "jv.version.compile_info",
+                        build_time = compile_info.date,
+                        build_target = compile_info.target,
+                        build_platform = compile_info.platform,
+                        build_toolchain = compile_info.toolchain
+                    ))
+                );
+            }
+        }
+
         JustEnoughVcsWorkspaceCommand::Help => {
             println!("{}", md(t!("jv.help")));
         }

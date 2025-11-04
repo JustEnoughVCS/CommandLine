@@ -3,6 +3,17 @@ common:
     Confirm to perform the above operation? (Y/n):
 
 jvv:
+  version:
+    header: |
+      JustEnoughVCS Upstream Vault Manager
+        VERSION - %{version}
+
+    compile_info: |
+      Compile Info
+        Compile Date - %{build_time}
+              Target - %{build_target}
+            Platform - %{build_platform} - %{build_toolchain}
+
   help: |
     **JustEnoughVCS Upstream Vault Commands**
     This program directly creates, manages, and runs JustEnoughVCS upstream vaults.
@@ -135,8 +146,19 @@ jvv:
       listen_done: Server shutdown!
 
 jv:
+  version:
+    header: |
+      JustEnoughVCS
+        VERSION - %{version}
+
+    compile_info: |
+      Compile Info
+        Compile Date - %{build_time}
+              Target - %{build_target}
+            Platform - %{build_platform} - %{build_toolchain}
+
   help: |
-    **JustEnoughVCS Local Workspace Commands**
+    **JustEnoughVCS**
     This program connects to upstream vaults to synchronize and commit changes to local workspace files for collaborative work.
 
     **ALIASES**:

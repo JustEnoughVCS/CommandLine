@@ -16,3 +16,6 @@
 
 # Target directory
 /target/
+
+# Compile info
+/src/data/compile_info.rs

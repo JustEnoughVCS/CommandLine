@@ -3,6 +3,17 @@ common:
     是否执行上述操作？（Y/n）：
 
 jvv:
+  version:
+    header: |
+      JustEnoughVCS 上游库管理工具
+        当前版本：%{version}
+
+    compile_info: |
+      编译信息：
+        时间：%{build_time}
+        目标：%{build_target}
+        平台：%{build_platform} - %{build_toolchain}
+
   help: |
     **JustEnoughVCS 上游库命令**
     该程序直接创建、管理、运行 JustEnoughVCS 的上游库
@@ -129,6 +140,17 @@ jvv:
       listen_done: 服务端运行结束！
 
 jv:
+  version:
+    header: |
+      JustEnoughVCS 本地工作区命令
+        当前版本：%{version}
+
+    compile_info: |
+      编译信息：
+        时间：%{build_time}
+        目标：%{build_target}
+        平台：%{build_platform} - %{build_toolchain}
+
   help: |
     **JustEnoughVCS 本地工作区命令**
     该程序将连接至上游库，用以同步、提交本地工作区文件的变化，以供协同创作

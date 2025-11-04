@@ -16,8 +16,9 @@ use just_enough_vcs::{
         },
     },
 };
-use just_enough_vcs_cli::utils::{
-    build_env_logger::build_env_logger, lang_selector::current_locales, md_colored::md,
+use just_enough_vcs_cli::{
+    data::compile_info::CompileInfo,
+    utils::{build_env_logger::build_env_logger, lang_selector::current_locales, md_colored::md},
 };
 use log::{error, info};
 use rust_i18n::{set_locale, t};
@@ -40,6 +41,10 @@ struct JustEnoughVcsVault {
 
 #[derive(Subcommand, Debug)]
 enum JustEnoughVcsVaultCommand {
+    /// Version information
+    #[command(alias = "--version", alias = "-v")]
+    Version(VersionArgs),
+
     /// Get vault info in the current directory
     #[command(alias = "-H")]
     Here(HereArgs),
@@ -63,6 +68,12 @@ enum JustEnoughVcsVaultCommand {
     // Short commands
     #[command(alias = "-l", alias = "listen")]
     ServiceListen(ListenArgs),
+}
+
+#[derive(Parser, Debug)]
+struct VersionArgs {
+    #[arg(short = 'C', long = "compile-info")]
+    compile_info: bool,
 }
 
 #[derive(Subcommand, Debug)]
@@ -178,6 +189,27 @@ async fn main() {
     };
 
     match parser.command {
+        JustEnoughVcsVaultCommand::Version(version_args) => {
+            let compile_info = CompileInfo::default();
+            println!(
+                "{}",
+                md(t!("jvv.version.header", version = compile_info.cli_version))
+            );
+
+            if version_args.compile_info {
+                println!(
+                    "\n{}",
+                    md(t!(
+                        "jvv.version.compile_info",
+                        build_time = compile_info.date,
+                        build_target = compile_info.target,
+                        build_platform = compile_info.platform,
+                        build_toolchain = compile_info.toolchain
+                    ))
+                );
+            }
+        }
+
         JustEnoughVcsVaultCommand::Here(here_args) => {
             if here_args.help {
                 println!("{}", md(t!("jvv.here")));

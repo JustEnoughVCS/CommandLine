@@ -865,6 +865,7 @@ dependencies = [
  "regex",
  "rust-i18n",
  "tokio",
+ "toml 0.9.8",
 ]
 
 [[package]]
