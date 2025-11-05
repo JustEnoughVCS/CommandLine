@@ -1009,7 +1009,10 @@ async fn jv_account_as(user_dir: UserDirectory, args: SetLocalWorkspaceAccountAr
         return;
     };
 
-    local_cfg.set_current_account(member.id());
+    if let Err(_) = local_cfg.set_current_account(member.id()) {
+        eprintln!("{}", md(t!("jv.fail.account.as")));
+        return;
+    };
 
     let Ok(_) = LocalConfig::write(&local_cfg).await else {
         eprintln!("{}", t!("jv.fail.write_cfg").trim());
