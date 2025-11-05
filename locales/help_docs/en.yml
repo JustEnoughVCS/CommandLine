@@ -371,6 +371,16 @@ jv:
     direct: |
       Do you want to direct the current local workspace to the upstream vault %{upstream}?
 
+    sheet:
+      make:
+        restore: |
+          Sheet `%{sheet_name}` is no holder. Take ownership?
+          If not, use a different name to create a sheet.
+
+      drop: |
+        Are you sure you want to drop sheet `%{sheet_name}`?
+        After this, you will not be able to work in the sheet!
+
   fail:
     path_not_found: |
       The directory `%{path}` cannot be found!
@@ -393,6 +403,7 @@ jv:
       remove: Failed to remove account `%{account}`, please check if the account exists.
       list: Failed to get account list!
       not_found: Cannot find account `%{account}`!
+      as: Failed to set current account, please ensure the current sheet has been exited
 
     init_create_dir_not_empty: |
       The current directory is not empty!
@@ -457,10 +468,9 @@ jv:
         other_sheet_item_no_holder: |
           %{number}. %{name} (NO HOLDER)
         tip_has_sheet: |
-          You can use `jv use <SHEET_NAME>` to start working
+          You are not on any sheet, you can use `jv use <SHEET_NAME>` to use a sheet
         tip_no_sheet: |
-          **YOU HAVE NO SHEETS**
-          You can use `jv sheet make <SHEET_NAME>` to create a new sheet
+          You don't have any sheets, you can use `jv make <SHEET_NAME>` to create a new sheet
 
   result:
     common:
@@ -496,7 +506,35 @@ jv:
         success: |
           Successfully created sheet `%{name}`!
           Upstream changed，use `jv update` to get the latest information
+
+        success_restore: |
+          Successfully restored sheet `%{name}`!
+          Upstream changed，use `jv update` to get the latest information
+
         sheet_already_exists: |
           Sheet `%{name}` already exists!
+
         sheet_creation_failed: |
           Sheet creation failed: `%{error}`
+
+      drop:
+        success: |
+          Successfully dropped sheet `%{name}`!
+          Upstream changed, use `jv update` to sync to latest information
+          **Tip**: You can use `jv make %{name}` to restore this sheet
+
+        sheet_in_use: |
+          Sheet `%{name}` is in use, cannot drop!
+          **Tip**: Please use `jv exit` to exit current sheet first
+
+        sheet_not_exists: |
+          Sheet `%{name}` does not exist!
+
+        sheet_drop_failed: |
+          Failed to drop sheet: %{err}
+
+        no_holder: |
+          Sheet `%{name}` has no holder!
+
+        not_owner: |
+          You are not the holder of sheet `%{name}`, cannot drop it!

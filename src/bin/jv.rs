@@ -217,6 +217,14 @@ struct SheetListArgs {
     /// Show help information
     #[arg(short, long)]
     help: bool,
+
+    /// 显示他人的表而不是自己的
+    #[arg(short, long)]
+    others: bool,
+
+    /// 显示所有的表
+    #[arg(short = 'A', long)]
+    all: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -251,6 +259,10 @@ struct SheetDropArgs {
     /// Show help information
     #[arg(short, long)]
     help: bool,
+
+    /// Whether to skip confirmation
+    #[arg(short = 'C', long)]
+    confirm: bool,
 
     /// Sheet name
     sheet_name: String,
@@ -717,7 +729,7 @@ async fn jv_here(_args: HereArgs) {
     todo!()
 }
 
-async fn jv_sheet_list(_args: SheetListArgs) {
+async fn jv_sheet_list(args: SheetListArgs) {
     let Some(_local_dir) = current_local_path() else {
         eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
         return;
@@ -737,7 +749,7 @@ async fn jv_sheet_list(_args: SheetListArgs) {
     let mut other_sheet_counts = 0;
 
     // Print your sheets
-    {
+    if !args.others && !args.all || !args.others {
         println!("{}", md(t!("jv.success.sheet.list.your_sheet")));
         let in_use = local_cfg.sheet_in_use();
         for sheet in latest_info.my_sheets {
@@ -764,11 +776,13 @@ async fn jv_sheet_list(_args: SheetListArgs) {
             }
             your_sheet_counts += 1;
         }
-        println!();
     }
 
     // Print other sheets
-    {
+    if args.others || args.all {
+        if args.all {
+            println!();
+        }
         println!("{}", md(t!("jv.success.sheet.list.other_sheet")));
         for sheet in latest_info.other_sheets {
             if let Some(holder) = sheet.holder_name {
@@ -793,11 +807,11 @@ async fn jv_sheet_list(_args: SheetListArgs) {
             }
             other_sheet_counts += 1;
         }
-        println!();
     }
 
-    // Print tips
-    {
+    // If not use any sheets, print tips
+    if local_cfg.sheet_in_use().is_none() {
+        println!();
         if your_sheet_counts > 0 {
             println!("{}", md(t!("jv.success.sheet.list.tip_has_sheet")));
         } else {
@@ -867,12 +881,43 @@ async fn jv_sheet_make(args: SheetMakeArgs) {
         None => return,
     };
 
+    let latest_info = match LatestInfo::read().await {
+        Ok(info) => info,
+        Err(_) => {
+            eprintln!("{}", t!("jv.fail.read_cfg"));
+            return;
+        }
+    };
+
+    if latest_info
+        .other_sheets
+        .iter()
+        .any(|sheet| sheet.sheet_name == sheet_name)
+    {
+        eprintln!(
+            "{}",
+            md(t!("jv.confirm.sheet.make.restore", sheet_name = sheet_name))
+        );
+        if !confirm_hint(t!("common.confirm")).await {
+            return;
+        }
+    }
+
     match proc_make_sheet_action(&pool, ctx, sheet_name.clone()).await {
         Ok(r) => match r {
             MakeSheetActionResult::Success => {
                 eprintln!(
                     "{}",
                     md(t!("jv.result.sheet.make.success", name = sheet_name))
+                )
+            }
+            MakeSheetActionResult::SuccessRestore => {
+                eprintln!(
+                    "{}",
+                    md(t!(
+                        "jv.result.sheet.make.success_restore",
+                        name = sheet_name
+                    ))
                 )
             }
             MakeSheetActionResult::AuthorizeFailed(e) => {
@@ -899,8 +944,75 @@ async fn jv_sheet_make(args: SheetMakeArgs) {
     }
 }
 
-async fn jv_sheet_drop(_args: SheetDropArgs) {
-    todo!()
+async fn jv_sheet_drop(args: SheetDropArgs) {
+    let sheet_name = snake_case!(args.sheet_name);
+
+    if !args.confirm {
+        println!(
+            "{}",
+            t!("jv.confirm.sheet.drop", sheet_name = sheet_name).trim()
+        );
+        confirm_hint_or(t!("common.confirm"), || exit(1)).await;
+    }
+
+    let local_config = match precheck().await {
+        Some(config) => config,
+        None => return,
+    };
+
+    let (pool, ctx) = match build_pool_and_ctx(&local_config).await {
+        Some(result) => result,
+        None => return,
+    };
+
+    match proc_drop_sheet_action(&pool, ctx, sheet_name.clone()).await {
+        Ok(r) => match r {
+            DropSheetActionResult::Success => {
+                println!(
+                    "{}",
+                    md(t!("jv.result.sheet.drop.success", name = sheet_name))
+                )
+            }
+            DropSheetActionResult::SheetInUse => {
+                eprintln!(
+                    "{}",
+                    md(t!("jv.result.sheet.drop.sheet_in_use", name = sheet_name))
+                )
+            }
+            DropSheetActionResult::AuthorizeFailed(e) => {
+                eprintln!("{}", md(t!("jv.result.common.authroize_failed", err = e)))
+            }
+            DropSheetActionResult::SheetNotExists => {
+                eprintln!(
+                    "{}",
+                    md(t!(
+                        "jv.result.sheet.drop.sheet_not_exists",
+                        name = sheet_name
+                    ))
+                )
+            }
+            DropSheetActionResult::SheetDropFailed(e) => {
+                eprintln!(
+                    "{}",
+                    md(t!("jv.result.sheet.drop.sheet_drop_failed", err = e))
+                )
+            }
+            DropSheetActionResult::NoHolder => {
+                eprintln!(
+                    "{}",
+                    md(t!("jv.result.sheet.drop.no_holder", name = sheet_name))
+                )
+            }
+            DropSheetActionResult::NotOwner => {
+                eprintln!(
+                    "{}",
+                    md(t!("jv.result.sheet.drop.not_owner", name = sheet_name))
+                )
+            }
+            _ => {}
+        },
+        Err(e) => handle_err(e),
+    }
 }
 
 async fn jv_track(_args: TrackFileArgs) {
