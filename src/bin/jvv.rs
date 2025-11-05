@@ -68,6 +68,10 @@ enum JustEnoughVcsVaultCommand {
     // Short commands
     #[command(alias = "-l", alias = "listen")]
     ServiceListen(ListenArgs),
+
+    // List all members
+    #[command(alias = "-M", alias = "members")]
+    MemberList,
 }
 
 #[derive(Parser, Debug)]
@@ -299,6 +303,27 @@ async fn main() {
                 return;
             }
             jvv_service_listen(listen_args).await;
+        }
+        JustEnoughVcsVaultCommand::MemberList => {
+            let vault_cfg = match VaultConfig::read().await {
+                Ok(cfg) => cfg,
+                Err(_) => {
+                    eprintln!("{}", t!("jvv.fail.no_vault_here").trim());
+                    return;
+                }
+            };
+
+            let vault = match Vault::init_current_dir(vault_cfg) {
+                Some(vault) => vault,
+                None => {
+                    eprintln!(
+                        "{}",
+                        t!("jvv.fail.jvcs", err = "Failed to initialize vault")
+                    );
+                    return;
+                }
+            };
+            jvv_member_list(vault, MemberListArgs { help: false }).await;
         }
     }
 }

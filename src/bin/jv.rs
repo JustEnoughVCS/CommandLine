@@ -13,7 +13,10 @@ use just_enough_vcs::{
                 SetUpstreamVaultActionResult, UpdateToLatestInfoResult,
                 proc_update_to_latest_info_action,
             },
-            sheet_actions::{MakeSheetActionResult, proc_make_sheet_action},
+            sheet_actions::{
+                DropSheetActionResult, MakeSheetActionResult, proc_drop_sheet_action,
+                proc_make_sheet_action,
+            },
         },
         constants::PORT,
         current::current_local_path,
@@ -33,7 +36,10 @@ use just_enough_vcs::{
 use just_enough_vcs_cli::{
     data::compile_info::CompileInfo,
     utils::{
-        input::confirm_hint_or, lang_selector::current_locales, md_colored::md, socket_addr_helper,
+        input::{confirm_hint, confirm_hint_or},
+        lang_selector::current_locales,
+        md_colored::md,
+        socket_addr_helper,
     },
 };
 use rust_i18n::{set_locale, t};
@@ -136,6 +142,18 @@ enum JustEnoughVcsWorkspaceCommand {
 
     /// List all sheets
     Sheets,
+
+    /// List all accounts
+    Accounts,
+
+    /// Set current local workspace account
+    As(SetLocalWorkspaceAccountArgs),
+
+    /// Make a new sheet
+    Make(SheetMakeArgs),
+
+    /// Drop a sheet
+    Drop(SheetDropArgs),
 }
 
 #[derive(Parser, Debug)]
@@ -609,7 +627,40 @@ async fn main() {
             })
             .await;
         }
-        JustEnoughVcsWorkspaceCommand::Sheets => jv_sheet_list(SheetListArgs { help: false }).await,
+        JustEnoughVcsWorkspaceCommand::Sheets => {
+            jv_sheet_list(SheetListArgs {
+                help: false,
+                others: false,
+                all: false,
+            })
+            .await
+        }
+        JustEnoughVcsWorkspaceCommand::Accounts => {
+            let user_dir = match UserDirectory::current_doc_dir() {
+                Some(dir) => dir,
+                None => {
+                    eprintln!("{}", t!("jv.fail.account.no_user_dir"));
+                    return;
+                }
+            };
+            jv_account_list(user_dir, AccountListArgs { help: false }).await
+        }
+        JustEnoughVcsWorkspaceCommand::As(args) => {
+            let user_dir = match UserDirectory::current_doc_dir() {
+                Some(dir) => dir,
+                None => {
+                    eprintln!("{}", t!("jv.fail.account.no_user_dir"));
+                    return;
+                }
+            };
+            jv_account_as(user_dir, args).await
+        }
+        JustEnoughVcsWorkspaceCommand::Make(args) => {
+            jv_sheet_make(args).await;
+        }
+        JustEnoughVcsWorkspaceCommand::Drop(args) => {
+            jv_sheet_drop(args).await;
+        }
     }
 }
 
