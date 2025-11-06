@@ -13,3 +13,15 @@ binaries = [
     "jvv",
     "jvv.exe",
 ]
+
+[copies.completion_jv]
+from = "scripts/completion_jv.sh"
+to = "completion_jv.sh"
+
+[copies.completion_jvv]
+from = "scripts/completion_jvv.sh"
+to = "completion_jvv.sh"
+
+[copies.entry]
+from = "scripts/cli.sh"
+to = "cli.sh"
