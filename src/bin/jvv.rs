@@ -18,7 +18,10 @@ use just_enough_vcs::{
 };
 use just_enough_vcs_cli::{
     data::compile_info::CompileInfo,
-    utils::{build_env_logger::build_env_logger, lang_selector::current_locales, md_colored::md},
+    utils::{
+        build_env_logger::build_env_logger, display::size_str, lang_selector::current_locales,
+        md_colored::md,
+    },
 };
 use log::{error, info};
 use rust_i18n::{set_locale, t};
@@ -158,6 +161,10 @@ struct MemberListArgs {
     /// Show help information
     #[arg(short, long)]
     help: bool,
+
+    /// Show raw output for list
+    #[arg(short, long)]
+    raw: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -323,7 +330,14 @@ async fn main() {
                     return;
                 }
             };
-            jvv_member_list(vault, MemberListArgs { help: false }).await;
+            jvv_member_list(
+                vault,
+                MemberListArgs {
+                    help: false,
+                    raw: false,
+                },
+            )
+            .await;
         }
     }
 }
@@ -412,21 +426,6 @@ async fn jvv_here(_args: HereArgs) {
     };
     let num_ref_sheet_managed_files = ref_sheet.mapping().len();
 
-    let total_size_str = if total_size < 1024 {
-        format!("{} B", total_size)
-    } else if total_size < 1024 * 1024 {
-        format!("{:.2} KB", total_size as f64 / 1024.0)
-    } else if total_size < 1024 * 1024 * 1024 {
-        format!("{:.2} MB", total_size as f64 / (1024.0 * 1024.0))
-    } else if total_size < 1024 * 1024 * 1024 * 1024 {
-        format!("{:.2} GB", total_size as f64 / (1024.0 * 1024.0 * 1024.0))
-    } else {
-        format!(
-            "{:.2} TB",
-            total_size as f64 / (1024.0 * 1024.0 * 1024.0 * 1024.0)
-        )
-    };
-
     // Success
     println!(
         "{}",
@@ -438,7 +437,7 @@ async fn jvv_here(_args: HereArgs) {
             num_mem = num_mem,
             num_pk = num_pk,
             num_ref_sheet_managed_files = num_ref_sheet_managed_files,
-            total_size = total_size_str
+            total_size = size_str(total_size as usize)
         ))
     )
 }
@@ -590,24 +589,18 @@ async fn jvv_member_remove(vault: Vault, args: MemberRemoveArgs) {
     )
 }
 
-async fn jvv_member_list(vault: Vault, _args: MemberListArgs) {
+async fn jvv_member_list(vault: Vault, args: MemberListArgs) {
     // Get id list
     let ids = match vault.member_ids() {
         Ok(ids) => ids,
         Err(_) => {
-            eprintln!("{}", t!("jvv.fail.member.list").trim());
+            if !args.raw {
+                eprintln!("{}", t!("jvv.fail.member.list").trim());
+            }
             return;
         }
     };
 
-    // Print header
-    println!(
-        "{}",
-        md(t!("jvv.success.member.list.header", num = ids.len()))
-    );
-
-    // Print list
-    let mut i = 0;
     let mut members: Vec<String> = ids.into_iter().collect();
 
     // Sort members to put "host" first if it exists
@@ -621,24 +614,38 @@ async fn jvv_member_list(vault: Vault, _args: MemberListArgs) {
         }
     });
 
-    let mut has_pubkey = 0;
-    for member in members {
-        println!("{}. {} {}", i + 1, &member, {
-            // Key registered
-            if vault.member_key_path(&member).exists() {
-                has_pubkey += 1;
-                t!("jvv.success.member.list.status_key_registered")
-            } else {
-                std::borrow::Cow::Borrowed("")
-            }
-        });
-        i += 1;
-    }
+    if args.raw {
+        for member in members {
+            println!("{}", member);
+        }
+    } else {
+        // Print header
+        println!(
+            "{}",
+            md(t!("jvv.success.member.list.header", num = members.len()))
+        );
 
-    println!(
-        "{}",
-        md(t!("jvv.success.member.list.footer", num = has_pubkey))
-    );
+        // Print list
+        let mut i = 0;
+        let mut has_pubkey = 0;
+        for member in members {
+            println!("{}. {} {}", i + 1, &member, {
+                // Key registered
+                if vault.member_key_path(&member).exists() {
+                    has_pubkey += 1;
+                    t!("jvv.success.member.list.status_key_registered")
+                } else {
+                    std::borrow::Cow::Borrowed("")
+                }
+            });
+            i += 1;
+        }
+
+        println!(
+            "{}",
+            md(t!("jvv.success.member.list.footer", num = has_pubkey))
+        );
+    }
 }
 
 async fn jvv_service_listen(args: ListenArgs) {
