@@ -1,5 +1,4 @@
-use std::{env::current_dir, net::SocketAddr, path::PathBuf, process::exit};
-
+use colored::Colorize;
 use just_enough_vcs::{
     system::action_system::{action::ActionContext, action_pool::ActionPool},
     utils::{
@@ -18,15 +17,19 @@ use just_enough_vcs::{
                 proc_make_sheet_action,
             },
         },
-        constants::PORT,
-        current::current_local_path,
+        constants::{
+            CLIENT_FILE_LATEST_INFO, CLIENT_FILE_WORKSPACE, CLIENT_FOLDER_WORKSPACE_ROOT_NAME, PORT,
+        },
+        current::{current_doc_dir, current_local_path},
         data::{
             local::{LocalWorkspace, config::LocalConfig, latest_info::LatestInfo},
             member::Member,
             user::UserDirectory,
         },
+        docs::{document, documents},
     },
 };
+use std::{env::current_dir, net::SocketAddr, path::PathBuf, process::exit};
 
 use clap::{Parser, Subcommand, arg, command};
 use just_enough_vcs::{
@@ -36,7 +39,8 @@ use just_enough_vcs::{
 use just_enough_vcs_cli::{
     data::compile_info::CompileInfo,
     utils::{
-        input::{confirm_hint, confirm_hint_or},
+        display::{SimpleTable, size_str},
+        input::{confirm_hint, confirm_hint_or, input_with_editor},
         lang_selector::current_locales,
         md_colored::md,
         socket_addr_helper,
@@ -218,13 +222,17 @@ struct SheetListArgs {
     #[arg(short, long)]
     help: bool,
 
-    /// 显示他人的表而不是自己的
-    #[arg(short, long)]
+    /// Show other's sheets
+    #[arg(short, long = "other")]
     others: bool,
 
-    /// 显示所有的表
+    /// Show all sheets
     #[arg(short = 'A', long)]
     all: bool,
+
+    /// Show raw output
+    #[arg(short, long)]
+    raw: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -275,7 +283,7 @@ struct CreateWorkspaceArgs {
     help: bool,
 
     /// Workspace directory path
-    path: PathBuf,
+    path: Option<PathBuf>,
 
     /// Force create, ignore files in the directory
     #[arg(short, long)]
@@ -325,6 +333,10 @@ struct AccountListArgs {
     /// Show help information
     #[arg(short, long)]
     help: bool,
+
+    /// Show raw output
+    #[arg(short, long)]
+    raw: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -406,7 +418,7 @@ struct DirectArgs {
     help: bool,
 
     /// Upstream vault address
-    upstream: String,
+    upstream: Option<String>,
 
     /// Whether to skip confirmation
     #[arg(short = 'C', long)]
@@ -429,6 +441,17 @@ struct DocsArgs {
     /// Show help information
     #[arg(short, long)]
     help: bool,
+
+    /// Name of the docs
+    docs_name: Option<String>,
+
+    /// Direct output
+    #[arg(short, long)]
+    direct: bool,
+
+    /// Show raw output for list
+    #[arg(short, long)]
+    raw: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -446,7 +469,7 @@ async fn main() {
     colored::control::set_virtual_terminal(true).unwrap();
 
     let Ok(parser) = JustEnoughVcsWorkspace::try_parse() else {
-        println!("{}", md(t!("jv.fail.parse.parser_failed")));
+        eprintln!("{}", md(t!("jv.fail.parse.parser_failed")).bright_red());
         return;
     };
 
@@ -480,7 +503,7 @@ async fn main() {
             let user_dir = match UserDirectory::current_doc_dir() {
                 Some(dir) => dir,
                 None => {
-                    eprintln!("{}", t!("jv.fail.account.no_user_dir"));
+                    eprintln!("{}", t!("jv.fail.account.no_user_dir").bright_red());
                     return;
                 }
             };
@@ -644,6 +667,7 @@ async fn main() {
                 help: false,
                 others: false,
                 all: false,
+                raw: false,
             })
             .await
         }
@@ -651,17 +675,24 @@ async fn main() {
             let user_dir = match UserDirectory::current_doc_dir() {
                 Some(dir) => dir,
                 None => {
-                    eprintln!("{}", t!("jv.fail.account.no_user_dir"));
+                    eprintln!("{}", t!("jv.fail.account.no_user_dir").bright_red());
                     return;
                 }
             };
-            jv_account_list(user_dir, AccountListArgs { help: false }).await
+            jv_account_list(
+                user_dir,
+                AccountListArgs {
+                    help: false,
+                    raw: false,
+                },
+            )
+            .await
         }
         JustEnoughVcsWorkspaceCommand::As(args) => {
             let user_dir = match UserDirectory::current_doc_dir() {
                 Some(dir) => dir,
                 None => {
-                    eprintln!("{}", t!("jv.fail.account.no_user_dir"));
+                    eprintln!("{}", t!("jv.fail.account.no_user_dir").bright_red());
                     return;
                 }
             };
@@ -677,10 +708,16 @@ async fn main() {
 }
 
 async fn jv_create(args: CreateWorkspaceArgs) {
-    let path = args.path;
+    let Some(path) = args.path else {
+        println!("{}", md(t!("jv.create")));
+        return;
+    };
 
     if !args.force && path.exists() && !is_directory_empty(&path).await {
-        eprintln!("{}", t!("jv.fail.init_create_dir_not_empty").trim());
+        eprintln!(
+            "{}",
+            t!("jv.fail.init_create_dir_not_empty").trim().bright_red()
+        );
         return;
     }
 
@@ -689,7 +726,10 @@ async fn jv_create(args: CreateWorkspaceArgs) {
             println!("{}", t!("jv.success.create"));
         }
         Err(e) => {
-            eprintln!("{}", t!("jv.fail.create", error = e.to_string()));
+            eprintln!(
+                "{}",
+                t!("jv.fail.create", error = e.to_string()).bright_red()
+            );
         }
     }
 }
@@ -698,13 +738,19 @@ async fn jv_init(args: InitWorkspaceArgs) {
     let path = match current_dir() {
         Ok(path) => path,
         Err(e) => {
-            eprintln!("{}", t!("jv.fail.get_current_dir", error = e.to_string()));
+            eprintln!(
+                "{}",
+                t!("jv.fail.get_current_dir", error = e.to_string()).bright_red()
+            );
             return;
         }
     };
 
     if !args.force && path.exists() && !is_directory_empty(&path).await {
-        eprintln!("{}", t!("jv.fail.init_create_dir_not_empty").trim());
+        eprintln!(
+            "{}",
+            t!("jv.fail.init_create_dir_not_empty").trim().bright_red()
+        );
         return;
     }
 
@@ -713,7 +759,7 @@ async fn jv_init(args: InitWorkspaceArgs) {
             println!("{}", t!("jv.success.init"));
         }
         Err(e) => {
-            eprintln!("{}", t!("jv.fail.init", error = e.to_string()));
+            eprintln!("{}", t!("jv.fail.init", error = e.to_string()).bright_red());
         }
     }
 }
@@ -726,115 +772,262 @@ async fn is_directory_empty(path: &PathBuf) -> bool {
 }
 
 async fn jv_here(_args: HereArgs) {
-    todo!()
+    let Some(local_dir) = current_local_path() else {
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim().bright_red());
+        return;
+    };
+
+    let Ok(_latest_info) = LatestInfo::read_from(local_dir.join(CLIENT_FILE_LATEST_INFO)).await
+    else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
+        return;
+    };
+
+    let Ok(local_cfg) = LocalConfig::read_from(local_dir.join(CLIENT_FILE_WORKSPACE)).await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
+        return;
+    };
+
+    // Print path information
+    let sheet_name = if let Some(sheet_name) = local_cfg.sheet_in_use() {
+        sheet_name.to_string()
+    } else {
+        "".to_string()
+    };
+
+    let path = match current_dir() {
+        Ok(path) => path,
+        Err(_) => {
+            eprintln!("{}", t!("jv.fail.get_current_dir").bright_red());
+            return;
+        }
+    };
+
+    let local_dir = match current_local_path() {
+        Some(path) => path,
+        None => {
+            eprintln!("{}", t!("jv.fail.workspace_not_found").trim().bright_red());
+            return;
+        }
+    };
+
+    let relative_path = match path.strip_prefix(&local_dir) {
+        Ok(path) => path.display().to_string(),
+        Err(_) => path.display().to_string(),
+    };
+
+    println!(
+        "{}",
+        t!(
+            "jv.success.here.path_info",
+            upstream = local_cfg.upstream_addr().to_string().bright_cyan(),
+            account = local_cfg.current_account().bright_green(),
+            sheet_name = sheet_name.bright_yellow(),
+            path = relative_path
+        )
+        .trim()
+    );
+    println!();
+
+    // Print file info
+    let mut table = SimpleTable::new(vec![
+        t!("jv.success.here.items.name"),
+        t!("jv.success.here.items.version"),
+        t!("jv.success.here.items.hold"),
+        t!("jv.success.here.items.size"),
+        t!("jv.success.here.items.editing"),
+    ]);
+
+    let mut dir_count = 0;
+    let mut file_count = 0;
+    let mut total_size = 0;
+
+    if let Ok(mut entries) = fs::read_dir(&path).await {
+        while let Ok(Some(entry)) = entries.next_entry().await {
+            if let Ok(file_type) = entry.file_type().await {
+                let file_name = entry.file_name().to_string_lossy().to_string();
+
+                if file_name == CLIENT_FOLDER_WORKSPACE_ROOT_NAME {
+                    continue;
+                }
+
+                let metadata = match entry.metadata().await {
+                    Ok(meta) => meta,
+                    Err(_) => continue,
+                };
+
+                let size = metadata.len();
+                let is_dir = file_type.is_dir();
+                let version = "-";
+                let hold = "-";
+                let editing = "-";
+
+                if is_dir {
+                    dir_count += 1;
+                    table.push_item(vec![
+                        format!("{}/", file_name.bright_cyan()),
+                        version.to_string(),
+                        hold.to_string(),
+                        size_str(size as usize),
+                        editing.to_string(),
+                    ]);
+                } else {
+                    file_count += 1;
+                    table.push_item(vec![
+                        file_name,
+                        version.to_string(),
+                        hold.to_string(),
+                        size_str(size as usize),
+                        editing.to_string(),
+                    ]);
+                }
+
+                total_size += size;
+            }
+        }
+    }
+
+    println!("{}", table);
+
+    // Print directory info
+    println!(
+        "{}",
+        t!(
+            "jv.success.here.count_info",
+            dir_count = dir_count,
+            file_count = file_count,
+            size = size_str(total_size as usize)
+        )
+        .trim()
+    );
 }
 
 async fn jv_sheet_list(args: SheetListArgs) {
     let Some(_local_dir) = current_local_path() else {
-        eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+        if !args.raw {
+            eprintln!("{}", t!("jv.fail.workspace_not_found").trim().bright_red());
+        }
         return;
     };
 
     let Ok(latest_info) = LatestInfo::read().await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        if !args.raw {
+            eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
+        }
         return;
     };
 
     let Ok(local_cfg) = LocalConfig::read().await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        if !args.raw {
+            eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
+        }
         return;
     };
 
     let mut your_sheet_counts = 0;
     let mut other_sheet_counts = 0;
 
-    // Print your sheets
-    if !args.others && !args.all || !args.others {
-        println!("{}", md(t!("jv.success.sheet.list.your_sheet")));
-        let in_use = local_cfg.sheet_in_use();
-        for sheet in latest_info.my_sheets {
-            if let Some(in_use) = in_use
-                && in_use == &sheet
-            {
-                println!(
-                    "{}",
-                    md(t!(
-                        "jv.success.sheet.list.your_sheet_item_use",
-                        number = your_sheet_counts + 1,
-                        name = sheet
-                    ))
-                );
-            } else {
-                println!(
-                    "{}",
-                    md(t!(
-                        "jv.success.sheet.list.your_sheet_item",
-                        number = your_sheet_counts + 1,
-                        name = sheet
-                    ))
-                );
-            }
-            your_sheet_counts += 1;
+    if args.raw {
+        // Print your sheets
+        if !args.others && !args.all || !args.others {
+            latest_info.my_sheets.iter().for_each(|s| println!("{}", s));
         }
-    }
+        // Print other sheets
+        if args.others || args.all {
+            latest_info
+                .other_sheets
+                .iter()
+                .for_each(|s| println!("{}", s.sheet_name));
+        }
+    } else {
+        // Print your sheets
+        if !args.others && !args.all || !args.others {
+            println!("{}", md(t!("jv.success.sheet.list.your_sheet")));
+            let in_use = local_cfg.sheet_in_use();
+            for sheet in latest_info.my_sheets {
+                if let Some(in_use) = in_use
+                    && in_use == &sheet
+                {
+                    println!(
+                        "{}",
+                        md(t!(
+                            "jv.success.sheet.list.your_sheet_item_use",
+                            number = your_sheet_counts + 1,
+                            name = sheet
+                        ))
+                    );
+                } else {
+                    println!(
+                        "{}",
+                        md(t!(
+                            "jv.success.sheet.list.your_sheet_item",
+                            number = your_sheet_counts + 1,
+                            name = sheet
+                        ))
+                    );
+                }
+                your_sheet_counts += 1;
+            }
+        }
 
-    // Print other sheets
-    if args.others || args.all {
-        if args.all {
+        // Print other sheets
+        if args.others || args.all {
+            if args.all {
+                println!();
+            }
+            println!("{}", md(t!("jv.success.sheet.list.other_sheet")));
+            for sheet in latest_info.other_sheets {
+                if let Some(holder) = sheet.holder_name {
+                    println!(
+                        "{}",
+                        md(t!(
+                            "jv.success.sheet.list.other_sheet_item",
+                            number = other_sheet_counts + 1,
+                            name = sheet.sheet_name,
+                            holder = holder
+                        ))
+                    );
+                } else {
+                    println!(
+                        "{}",
+                        md(t!(
+                            "jv.success.sheet.list.other_sheet_item_no_holder",
+                            number = other_sheet_counts + 1,
+                            name = sheet.sheet_name
+                        ))
+                    );
+                }
+                other_sheet_counts += 1;
+            }
+        }
+
+        // If not use any sheets, print tips
+        if local_cfg.sheet_in_use().is_none() {
             println!();
-        }
-        println!("{}", md(t!("jv.success.sheet.list.other_sheet")));
-        for sheet in latest_info.other_sheets {
-            if let Some(holder) = sheet.holder_name {
-                println!(
-                    "{}",
-                    md(t!(
-                        "jv.success.sheet.list.other_sheet_item",
-                        number = other_sheet_counts + 1,
-                        name = sheet.sheet_name,
-                        holder = holder
-                    ))
-                );
+            if your_sheet_counts > 0 {
+                println!("{}", md(t!("jv.success.sheet.list.tip_has_sheet")));
             } else {
-                println!(
-                    "{}",
-                    md(t!(
-                        "jv.success.sheet.list.other_sheet_item_no_holder",
-                        number = other_sheet_counts + 1,
-                        name = sheet.sheet_name
-                    ))
-                );
+                println!("{}", md(t!("jv.success.sheet.list.tip_no_sheet")));
             }
-            other_sheet_counts += 1;
-        }
-    }
-
-    // If not use any sheets, print tips
-    if local_cfg.sheet_in_use().is_none() {
-        println!();
-        if your_sheet_counts > 0 {
-            println!("{}", md(t!("jv.success.sheet.list.tip_has_sheet")));
-        } else {
-            println!("{}", md(t!("jv.success.sheet.list.tip_no_sheet")));
         }
     }
 }
 
 async fn jv_sheet_use(args: SheetUseArgs) {
     let Some(_local_dir) = current_local_path() else {
-        eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim().bright_red());
         return;
     };
 
     let Ok(mut local_cfg) = LocalConfig::read().await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
         return;
     };
 
     match local_cfg.use_sheet(args.sheet_name).await {
         Ok(_) => {
             let Ok(_) = LocalConfig::write(&local_cfg).await else {
-                eprintln!("{}", t!("jv.fail.write_cfg").trim());
+                eprintln!("{}", t!("jv.fail.write_cfg").trim().bright_red());
                 return;
             };
         }
@@ -846,19 +1039,19 @@ async fn jv_sheet_use(args: SheetUseArgs) {
 
 async fn jv_sheet_exit(_args: SheetExitArgs) {
     let Some(_local_dir) = current_local_path() else {
-        eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim().bright_red());
         return;
     };
 
     let Ok(mut local_cfg) = LocalConfig::read().await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
         return;
     };
 
     match local_cfg.exit_sheet().await {
         Ok(_) => {
             let Ok(_) = LocalConfig::write(&local_cfg).await else {
-                eprintln!("{}", t!("jv.fail.write_cfg").trim());
+                eprintln!("{}", t!("jv.fail.write_cfg").trim().bright_red());
                 return;
             };
         }
@@ -884,7 +1077,7 @@ async fn jv_sheet_make(args: SheetMakeArgs) {
     let latest_info = match LatestInfo::read().await {
         Ok(info) => info,
         Err(_) => {
-            eprintln!("{}", t!("jv.fail.read_cfg"));
+            eprintln!("{}", t!("jv.fail.read_cfg").bright_red());
             return;
         }
     };
@@ -894,9 +1087,9 @@ async fn jv_sheet_make(args: SheetMakeArgs) {
         .iter()
         .any(|sheet| sheet.sheet_name == sheet_name)
     {
-        eprintln!(
+        println!(
             "{}",
-            md(t!("jv.confirm.sheet.make.restore", sheet_name = sheet_name))
+            md(t!("jv.confirm.sheet.make.restore", sheet_name = sheet_name)).bright_yellow()
         );
         if !confirm_hint(t!("common.confirm")).await {
             return;
@@ -906,13 +1099,13 @@ async fn jv_sheet_make(args: SheetMakeArgs) {
     match proc_make_sheet_action(&pool, ctx, sheet_name.clone()).await {
         Ok(r) => match r {
             MakeSheetActionResult::Success => {
-                eprintln!(
+                println!(
                     "{}",
                     md(t!("jv.result.sheet.make.success", name = sheet_name))
                 )
             }
             MakeSheetActionResult::SuccessRestore => {
-                eprintln!(
+                println!(
                     "{}",
                     md(t!(
                         "jv.result.sheet.make.success_restore",
@@ -921,7 +1114,10 @@ async fn jv_sheet_make(args: SheetMakeArgs) {
                 )
             }
             MakeSheetActionResult::AuthorizeFailed(e) => {
-                eprintln!("{}", md(t!("jv.result.common.authroize_failed", err = e)))
+                eprintln!(
+                    "{}",
+                    md(t!("jv.result.common.authroize_failed", err = e)).bright_red()
+                )
             }
             MakeSheetActionResult::SheetAlreadyExists => {
                 eprintln!(
@@ -930,12 +1126,13 @@ async fn jv_sheet_make(args: SheetMakeArgs) {
                         "jv.result.sheet.make.sheet_already_exists",
                         name = sheet_name
                     ))
+                    .bright_red()
                 );
             }
             MakeSheetActionResult::SheetCreationFailed(e) => {
-                println!(
+                eprintln!(
                     "{}",
-                    md(t!("jv.result.sheet.make.sheet_creation_failed", err = e))
+                    md(t!("jv.result.sheet.make.sheet_creation_failed", err = e)).bright_red()
                 )
             }
             MakeSheetActionResult::Unknown => todo!(),
@@ -950,7 +1147,9 @@ async fn jv_sheet_drop(args: SheetDropArgs) {
     if !args.confirm {
         println!(
             "{}",
-            t!("jv.confirm.sheet.drop", sheet_name = sheet_name).trim()
+            t!("jv.confirm.sheet.drop", sheet_name = sheet_name)
+                .trim()
+                .bright_yellow()
         );
         confirm_hint_or(t!("common.confirm"), || exit(1)).await;
     }
@@ -976,11 +1175,14 @@ async fn jv_sheet_drop(args: SheetDropArgs) {
             DropSheetActionResult::SheetInUse => {
                 eprintln!(
                     "{}",
-                    md(t!("jv.result.sheet.drop.sheet_in_use", name = sheet_name))
+                    md(t!("jv.result.sheet.drop.sheet_in_use", name = sheet_name)).bright_red()
                 )
             }
             DropSheetActionResult::AuthorizeFailed(e) => {
-                eprintln!("{}", md(t!("jv.result.common.authroize_failed", err = e)))
+                eprintln!(
+                    "{}",
+                    md(t!("jv.result.common.authroize_failed", err = e)).bright_red()
+                )
             }
             DropSheetActionResult::SheetNotExists => {
                 eprintln!(
@@ -989,24 +1191,25 @@ async fn jv_sheet_drop(args: SheetDropArgs) {
                         "jv.result.sheet.drop.sheet_not_exists",
                         name = sheet_name
                     ))
+                    .bright_red()
                 )
             }
             DropSheetActionResult::SheetDropFailed(e) => {
                 eprintln!(
                     "{}",
-                    md(t!("jv.result.sheet.drop.sheet_drop_failed", err = e))
+                    md(t!("jv.result.sheet.drop.sheet_drop_failed", err = e)).bright_red()
                 )
             }
             DropSheetActionResult::NoHolder => {
                 eprintln!(
                     "{}",
-                    md(t!("jv.result.sheet.drop.no_holder", name = sheet_name))
+                    md(t!("jv.result.sheet.drop.no_holder", name = sheet_name)).bright_red()
                 )
             }
             DropSheetActionResult::NotOwner => {
                 eprintln!(
                     "{}",
-                    md(t!("jv.result.sheet.drop.not_owner", name = sheet_name))
+                    md(t!("jv.result.sheet.drop.not_owner", name = sheet_name)).bright_red()
                 )
             }
             _ => {}
@@ -1050,7 +1253,10 @@ async fn jv_account_add(user_dir: UserDirectory, args: AccountAddArgs) {
             );
         }
         Err(_) => {
-            eprintln!("{}", t!("jv.fail.account.add", account = args.account_name));
+            eprintln!(
+                "{}",
+                t!("jv.fail.account.add", account = args.account_name).bright_red()
+            );
         }
     }
 }
@@ -1066,13 +1272,21 @@ async fn jv_account_remove(user_dir: UserDirectory, args: AccountRemoveArgs) {
         Err(_) => {
             eprintln!(
                 "{}",
-                t!("jv.fail.account.remove", account = args.account_name)
+                t!("jv.fail.account.remove", account = args.account_name).bright_red()
             );
         }
     }
 }
 
-async fn jv_account_list(user_dir: UserDirectory, _args: AccountListArgs) {
+async fn jv_account_list(user_dir: UserDirectory, args: AccountListArgs) {
+    if args.raw {
+        let Ok(account_ids) = user_dir.account_ids() else {
+            return;
+        };
+        account_ids.iter().for_each(|a| println!("{}", a));
+        return;
+    }
+
     match user_dir.account_ids() {
         Ok(account_ids) => {
             println!(
@@ -1096,7 +1310,7 @@ async fn jv_account_list(user_dir: UserDirectory, _args: AccountListArgs) {
             }
         }
         Err(_) => {
-            eprintln!("{}", t!("jv.fail.account.list"));
+            eprintln!("{}", t!("jv.fail.account.list").bright_red());
         }
     }
 }
@@ -1106,28 +1320,28 @@ async fn jv_account_as(user_dir: UserDirectory, args: SetLocalWorkspaceAccountAr
     let Ok(member) = user_dir.account(&args.account_name).await else {
         eprintln!(
             "{}",
-            t!("jv.fail.account.not_found", account = args.account_name)
+            t!("jv.fail.account.not_found", account = args.account_name).bright_red()
         );
         return;
     };
 
     let Some(_local_dir) = current_local_path() else {
-        eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim().bright_red());
         return;
     };
 
     let Ok(mut local_cfg) = LocalConfig::read().await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
         return;
     };
 
     if let Err(_) = local_cfg.set_current_account(member.id()) {
-        eprintln!("{}", md(t!("jv.fail.account.as")));
+        eprintln!("{}", md(t!("jv.fail.account.as")).bright_red());
         return;
     };
 
     let Ok(_) = LocalConfig::write(&local_cfg).await else {
-        eprintln!("{}", t!("jv.fail.write_cfg").trim());
+        eprintln!("{}", t!("jv.fail.write_cfg").trim().bright_red());
         return;
     };
 
@@ -1142,7 +1356,7 @@ async fn jv_account_move_key(user_dir: UserDirectory, args: MoveKeyToAccountArgs
     if !args.key_path.exists() {
         eprintln!(
             "{}",
-            t!("jv.fail.path_not_found", path = args.key_path.display())
+            t!("jv.fail.path_not_found", path = args.key_path.display()).bright_red()
         );
         return;
     }
@@ -1151,7 +1365,7 @@ async fn jv_account_move_key(user_dir: UserDirectory, args: MoveKeyToAccountArgs
     let Ok(_member) = user_dir.account(&args.account_name).await else {
         eprintln!(
             "{}",
-            t!("jv.fail.account.not_found", account = args.account_name)
+            t!("jv.fail.account.not_found", account = args.account_name).bright_red()
         );
         return;
     };
@@ -1164,7 +1378,7 @@ async fn jv_account_move_key(user_dir: UserDirectory, args: MoveKeyToAccountArgs
     .await
     {
         Ok(_) => println!("{}", t!("jv.success.account.move_key")),
-        Err(_) => eprintln!("{}", t!("jv.fail.account.move_key")),
+        Err(_) => eprintln!("{}", t!("jv.fail.account.move_key").bright_red()),
     }
 }
 
@@ -1186,32 +1400,43 @@ async fn jv_update(_update_file_args: UpdateArgs) {
                 println!("{}", md(t!("jv.result.update.success")));
             }
             UpdateToLatestInfoResult::AuthorizeFailed(e) => {
-                println!("{}", md(t!("jv.result.common.authroize_failed", err = e)))
+                eprintln!(
+                    "{}",
+                    md(t!("jv.result.common.authroize_failed", err = e)).bright_red()
+                )
             }
         },
     }
 }
 
 async fn jv_direct(args: DirectArgs) {
+    let Some(upstream) = args.upstream else {
+        println!("{}", md(t!("jv.direct")));
+        return;
+    };
+
     if !args.confirm {
         println!(
             "{}",
-            t!("jv.confirm.direct", upstream = args.upstream).trim()
+            t!("jv.confirm.direct", upstream = upstream)
+                .trim()
+                .bright_yellow()
         );
         confirm_hint_or(t!("common.confirm"), || exit(1)).await;
     }
 
     let pool = client_registry::client_action_pool();
-    let upstream = match socket_addr_helper::get_socket_addr(&args.upstream, PORT).await {
+    let upstream = match socket_addr_helper::get_socket_addr(&upstream, PORT).await {
         Ok(result) => result,
         Err(e) => {
             eprintln!(
                 "{}",
                 md(t!(
                     "jv.fail.parse.str_to_sockaddr",
-                    str = &args.upstream.trim(),
+                    str = &upstream.trim(),
                     err = e
                 ))
+                .bright_red()
             );
             return;
         }
@@ -1243,16 +1468,25 @@ async fn jv_direct(args: DirectArgs) {
                 )
             }
             SetUpstreamVaultActionResult::AlreadyStained => {
-                eprintln!("{}", md(t!("jv.result.direct.already_stained")))
+                eprintln!(
+                    "{}",
+                    md(t!("jv.result.direct.already_stained")).bright_red()
+                )
             }
             SetUpstreamVaultActionResult::AuthorizeFailed(e) => {
-                println!("{}", md(t!("jv.result.common.authroize_failed", err = e)))
+                eprintln!(
+                    "{}",
+                    md(t!("jv.result.common.authroize_failed", err = e)).bright_red()
+                )
             }
             SetUpstreamVaultActionResult::RedirectFailed(e) => {
-                println!("{}", md(t!("jv.result.direct.redirect_failed", err = e)))
+                eprintln!(
+                    "{}",
+                    md(t!("jv.result.direct.redirect_failed", err = e)).bright_red()
+                )
             }
             SetUpstreamVaultActionResult::SameUpstream => {
-                println!("{}", md(t!("jv.result.direct.same_upstream")))
+                eprintln!("{}", md(t!("jv.result.direct.same_upstream")).bright_red())
             }
             _ => {}
         },
@@ -1261,24 +1495,24 @@ async fn jv_direct(args: DirectArgs) {
 
 async fn jv_unstain(args: UnstainArgs) {
     let Some(_local_dir) = current_local_path() else {
-        eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim().bright_red());
         return;
     };
 
     let Ok(mut local_cfg) = LocalConfig::read().await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
         return;
     };
 
     if !local_cfg.stained() {
-        eprintln!("{}", md(t!("jv.fail.unstain")));
+        eprintln!("{}", md(t!("jv.fail.unstain")).bright_red());
         return;
     }
 
     if !args.confirm {
         println!(
             "{}",
-            md(t!("jv.warn.unstain", upstream = local_cfg.vault_addr()))
+            md(t!("jv.warn.unstain", upstream = local_cfg.vault_addr())).bright_yellow()
         );
         confirm_hint_or(t!("common.confirm"), || exit(1)).await;
     }
@@ -1286,19 +1520,92 @@ async fn jv_unstain(args: UnstainArgs) {
     local_cfg.unstain();
 
     let Ok(_) = LocalConfig::write(&local_cfg).await else {
-        eprintln!("{}", t!("jv.fail.write_cfg").trim());
+        eprintln!("{}", t!("jv.fail.write_cfg").trim().bright_red());
         return;
     };
 
     println!("{}", md(t!("jv.success.unstain")));
 }
 
-async fn jv_docs(_args: DocsArgs) {
-    todo!()
+async fn jv_docs(args: DocsArgs) {
+    let Some(docs_name) = args.docs_name else {
+        if !args.raw {
+            println!("{}", md(t!("jv.docs")));
+        }
+        return;
+    };
+
+    if docs_name.trim() == "ls" || docs_name.trim() == "list" {
+        let docs = documents();
+
+        if args.raw {
+            docs.iter().for_each(|d| {
+                if d.starts_with("docs_") {
+                    println!("{}", d.trim_start_matches("docs_"))
+                }
+            });
+            return;
+        }
+
+        println!("{}", md(t!("jv.success.docs.list.header")));
+        let mut i = 0;
+        for doc in docs {
+            if doc.starts_with("docs_") {
+                println!(
+                    "{}",
+                    md(t!(
+                        "jv.success.docs.list.item",
+                        num = i + 1,
+                        docs_name = doc.trim_start_matches("docs_")
+                    ))
+                );
+                i += 1;
+            }
+        }
+        println!("{}", md(t!("jv.success.docs.list.footer")));
+
+        return;
+    }
+
+    let name = format!("docs_{}", snake_case!(docs_name.clone()));
+    let Some(document) = document(name) else {
+        eprintln!(
+            "{}",
+            md(t!("jv.fail.docs.not_found", docs_name = docs_name)).bright_red()
+        );
+        return;
+    };
+
+    if args.direct {
+        println!("{}", document.trim());
+    } else {
+        let Some(doc_dir) = current_doc_dir() else {
+            eprintln!(
+                "{}",
+                md(t!("jv.fail.docs.no_doc_dir", docs_name = docs_name)).bright_red()
+            );
+            return;
+        };
+        let file = doc_dir.join("DOCS.MD");
+        if let Err(e) = input_with_editor(document, file, "").await {
+            eprintln!(
+                "{}",
+                md(t!(
+                    "jv.fail.docs.open_editor",
+                    err = e,
+                    docs_name = docs_name
+                ))
+                .bright_red()
+            );
+        }
+    }
 }
 
 pub fn handle_err(err: TcpTargetError) {
-    eprintln!("{}", md(t!("jv.fail.from_just_version_control", err = err)))
+    eprintln!(
+        "{}",
+        md(t!("jv.fail.from_just_version_control", err = err)).bright_red()
+    )
 }
 
 async fn connect(upstream: SocketAddr) -> Option<ConnectionInstance> {
@@ -1307,7 +1614,7 @@ async fn connect(upstream: SocketAddr) -> Option<ConnectionInstance> {
         match TcpSocket::new_v4() {
             Ok(socket) => socket,
             Err(_) => {
-                eprintln!("{}", t!("jv.fail.create_socket").trim());
+                eprintln!("{}", t!("jv.fail.create_socket").trim().bright_red());
                 return None;
             }
         }
@@ -1315,7 +1622,7 @@ async fn connect(upstream: SocketAddr) -> Option<ConnectionInstance> {
         match TcpSocket::new_v6() {
             Ok(socket) => socket,
             Err(_) => {
-                eprintln!("{}", t!("jv.fail.create_socket").trim());
+                eprintln!("{}", t!("jv.fail.create_socket").trim().bright_red());
                 return None;
             }
         }
@@ -1323,7 +1630,7 @@ async fn connect(upstream: SocketAddr) -> Option<ConnectionInstance> {
 
     // Connect
     let Ok(stream) = socket.connect(upstream).await else {
-        eprintln!("{}", t!("jv.fail.connection_failed").trim());
+        eprintln!("{}", t!("jv.fail.connection_failed").trim().bright_red());
         return None;
     };
 
@@ -1334,12 +1641,12 @@ async fn connect(upstream: SocketAddr) -> Option<ConnectionInstance> {
 // Returns LocalConfig if valid, None otherwise
 async fn precheck() -> Option<LocalConfig> {
     let Ok(local_config) = LocalConfig::read().await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
         return None;
     };
 
     if !local_config.stained() {
-        eprintln!("{}", md(t!("jv.fail.not_stained")));
+        eprintln!("{}", md(t!("jv.fail.not_stained")).bright_red());
         return None;
     }
 

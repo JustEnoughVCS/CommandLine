@@ -181,6 +181,9 @@ jv:
         remove  <ACCOUNT_NAME>      - Remove account from computer
         movekey <NAME> <KEY_FILE>   - Move private key file to specified account
 
+    **CONTEXT**：
+      here                          - Display path information
+
     **SYNC**:
       update - Download latest information
 
@@ -208,7 +211,7 @@ jv:
 
     You can use jv <COMMAND_NAME> --help to query more detailed help!
 
-    **Tip**: If you need to understand JustEnoughVCS collaboration paradigms, use jv docs get-started
+    **Tip**: If you need to understand JustEnoughVCS collaboration paradigms, use jv docs get_started
 
   account: |
     **Manage Local Accounts**
@@ -359,11 +362,11 @@ jv:
     **Usage**:
     jv docs list - List all available documentation
     jv docs <DOC_NAME> - View content of specified documentation
-    jv docs <DOC_NAME> -e - Return temporary path of specific documentation for editor opening
+    jv docs <DOC_NAME> -d - Print content directly
 
     **Example**:
-    jv docs get-started
-    jv docs collaboration -e | nano
+    jv docs get_started
+    jv docs collaboration -d
 
     Built-in documentation includes JustEnoughVCS usage guides, collaboration paradigms, and best practices.
 
@@ -430,6 +433,15 @@ jv:
       The current workspace is not stained, cannot perform the next operation!
       **Tip**: Please first use `jv direct <upstream_address>` to direct to an upstream vault
 
+    docs:
+      not_found: Doc `%{docs_name}` not found!
+      no_doc_dir: |
+        Cannot find staging directory!
+        **Tip**: You can also use `jv docs %{docs_name} -d` to print directly
+      open_editor: |
+        Failed to open text editor preview: `%{err}!
+        **Tip**: You can also use `jv docs %{docs_name} -d` to print directly
+
   warn:
     unstain: |
       This operation will disconnect the current workspace from the upstream vault `%{upstream}`
@@ -471,6 +483,71 @@ jv:
           You are not on any sheet, you can use `jv use <SHEET_NAME>` to use a sheet
         tip_no_sheet: |
           You don't have any sheets, you can use `jv make <SHEET_NAME>` to create a new sheet
+
+    docs:
+      list:
+        header: |
+          **DOCUMENTS**:
+
+        item: |
+          %{num}. %{docs_name}
+
+        footer: |
+          **Tip**: Use `jv docs <doc_name>` to view doc, use -d for direct output
+
+    here:
+      items:
+        name: FILE_NAME
+        version: VERSION
+        hold: HOLD
+        size: SIZE
+        editing: EDITING
+
+      path_info: |
+        CURRENT: %{upstream}/%{account}/%{sheet_name}/%{path}
+
+      ghost_directory_item_info: |
+        ? %{directory_name}/
+
+      ghost_file_item_info: |
+        ? %{file_name}
+
+      directory_item_info: |
+        %{directory_name}/
+
+      file_item_info: |
+        %{file_name}
+
+      append_info:
+        holder:
+          yourself: |
+            Hold
+
+          others: |
+            `%{holder}` held
+
+        size: |
+          %{size}
+
+        version:
+          unmatch: |
+            %{version} -> %{remote_version}
+
+          match: |
+            %{version}
+
+        editing:
+          cant_edit: |
+            Not allowed
+
+          can_edit: |
+            Allowed
+
+          edited: |
+            Modified
+
+      count_info: |
+        %{dir_count} dir(s), %{file_count} file(s). Total %{size}.
 
   result:
     common:

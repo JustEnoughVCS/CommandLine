@@ -185,6 +185,9 @@ jv:
         make                  - 创建新表以供自己使用
         drop                  - 抛弃表以供他人使用
 
+    **上下文查询**：
+      here                    - 显示当前路径的相关信息
+
     **文件传递**
       import <文件包名称>     - 从导入区导入文件
       import <参照表中目录>   - 从参照表导入文件
@@ -201,7 +204,7 @@ jv:
 
     您可以使用 jv <命令名称> --help 来查询更详细的帮助！
 
-    **提示**：若您需要了解 JustEnoughVCS 的协作范式，请使用 jv docs get-started
+    **提示**：若您需要了解 JustEnoughVCS 的协作范式，请使用 jv docs get_started
 
   account: |
     **管理本地账户**
@@ -366,11 +369,11 @@ jv:
     **用法**：
     jv docs list - 列出所有可用的文档
     jv docs <文档名称> - 查看指定文档的内容
-    jv docs <文档名称> -e - 返回特定文档的临时路径以供编辑器打开
+    jv docs <文档名称> -d - 直接打印内容
 
     **例如**：
-    jv docs get-started
-    jv docs collaboration -e | nano
+    jv docs get_started
+    jv docs collaboration -d
 
     内建文档包含 JustEnoughVCS 的使用指南、协作范式和最佳实践
 
@@ -437,6 +440,15 @@ jv:
       当前工作区并未被染色，无法执行下一步操作！
       **提示**：请先使用 `jv direct <上游地址>` 定向到上游库
 
+    docs:
+      not_found: 文档 `%{docs_name}` 未找到！
+      no_doc_dir: |
+        无法找到暂存目录！
+        **提示**：你也可以使用 `jv docs %{docs_name} -d` 直接打印
+      open_editor: |
+        无法打开文本编辑器预览：`%{err}`！
+        **提示**：你也可以使用 `jv docs %{docs_name} -d` 直接打印
+
   warn:
     unstain: |
       此操作将会断开当前工作区与上游库 `%{upstream}` 的关联
@@ -479,6 +491,71 @@ jv:
         tip_no_sheet: |
           **没有可以编辑的表！**
           您没有任何一张表，可使用 `jv make <表名>` 创建一张新表
+
+    docs:
+      list:
+        header: |
+          你可以查阅以下文档：
+
+        item: |
+          %{num}. %{docs_name}
+
+        footer: |
+          **提示**：使用 `jv docs <文档名称>` 查看文档，使用 -d 直接输出
+
+    here:
+      items:
+        name: 文件名
+        version: 版本状态
+        hold: 持有状态
+        size: 大小
+        editing: 编辑状态
+
+      path_info: |
+        当前：%{upstream}/%{account}/%{sheet_name}/%{path}
+
+      ghost_directory_item_info: |
+        ? %{directory_name}/
+
+      ghost_file_item_info: |
+        ? %{file_name}
+
+      directory_item_info: |
+        %{directory_name}/
+
+      file_item_info: |
+        %{file_name}
+
+      append_info:
+        holder:
+          yourself: |
+            持有
+
+          others: |
+            `%{holder}` 持有
+
+        size: |
+          %{size}
+
+        version:
+          unmatch: |
+            %{version} 至 %{remote_version}
+
+          match: |
+            %{version}
+
+        editing:
+          cant_edit: |
+            不可编辑
+
+          can_edit: |
+            可编辑
+
+          edited: |
+            已修改
+
+      count_info: |
+        %{dir_count} 目录、%{file_count} 文件，共计 %{size}
 
   result:
     common:
