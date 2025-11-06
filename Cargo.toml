@@ -49,8 +49,9 @@ env_logger = "0.11"
 # Async
 tokio = { version = "1", features = ["full"] }
 
-# Color
-colored = "2.0"
+# Display
+colored = "3.0"
+strip-ansi-escapes = "0.2.1"
 
 # i18n
 rust-i18n = "3"
