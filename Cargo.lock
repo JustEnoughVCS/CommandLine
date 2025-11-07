@@ -1626,6 +1626,9 @@ checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 [[package]]
 name = "string_proc"
 version = "0.1.0"
+dependencies = [
+ "strip-ansi-escapes",
+]
 
 [[package]]
 name = "strip-ansi-escapes"
