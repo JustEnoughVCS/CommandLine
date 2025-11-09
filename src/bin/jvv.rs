@@ -189,10 +189,7 @@ async fn main() {
 
     // Init colored
     #[cfg(windows)]
-    if let Err(err) = colored::control::set_virtual_terminal(true) {
-        eprintln!("{}", t!("jvv.fail.colored_control", err = err.to_string()));
-        return;
-    }
+    let _ = colored::control::set_virtual_terminal(true);
 
     let Ok(parser) = JustEnoughVcsVault::try_parse() else {
         println!("{}", md(t!("jvv.help")));
