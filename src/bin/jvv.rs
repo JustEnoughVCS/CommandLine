@@ -18,7 +18,11 @@ use just_enough_vcs::{
 };
 use just_enough_vcs_cli::{
     data::compile_info::CompileInfo,
-    utils::{display::size_str, env::current_locales, logger::build_env_logger, md_colored::md},
+    utils::{
+        display::{md, size_str},
+        env::current_locales,
+        logger::build_env_logger,
+    },
 };
 use log::{error, info};
 use rust_i18n::{set_locale, t};

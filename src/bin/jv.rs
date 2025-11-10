@@ -39,11 +39,10 @@ use just_enough_vcs::{
 use just_enough_vcs_cli::{
     data::compile_info::CompileInfo,
     utils::{
-        display::{SimpleTable, size_str},
+        display::{SimpleTable, md, size_str},
         env::current_locales,
         fs::move_across_partitions,
         input::{confirm_hint, confirm_hint_or, input_with_editor},
-        md_colored::md,
         socket_addr_helper,
     },
 };
