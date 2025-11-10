@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Use JV_LANG to set CLI language
 # Supported: en, zh-CN
-# export JV_LANG = en
+# export JV_LANG=en
 
 ###############
 ### ALIASES ###
