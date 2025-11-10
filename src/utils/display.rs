@@ -1,3 +1,6 @@
+use colored::*;
+use regex::Regex;
+
 pub struct SimpleTable {
     items: Vec<String>,
     line: Vec<Vec<String>>,
@@ -118,6 +121,10 @@ fn display_width(s: &str) -> usize {
     width
 }
 
+/// Convert byte size to a human-readable string format
+///
+/// Automatically selects the appropriate unit (B, KB, MB, GB, TB) based on the byte size
+/// and formats it as a string with two decimal places
 pub fn size_str(total_size: usize) -> String {
     if total_size < 1024 {
         format!("{} B", total_size)
@@ -133,4 +140,23 @@ pub fn size_str(total_size: usize) -> String {
             total_size as f64 / (1024.0 * 1024.0 * 1024.0 * 1024.0)
         )
     }
+}
+
+// Convert the Markdown formatted text into a format supported by the command line
+pub fn md(text: impl AsRef<str>) -> String {
+    let bold_re = Regex::new(r"\*\*(.*?)\*\*").unwrap();
+    let mut result = bold_re
+        .replace_all(text.as_ref().trim(), |caps: &regex::Captures| {
+            format!("{}", caps[1].bold())
+        })
+        .to_string();
+
+    let italic_re = Regex::new(r"\*(.*?)\*").unwrap();
+    result = italic_re
+        .replace_all(&result, |caps: &regex::Captures| {
+            format!("{}", caps[1].italic())
+        })
+        .to_string();
+
+    result
 }
