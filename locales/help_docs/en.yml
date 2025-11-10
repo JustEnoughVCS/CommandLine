@@ -155,6 +155,22 @@ jv:
         Target       - %{build_target}
         Platform     - %{build_platform} - %{build_toolchain}
 
+  tip:
+    not_workspace: |
+      Not in workspace directory.
+      Use `jv create <name>` or `jv init` to create workspace
+
+    no_account: |
+      No accounts registered on this computer.
+      Use `jv account add <account_name>` to create account
+
+    no_account_set: |
+      Current workspace account is `unknown`, meaning no account is set
+      Use `jv as <account_name>` to set account for workspace
+
+    account_not_exist: |
+      The account `%{account}` set for the current workspace is not registered on your computer
+
   help: |
     **JustEnoughVCS**
     This program connects to upstream vaults to synchronize and commit changes to local workspace files for collaborative work.

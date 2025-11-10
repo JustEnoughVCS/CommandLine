@@ -40,8 +40,9 @@ use just_enough_vcs_cli::{
     data::compile_info::CompileInfo,
     utils::{
         display::{SimpleTable, size_str},
+        env::current_locales,
+        fs::move_across_partitions,
         input::{confirm_hint, confirm_hint_or, input_with_editor},
-        lang_selector::current_locales,
         md_colored::md,
         socket_addr_helper,
     },
@@ -470,6 +471,58 @@ async fn main() {
 
     let Ok(parser) = JustEnoughVcsWorkspace::try_parse() else {
         eprintln!("{}", md(t!("jv.fail.parse.parser_failed")).bright_red());
+
+        // Tips
+        // Guide to create
+        {
+            // Check if workspace exist
+            let Some(_local_dir) = current_local_path() else {
+                println!();
+                println!("{}", t!("jv.tip.not_workspace").trim().bright_yellow());
+                return;
+            };
+
+            // Check if account list is not empty
+            let Some(dir) = UserDirectory::current_doc_dir() else {
+                return;
+            };
+
+            if let Ok(ids) = dir.account_ids() {
+                if ids.len() < 1 {
+                    println!();
+                    println!("{}", t!("jv.tip.no_account").trim().bright_yellow());
+                    return;
+                }
+            }
+
+            // Check if the workspace has a registered account (account = unknown)
+            if let Some(local_cfg) = LocalConfig::read().await.ok() {
+                if local_cfg.current_account() == "unknown" {
+                    println!();
+                    println!("{}", t!("jv.tip.no_account_set").trim().bright_yellow());
+                } else {
+                    if dir
+                        .account_ids()
+                        .ok()
+                        .map(|ids| !ids.contains(&local_cfg.current_account()))
+                        .unwrap_or(false)
+                    {
+                        println!();
+                        println!(
+                            "{}",
+                            t!(
+                                "jv.tip.account_not_exist",
+                                account = local_cfg.current_account()
+                            )
+                            .trim()
+                            .bright_yellow()
+                        );
+                        return;
+                    }
+                }
+            }
+        }
+
         return;
     };
 
@@ -1371,7 +1424,7 @@ async fn jv_account_move_key(user_dir: UserDirectory, args: MoveKeyToAccountArgs
     };
 
     // Rename key file
-    match fs::rename(
+    match move_across_partitions(
         args.key_path,
         user_dir.account_private_key_path(&args.account_name),
     )

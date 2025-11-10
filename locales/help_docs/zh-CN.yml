@@ -149,6 +149,20 @@ jv:
         目标：%{build_target}
         平台：%{build_platform} - %{build_toolchain}
 
+  tip:
+    not_workspace: |
+      当前不在工作区目录，您可使用 `jv create <名称>` 或 `jv init` 创建工作区
+
+    no_account: |
+      您的计算机没有任何账户注册，可使用 `jv account add <账户名称>` 以创建账户
+
+    no_account_set: |
+      当前工作区的账户为 `unknown`，这意味着您并未设置账户
+      使用 `jv as <账户名称>` 来为工作区指定账户
+
+    account_not_exist: |
+      当前工作区设置的账户 `%{account}` 并未注册至您的计算机
+
   help: |
     **JustEnoughVCS 本地工作区命令**
     该程序将连接至上游库，用以同步、提交本地工作区文件的变化，以供协同创作
