@@ -3,5 +3,4 @@ pub mod env;
 pub mod fs;
 pub mod input;
 pub mod logger;
-pub mod md_colored;
 pub mod socket_addr_helper;
