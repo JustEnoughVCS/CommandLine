@@ -2,6 +2,7 @@ use std::path::Path;
 
 use colored::Colorize;
 use env_logger::{Builder, Target};
+use just_enough_vcs::utils::string_proc::format_path::format_path;
 use log::{Level, LevelFilter};
 
 pub fn build_env_logger(log_path: impl AsRef<Path>) {
@@ -29,6 +30,18 @@ pub fn build_env_logger(log_path: impl AsRef<Path>) {
             self.b.flush()
         }
     }
+
+    let log_path = {
+        let path = log_path.as_ref();
+        let Ok(path) = format_path(path) else {
+            eprintln!(
+                "Build logger failed: {} is not a vaild path.",
+                path.display()
+            );
+            return;
+        };
+        path
+    };
 
     let mut builder = Builder::new();
 
