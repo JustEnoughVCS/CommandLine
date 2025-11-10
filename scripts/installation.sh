@@ -13,12 +13,30 @@ fi
 echo "Installation directory set to current directory: $(pwd)"
 install_dir="$(pwd)"
 
-# Clone repos
-echo "Cloning repositories..."
+# Clone or update repos
+echo "Cloning or updating repositories..."
 mkdir -p "$install_dir"
 cd "$install_dir"
-git clone https://github.com/JustEnoughVCS/CommandLine
-git clone https://github.com/JustEnoughVCS/VersionControl
+
+# Function to clone or pull repository
+clone_or_pull() {
+    local repo_url="$1"
+    local repo_name=$(basename "$repo_url")
+
+    if [ -d "$repo_name" ]; then
+        echo "Repository $repo_name already exists, pulling latest changes..."
+        cd "$repo_name"
+        git pull origin main
+        cd ..
+    else
+        echo "Cloning $repo_name..."
+        git clone "$repo_url"
+    fi
+}
+
+# Clone or update repositories
+clone_or_pull https://github.com/JustEnoughVCS/CommandLine
+clone_or_pull https://github.com/JustEnoughVCS/VersionControl
 
 # Setup VersionControl repo
 echo "Setting up VersionControl..."
