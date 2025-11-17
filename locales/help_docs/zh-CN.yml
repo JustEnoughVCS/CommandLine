@@ -661,13 +661,17 @@ jv:
         -   丢失：      %{path}
 
       moved_item: |
-        >   移动：      %{from} -> %{to}
+        >   移动：      %{from} 至 %{to}
 
       modified_item: |
         *   修改：      %{path}
 
       invalid_modified_item: |
-        *   修改：      %{path} (无法提交的修改)
+        *   修改：      %{path}（%{reason}）
+
+      invalid_modified_reasons:
+        not_holder: 不持有但被修改
+        base_version_mismatch: 基于的编辑版本不匹配
 
       no_structure_changes: |
         无文件结构变更

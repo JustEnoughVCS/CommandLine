@@ -659,7 +659,11 @@ jv:
         *  Modified:      %{path}
 
       invalid_modified_item: |
-        *  Modified:      %{path} (INVALID)
+        *  Modified:      %{path} (%{reason})
+
+      invalid_modified_reasons:
+        not_holder: Modified without holding
+        base_version_mismatch: Base version mismatch for editing
 
       no_structure_changes: |
         No structural changes locally
