@@ -9,27 +9,40 @@ use just_enough_vcs::{
     vcs::{
         actions::{
             local_actions::{
-                SetUpstreamVaultActionResult, UpdateToLatestInfoResult,
+                SetUpstreamVaultActionResult, SyncCachedSheetFailReason, UpdateToLatestInfoResult,
                 proc_update_to_latest_info_action,
             },
             sheet_actions::{
                 DropSheetActionResult, MakeSheetActionResult, proc_drop_sheet_action,
                 proc_make_sheet_action,
             },
+            virtual_file_actions::{
+                CreateTaskResult, TrackFileActionArguments, TrackFileActionResult,
+                proc_track_file_action,
+            },
         },
         constants::{
-            CLIENT_FILE_LATEST_INFO, CLIENT_FILE_WORKSPACE, CLIENT_FOLDER_WORKSPACE_ROOT_NAME, PORT,
+            CLIENT_FILE_LATEST_INFO, CLIENT_FILE_WORKSPACE, CLIENT_FOLDER_WORKSPACE_ROOT_NAME,
+            PORT, REF_SHEET_NAME,
         },
         current::{current_doc_dir, current_local_path},
         data::{
-            local::{LocalWorkspace, config::LocalConfig, latest_info::LatestInfo},
+            local::{
+                LocalWorkspace, config::LocalConfig, file_status::AnalyzeResult,
+                latest_info::LatestInfo, local_files::get_relative_paths, member_held::MemberHeld,
+            },
             member::Member,
             user::UserDirectory,
         },
-        docs::{document, documents},
+        docs::{ASCII_YIZI, document, documents},
     },
 };
-use std::{env::current_dir, net::SocketAddr, path::PathBuf, process::exit};
+use std::{
+    env::{current_dir, set_current_dir},
+    net::SocketAddr,
+    path::PathBuf,
+    process::exit,
+};
 
 use clap::{Parser, Subcommand, arg, command};
 use just_enough_vcs::{
@@ -44,10 +57,11 @@ use just_enough_vcs_cli::{
         fs::move_across_partitions,
         input::{confirm_hint, confirm_hint_or, input_with_editor},
         socket_addr_helper,
+        sort::quick_sort_with_cmp,
     },
 };
 use rust_i18n::{set_locale, t};
-use tokio::{fs, net::TcpSocket};
+use tokio::{fs, net::TcpSocket, time::Instant};
 
 // Import i18n files
 rust_i18n::i18n!("locales", fallback = "en");
@@ -89,6 +103,10 @@ enum JustEnoughVcsWorkspaceCommand {
     /// Get workspace information in the current directory
     #[command(alias = "h")]
     Here(HereArgs),
+
+    /// Display current sheet status information
+    #[command(alias = "s")]
+    Status(StatusArgs),
 
     // Sheet management
     /// Manage sheets in the workspace
@@ -164,6 +182,9 @@ enum JustEnoughVcsWorkspaceCommand {
 struct VersionArgs {
     #[arg(short = 'C', long = "compile-info")]
     compile_info: bool,
+
+    #[arg(long)]
+    without_banner: bool,
 }
 
 #[derive(Subcommand, Debug)]
@@ -309,6 +330,13 @@ struct HereArgs {
 }
 
 #[derive(Parser, Debug)]
+struct StatusArgs {
+    /// Show help information
+    #[arg(short, long)]
+    help: bool,
+}
+
+#[derive(Parser, Debug)]
 struct AccountAddArgs {
     /// Show help information
     #[arg(short, long)]
@@ -367,6 +395,17 @@ struct TrackFileArgs {
     /// Show help information
     #[arg(short, long)]
     help: bool,
+
+    /// Track files
+    track_files: Option<Vec<PathBuf>>,
+
+    /// Commit - Editor mode
+    #[arg(short, long)]
+    work: bool,
+
+    /// Commit - Text mode
+    #[arg(short, long)]
+    msg: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -475,7 +514,7 @@ async fn main() {
         // Guide to create
         {
             // Check if workspace exist
-            let Some(_local_dir) = current_local_path() else {
+            let Some(local_dir) = current_local_path() else {
                 println!();
                 println!("{}", t!("jv.tip.not_workspace").trim().bright_yellow());
                 return;
@@ -520,6 +559,29 @@ async fn main() {
                     }
                 }
             }
+
+            // Outdated
+            let Ok(latest_info) =
+                LatestInfo::read_from(local_dir.join(CLIENT_FILE_LATEST_INFO)).await
+            else {
+                return;
+            };
+            if let Some(instant) = latest_info.update_instant {
+                let now = Instant::now();
+                let duration = now.duration_since(instant);
+                if duration.as_secs() > 60 * 15 {
+                    // More than 15 minutes
+                    let hours = duration.as_secs() / 3600;
+                    let minutes = (duration.as_secs() % 3600) / 60;
+                    println!();
+                    println!(
+                        "{}",
+                        t!("jv.tip.outdated", hour = hours, minutes = minutes)
+                            .trim()
+                            .bright_yellow()
+                    );
+                }
+            }
         }
 
         return;
@@ -528,10 +590,41 @@ async fn main() {
     match parser.command {
         JustEnoughVcsWorkspaceCommand::Version(version_args) => {
             let compile_info = CompileInfo::default();
-            println!(
-                "{}",
-                md(t!("jv.version.header", version = compile_info.cli_version))
-            );
+            if version_args.without_banner {
+                println!(
+                    "{}",
+                    md(t!("jv.version.header", version = compile_info.cli_version))
+                );
+            } else {
+                println!();
+                let ascii_art_banner = ASCII_YIZI
+                    .split('\n')
+                    .skip_while(|line| !line.contains("#BANNER START#"))
+                    .skip(1)
+                    .take_while(|line| !line.contains("#BANNER END#"))
+                    .collect::<Vec<&str>>()
+                    .join("\n");
+
+                println!(
+                    "{}",
+                    ascii_art_banner
+                        .replace("{banner_line_1}", "JustEnoughVCS")
+                        .replace(
+                            "{banner_line_2}",
+                            &format!(
+                                "{}: {} ({})",
+                                t!("common.word.version"),
+                                &compile_info.cli_version,
+                                &compile_info.date
+                            )
+                        )
+                        .replace("{banner_line_3}", "")
+                );
+
+                if !version_args.compile_info {
+                    println!();
+                }
+            }
 
             if version_args.compile_info {
                 println!(
@@ -621,6 +714,13 @@ async fn main() {
                 return;
             }
             jv_here(here_args).await;
+        }
+        JustEnoughVcsWorkspaceCommand::Status(status_args) => {
+            if status_args.help {
+                println!("{}", md(t!("jv.status")));
+                return;
+            }
+            jv_status(status_args).await;
         }
         JustEnoughVcsWorkspaceCommand::Sheet(sheet_manage) => match sheet_manage {
             SheetManage::Help => {
@@ -829,7 +929,7 @@ async fn jv_here(_args: HereArgs) {
         return;
     };
 
-    let Ok(_latest_info) = LatestInfo::read_from(local_dir.join(CLIENT_FILE_LATEST_INFO)).await
+    let Ok(latest_info) = LatestInfo::read_from(local_dir.join(CLIENT_FILE_LATEST_INFO)).await
     else {
         eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
         return;
@@ -868,6 +968,10 @@ async fn jv_here(_args: HereArgs) {
         Err(_) => path.display().to_string(),
     };
 
+    let duration_updated =
+        Instant::now().duration_since(latest_info.update_instant.unwrap_or(Instant::now()));
+    let minutes = duration_updated.as_secs() / 60;
+
     println!(
         "{}",
         t!(
@@ -875,7 +979,8 @@ async fn jv_here(_args: HereArgs) {
             upstream = local_cfg.upstream_addr().to_string().bright_cyan(),
             account = local_cfg.current_account().bright_green(),
             sheet_name = sheet_name.bright_yellow(),
-            path = relative_path
+            path = relative_path,
+            minutes = minutes
         )
         .trim()
     );
@@ -950,6 +1055,208 @@ async fn jv_here(_args: HereArgs) {
             file_count = file_count,
             size = size_str(total_size as usize)
         )
+        .trim()
+    );
+}
+
+async fn jv_status(_args: StatusArgs) {
+    let Some(local_dir) = current_local_path() else {
+        eprintln!(
+            "{}",
+            md(t!("jv.fail.workspace_not_found")).trim().bright_red()
+        );
+        return;
+    };
+
+    let Ok(local_cfg) = LocalConfig::read_from(local_dir.join(CLIENT_FILE_WORKSPACE)).await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
+        return;
+    };
+
+    let account = local_cfg.current_account();
+
+    let Ok(member_held_path) = MemberHeld::held_file_path(&account) else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
+        return;
+    };
+
+    let Ok(member_held) = MemberHeld::read_from(&member_held_path).await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
+        return;
+    };
+
+    let Some(sheet_name) = local_cfg.sheet_in_use().clone() else {
+        eprintln!(
+            "{}",
+            md(t!("jv.fail.status.no_sheet_in_use")).trim().bright_red()
+        );
+        return;
+    };
+
+    let Some(local_workspace) = LocalWorkspace::init_current_dir(local_cfg) else {
+        eprintln!(
+            "{}",
+            md(t!("jv.fail.workspace_not_found")).trim().bright_red()
+        );
+        return;
+    };
+
+    let Ok(local_sheet) = local_workspace.local_sheet(&account, &sheet_name).await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
+        return;
+    };
+
+    let Ok(analyzed) = AnalyzeResult::analyze_local_status(&local_workspace).await else {
+        eprintln!("{}", md(t!("jv.fail.status.analyze")).trim().bright_red());
+        return;
+    };
+
+    println!(
+        "{}",
+        t!("jv.success.status.header", sheet_name = sheet_name)
+    );
+
+    // Format created items
+    let mut created_items: Vec<String> = analyzed
+        .created
+        .iter()
+        .map(|path| {
+            t!(
+                "jv.success.status.created_item",
+                path = path.display().to_string()
+            )
+            .trim()
+            .bright_green()
+            .to_string()
+        })
+        .collect();
+
+    // Format lost items
+    let mut lost_items: Vec<String> = analyzed
+        .lost
+        .iter()
+        .map(|path| {
+            t!(
+                "jv.success.status.lost_item",
+                path = path.display().to_string()
+            )
+            .trim()
+            .bright_red()
+            .to_string()
+        })
+        .collect();
+
+    // Format moved items
+    let mut moved_items: Vec<String> = analyzed
+        .moved
+        .iter()
+        .map(|(_, (from, to))| {
+            t!(
+                "jv.success.status.moved_item",
+                from = from.display(),
+                to = to.display()
+            )
+            .trim()
+            .bright_yellow()
+            .to_string()
+        })
+        .collect();
+
+    // Format modified items
+    let mut modified_items: Vec<String> = analyzed
+        .modified
+        .iter()
+        .map(|path| {
+            let is_invalid_modify = {
+                if let Ok(mapping) = local_sheet.mapping_data(path) {
+                    let vfid = mapping.mapping_vfid();
+                    match member_held.file_holder(vfid) {
+                        Some(holder) => holder == &account,
+                        None => false,
+                    }
+                } else {
+                    false
+                }
+            };
+            if !is_invalid_modify {
+                t!(
+                    "jv.success.status.invalid_modified_item",
+                    path = path.display().to_string()
+                )
+                .trim()
+                .bright_red()
+                .to_string()
+            } else {
+                t!(
+                    "jv.success.status.modified_item",
+                    path = path.display().to_string()
+                )
+                .trim()
+                .bright_cyan()
+                .to_string()
+            }
+        })
+        .collect();
+
+    let has_struct_changes =
+        !created_items.is_empty() || !lost_items.is_empty() || !moved_items.is_empty();
+    let has_file_modifications = !modified_items.is_empty();
+
+    if has_struct_changes {
+        sort_paths(&mut created_items);
+        sort_paths(&mut lost_items);
+        sort_paths(&mut moved_items);
+    }
+    if has_file_modifications {
+        sort_paths(&mut modified_items);
+    }
+
+    println!(
+        "{}",
+        md(t!(
+            "jv.success.status.content",
+            moved_items = if has_struct_changes {
+                if moved_items.is_empty() {
+                    "".to_string()
+                } else {
+                    moved_items.join("\n") + "\n"
+                }
+            } else {
+                t!("jv.success.status.no_structure_changes")
+                    .trim()
+                    .to_string()
+                    + "\n"
+            },
+            lost_items = if has_struct_changes {
+                if lost_items.is_empty() {
+                    "".to_string()
+                } else {
+                    lost_items.join("\n") + "\n"
+                }
+            } else {
+                "".to_string()
+            },
+            created_items = if has_struct_changes {
+                if created_items.is_empty() {
+                    "".to_string()
+                } else {
+                    created_items.join("\n") + "\n"
+                }
+            } else {
+                "".to_string()
+            },
+            modified_items = if has_file_modifications {
+                if modified_items.is_empty() {
+                    "".to_string()
+                } else {
+                    modified_items.join("\n") + "\n"
+                }
+            } else {
+                t!("jv.success.status.no_file_modifications")
+                    .trim()
+                    .to_string()
+            }
+        ))
         .trim()
     );
 }
@@ -1116,6 +1423,16 @@ async fn jv_sheet_exit(_args: SheetExitArgs) {
 async fn jv_sheet_make(args: SheetMakeArgs) {
     let sheet_name = snake_case!(args.sheet_name);
 
+    if sheet_name == REF_SHEET_NAME {
+        eprintln!(
+            "{}",
+            t!("jv.confirm.sheet.make.restore_ref")
+                .trim()
+                .bright_yellow()
+        );
+        return;
+    }
+
     let local_config = match precheck().await {
         Some(config) => config,
         None => return,
@@ -1270,8 +1587,110 @@ async fn jv_sheet_drop(args: SheetDropArgs) {
     }
 }
 
-async fn jv_track(_args: TrackFileArgs) {
-    todo!()
+async fn jv_track(args: TrackFileArgs) {
+    let Some(track_files) = args.track_files else {
+        println!("{}", md(t!("jv.track")));
+        return;
+    };
+
+    let local_config = match precheck().await {
+        Some(config) => config,
+        None => {
+            return;
+        }
+    };
+
+    let Some(local_dir) = current_local_path() else {
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim().bright_red());
+        return;
+    };
+
+    let Some(files) = get_relative_paths(local_dir, track_files).await else {
+        eprintln!(
+            "{}",
+            md(t!("jv.fail.track.parse_fail", param = "track_files")).bright_red()
+        );
+        return;
+    };
+
+    if files.iter().len() < 1 {
+        eprintln!("{}", md(t!("jv.fail.track.no_selection")).bright_red());
+        return;
+    };
+
+    let (pool, ctx) = match build_pool_and_ctx(&local_config).await {
+        Some(result) => result,
+        None => return,
+    };
+
+    match proc_track_file_action(
+        &pool,
+        ctx,
+        TrackFileActionArguments {
+            relative_pathes: files.iter().cloned().collect(),
+            display_progressbar: true,
+        },
+    )
+    .await
+    {
+        Ok(result) => match result {
+            TrackFileActionResult::Done {
+                created,
+                updated,
+                synced,
+            } => {
+                println!(
+                    "{}",
+                    md(t!(
+                        "jv.result.track.done",
+                        count = created.len() + updated.len() + synced.len(),
+                        created = created.len(),
+                        updated = updated.len(),
+                        synced = synced.len()
+                    ))
+                );
+            }
+            TrackFileActionResult::AuthorizeFailed(e) => {
+                eprintln!(
+                    "{}",
+                    md(t!("jv.result.common.authroize_failed", err = e)).bright_red()
+                )
+            }
+            TrackFileActionResult::StructureChangesNotSolved => {
+                eprintln!(
+                    "{}",
+                    md(t!("jv.result.track.structure_changes_not_solved")).bright_red()
+                )
+            }
+            TrackFileActionResult::CreateTaskFailed(create_task_result) => match create_task_result
+            {
+                CreateTaskResult::Success(_) => {} // Success is not handled here
+                CreateTaskResult::CreateFileOnExistPath(path) => {
+                    eprintln!(
+                        "{}",
+                        md(t!(
+                            "jv.result.track.create_failed.create_file_on_exist_path",
+                            path = path.display()
+                        ))
+                        .bright_red()
+                    )
+                }
+                CreateTaskResult::SheetNotFound(sheet) => {
+                    eprintln!(
+                        "{}",
+                        md(t!(
+                            "jv.result.track.create_failed.sheet_not_found",
+                            name = sheet
+                        ))
+                        .bright_red()
+                    )
+                }
+            },
+            TrackFileActionResult::UpdateTaskFailed(update_task_result) => todo!(),
+            TrackFileActionResult::SyncTaskFailed(sync_task_result) => todo!(),
+        },
+        Err(e) => handle_err(e),
+    }
 }
 
 async fn jv_hold(_args: HoldFileArgs) {
@@ -1457,6 +1876,20 @@ async fn jv_update(_update_file_args: UpdateArgs) {
                     md(t!("jv.result.common.authroize_failed", err = e)).bright_red()
                 )
             }
+            UpdateToLatestInfoResult::SyncCachedSheetFail(sync_cached_sheet_fail_reason) => {
+                match sync_cached_sheet_fail_reason {
+                    SyncCachedSheetFailReason::PathAlreadyExist(path_buf) => {
+                        eprintln!(
+                            "{}",
+                            md(t!(
+                                "jv.result.update.fail.sync_cached_sheet_fail.path_already_exist",
+                                path = path_buf.display()
+                            ))
+                            .bright_red()
+                        );
+                    }
+                }
+            }
         },
     }
 }
@@ -1564,7 +1997,7 @@ async fn jv_unstain(args: UnstainArgs) {
     if !args.confirm {
         println!(
             "{}",
-            md(t!("jv.warn.unstain", upstream = local_cfg.vault_addr())).bright_yellow()
+            md(t!("jv.confirm.unstain", upstream = local_cfg.vault_addr())).bright_yellow()
         );
         confirm_hint_or(t!("common.confirm"), || exit(1)).await;
     }
@@ -1654,10 +2087,7 @@ async fn jv_docs(args: DocsArgs) {
 }
 
 pub fn handle_err(err: TcpTargetError) {
-    eprintln!(
-        "{}",
-        md(t!("jv.fail.from_just_version_control", err = err)).bright_red()
-    )
+    eprintln!("{}", md(t!("jv.fail.from_core", err = err)).bright_red())
 }
 
 async fn connect(upstream: SocketAddr) -> Option<ConnectionInstance> {
@@ -1692,6 +2122,24 @@ async fn connect(upstream: SocketAddr) -> Option<ConnectionInstance> {
 // Check if the workspace is stained and has a valid configuration
 // Returns LocalConfig if valid, None otherwise
 async fn precheck() -> Option<LocalConfig> {
+    let Some(local_dir) = current_local_path() else {
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim().bright_red());
+        return None;
+    };
+
+    if let Err(e) = set_current_dir(&local_dir) {
+        eprintln!(
+            "{}",
+            t!(
+                "jv.fail.std.set_current_dir",
+                dir = local_dir.display(),
+                error = e
+            )
+            .bright_red()
+        );
+        return None;
+    }
+
     let Ok(local_config) = LocalConfig::read().await else {
         eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
         return None;
@@ -1715,4 +2163,20 @@ async fn build_pool_and_ctx(local_config: &LocalConfig) -> Option<(ActionPool, A
 
     let ctx = ActionContext::local().insert_instance(instance);
     Some((pool, ctx))
+}
+
+/// Sort paths in a vector of strings.
+/// Paths are strings with structure A/B/C/D/E.
+/// Paths with deeper levels (more '/' segments) are sorted first, followed by paths with shallower levels.
+/// Within the same level, paths are sorted based on the first letter or digit encountered, with the order A-Z > a-z > 0-9.
+fn sort_paths(paths: &mut Vec<String>) {
+    quick_sort_with_cmp(paths, false, |a, b| {
+        let depth_a = a.matches('/').count();
+        let depth_b = b.matches('/').count();
+
+        if depth_a != depth_b {
+            return if depth_a > depth_b { -1 } else { 1 };
+        }
+        a.cmp(b) as i32
+    });
 }

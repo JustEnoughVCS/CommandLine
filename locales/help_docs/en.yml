@@ -259,8 +259,8 @@ jv:
 
     **Align struct**：
     jv sheet align --list - View all items that need alignment
-    jv sheet align <ALIGN_TASK> [local/remote] - Choose based on local or remote location
     jv sheet align [local/remote] - All based on local or remote location
+    jv sheet align <ALIGN_TASK> [local/remote] - Choose based on local or remote location
     jv sheet align - Manually specify alignment method
 
     Sheets are core concepts in JustEnoughVCS, each sheet represents an independent file collection.
