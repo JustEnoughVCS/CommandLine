@@ -2,6 +2,9 @@ common:
   confirm: |
     是否执行上述操作？（Y/n）：
 
+  word:
+    version: 版本
+
 jvv:
   version:
     header: |
@@ -163,20 +166,21 @@ jv:
     account_not_exist: |
       当前工作区设置的账户 `%{account}` 并未注册至您的计算机
 
+    outdated: |
+      工作区内信息已经 %{hour} 小时 %{minutes} 分钟没有更新了
+      请使用 `jv u` 拿到最新信息
+
   help: |
     **JustEnoughVCS 本地工作区命令**
     该程序将连接至上游库，用以同步、提交本地工作区文件的变化，以供协同创作
 
     **常用别名**：
-      jv u 下载最新信息，jv t 追踪文件，jv mv -a 自动移动文件，jv in/out 导入或导出文件
-
-    **工作区**：
-      create <名称>           - 创建工作区
-      init                    - 当前目录创建工作区
+      jv u 下载最新信息，jv t 追踪文件，jv a 对齐文件结构到表，jv in/out 导入或导出文件
 
     **上游库**：
-      direct <上游地址>       - 定向到工作区到上游库
+      direct <上游地址>       - 定向到工作区到上游库            [远程]
       unstain                 - 祛色工作区，清除关联
+      update                  - 同步最新的信息                  [远程]
 
     **账户**：
       account [list|as|add|remove|movekey]
@@ -188,31 +192,32 @@ jv:
 
         movekey <账户> <私钥> - 移动私钥文件到指定账户
 
-    **信息同步**：
-      update                  - 下载最新的信息
-
     **表操作**：
-      sheet [list|use|exit|make|drop]
+      sheet [list|use|exit|make|drop|align]
         list                  - 列出所有表
         use                   - 使用表，并开始工作
         exit                  - 退出表，清除当前修改
-        make                  - 创建新表以供自己使用
-        drop                  - 抛弃表以供他人使用
+        make                  - 创建新表以供自己使用            [远程]
+        drop                  - 抛弃表以供他人使用              [远程]
+        align                 - 对齐文件结构到表                [远程]
 
     **上下文查询**：
       here                    - 显示当前路径的相关信息
+      status                  - 显示当前表的状态信息
 
-    **文件传递**
-      import <文件包名称>     - 从导入区导入文件
-      import <参照表中目录>   - 从参照表导入文件
-      export <文件> <表名称>  - 导出文件到其他表
+    **文件传递**：
+      import <文件包名称>     - 从导入区导入文件                [远程]
+      import <参照表中目录>   - 从参照表导入文件                [远程]
+      export <文件> <表名称>  - 导出文件到其他表                [远程]
 
-    **文件操作**
-      move <文件> <到>        - 安全地重命名文件
-      move auto               - 自动处理本地文件的移动或重命名
-      track <文件>            - 追踪、上传文件到上游库
+    **文件操作**：
+      move  <文件> <到>       - 安全地重命名文件
+      move auto-align         - 将表中记录的映射对齐到实际结构
+      track <文件>            - 跟踪文件内容到最新版本          [远程]
+      hold  <文件>            - 拿取文件，同步版本并获得编辑权  [远程]
+      throw <文件>            - 丢弃文件，同步版本并放弃编辑权  [远程]
 
-    **内建文档**
+    **内建文档**：
       docs list               - 列出所有可用的文档
       docs <文档名称>         - 查看指定文档的内容
 
@@ -243,6 +248,12 @@ jv:
 
     jv sheet make <表名称> - 为自己创建一张新的表
     jv sheet drop <表名称> - 将表抛弃，以供其他人使用
+
+    **对齐**：
+    jv sheet align --list - 查看所有需要对齐的项目
+    jv sheet align [local/remote] - 全部基于本地位置或远程位置
+    jv sheet align <对齐任务> [local/remote] - 选择基于本地位置或远程位置
+    jv sheet align - 手动指定对齐方式
 
     表是 JustEnoughVCS 中的核心概念，每个表代表一块独立的文件集合
     您可以在不同的表之间切换工作，或者将文件从一张表导出到另一张表
@@ -279,15 +290,28 @@ jv:
     这是了解当前工作区目录状态的快速方式
 
 
+  status: |
+    **显示当前表的状态信息**
+    **用法**：jv status
+
+    显示当前表的文件修改状态：
+    - 新增、删除的文件
+    - 移动的文件
+    - 修改的文件
+
+    这是了解当前表文件状态的快速方式
+
+
   track: |
-    **追踪本地的文件**
+    **追踪或拉取文件**
     **用法**：jv track <文件路径>
 
     **例如**：jv track src/main.rs
-    第一次追踪文件时，会创建并上传 “第一版本”，然后自动持有该文件的编辑权
-    后续追踪同一文件时，会更新文件的新版本
+    追踪新文件时，会创建并上传 “第一版本”，然后自动持有该文件的编辑权
+    追踪 *已持有* 文件时会上传新版本到上游库，以更新至最新版本。
+    追踪 *未持有* 或 *不存在* 的远程文件时，会下载或更新本地文件版本至最新
 
-    追踪文件是版本控制的基础操作，确保您的更改能够同步到上游库
+    追踪文件是版本控制的基础操作，确保您的上游和本地文件时刻都是最新的
 
 
   hold: |
@@ -316,12 +340,10 @@ jv:
     **移动本地文件**
     **用法**：
     jv move <源文件> <目标位置> - 安全地重命名或移动文件
-    jv move auto - 自动处理本地文件的移动或重命名
 
     **例如**：
     jv move old_name.txt new_name.txt
     jv move src/old_dir/file.rs src/new_dir/file.rs
-    jv move auto
 
     安全移动操作会保持文件的版本历史，而自动移动会检测并处理所有重命名
 
@@ -392,6 +414,10 @@ jv:
     内建文档包含 JustEnoughVCS 的使用指南、协作范式和最佳实践
 
   confirm:
+    unstain: |
+      此操作将会断开当前工作区与上游库 `%{upstream}` 的关联
+      若重新连接至标识不匹配的库，会导致严重的问题，请谨慎操作！
+
     direct: |
       是否需要将当前本地工作区定向到上游库 %{upstream}？
 
@@ -401,10 +427,37 @@ jv:
           似乎 `%{sheet_name}` 是一张无人认领的表，是否拿到它的所有权？
           如果您不想拿到该表，请使用别的名称建立表
 
+        restore_ref: |
+          您不能直接拿到参照表，它是团队的公共结构 :)
+
       drop: |
         是否要放弃表 `%{sheet_name}` 的所有权，此后，您将无法在表中工作！
 
+    track:
+      prepare: |
+        您正在准备跟踪 %{file_counts} 个文件的变更，这些文件将遵循如下规则：
+        1. 新文件，将被上传并加入您的表中管理
+        2. 已持有文件，除非本地不存在或版本不匹配，否则永远执行上传操作
+        3. 未持有文件，除非冻结版本，否则永远执行下载和更新最新版本
+
+        **当前**：
+        **下行**：%{old_files} 个待更新，%{download_files} 个待下载
+        **上行**：%{new_files} 个待跟踪，%{modified_files} 个待提交
+
+      need_upload: |
+        因为您指定的追踪操作涉及上传，所以需要详细说明您的更改
+        准备好提交了么？使用 `jv track <待上传文件> --work` 开始填写提交信息
+        不想使用命令行编辑器？使用 `jv track <待上传文件> --msg <本次修改信息>` 直接提交
+
   fail:
+    std:
+      current_dir: 无法获得当前目录
+      current_dir_name: 无法获得当前目录的名称
+      set_current_dir: 无法设置到目录 %{dir}
+
+    format_path: |
+      格式化目录 %{path} 失败：%{error}.
+
     path_not_found: |
       您给出的目录 `%{path}` 无法找到！
 
@@ -417,7 +470,7 @@ jv:
         错误：%{err}
         无法将 *`%{str}`* 识别为有效地址，请检查您的输入！
 
-    from_just_version_control: |
+    from_core: |
       **错误**：`%{err}`（该错误来自核心调用）
 
     account:
@@ -458,15 +511,29 @@ jv:
       not_found: 文档 `%{docs_name}` 未找到！
       no_doc_dir: |
         无法找到暂存目录！
-        **提示**：你也可以使用 `jv docs %{docs_name} -d` 直接打印
+        **提示**：您也可以使用 `jv docs %{docs_name} -d` 直接打印
       open_editor: |
         无法打开文本编辑器预览：`%{err}`！
-        **提示**：你也可以使用 `jv docs %{docs_name} -d` 直接打印
+        **提示**：您也可以使用 `jv docs %{docs_name} -d` 直接打印
 
-  warn:
-    unstain: |
-      此操作将会断开当前工作区与上游库 `%{upstream}` 的关联
-      若重新连接至标识不匹配的库，会导致严重的问题，请谨慎操作！
+    track:
+      no_selection: |
+        您未在此次操作中选中任何文件！
+
+        **提示**：如果您输入了内容依旧如此，
+        可能因为您传入的目录在工作区目录以外，工作区之外的路径会被忽略
+
+      parse_fail: |
+        解析传入的参数 `%{param}` 失败！
+        **提示**：请确保您输入的参数格式正确
+
+    status:
+      no_sheet_in_use: |
+        您并没有使用任何一张表！无法在此状态分析工作区状态
+        **提示**：您可以使用 `jv use <表名>` 选择并使用一张表
+
+      analyze: |
+        分析本地工作区的状态失败！
 
   success:
     account:
@@ -509,7 +576,7 @@ jv:
     docs:
       list:
         header: |
-          你可以查阅以下文档：
+          您可以查阅以下文档：
 
         item: |
           %{num}. %{docs_name}
@@ -526,7 +593,8 @@ jv:
         editing: 编辑状态
 
       path_info: |
-        当前：%{upstream}/%{account}/%{sheet_name}/%{path}
+        信息更新自 %{minutes} 分钟前
+        所在：%{upstream}/%{account}/%{sheet_name}/%{path}
 
       ghost_directory_item_info: |
         ? %{directory_name}/
@@ -571,6 +639,38 @@ jv:
       count_info: |
         %{dir_count} 目录、%{file_count} 文件，共计 %{size}
 
+    status:
+      header: |
+        您正在查看表 %{sheet_name} 的状态，在追踪文件变更之前，请确认：
+
+      content: |
+        结构变更：
+        %{moved_items}%{lost_items}%{created_items}
+        内容修改：
+        %{modified_items}
+
+      created_item: |
+        +   创建：      %{path}
+
+      lost_item: |
+        -   丢失：      %{path}
+
+      moved_item: |
+        >   移动：      %{from} -> %{to}
+
+      modified_item: |
+        *   修改：      %{path}
+
+      invalid_modified_item: |
+        *   修改：      %{path} (无法提交的修改)
+
+      no_structure_changes: |
+        无文件结构变更
+
+      no_file_modifications: |
+        本地无内容修改
+
+
   result:
     common:
       authroize_failed: 身份认证失败：%{err}！
@@ -598,6 +698,12 @@ jv:
     update:
       success: |
         已同步至最新信息！
+
+      fail:
+        sync_cached_sheet_fail:
+          path_already_exist: |
+            在同步上游信息至本地时发生了错误：本地已存在 %{path}，但是某个移动项需要移动到此处。
+            请尝试移动该项至其他路径，再重新输入 `jv update`
 
     sheet:
       make:
@@ -636,3 +742,22 @@ jv:
 
         not_owner: |
           您不是表 `%{name}` 的持有人，无法放弃该表！
+
+    track:
+      done: |
+        追踪 %{count} 个文件至最新！
+        其中，创建 %{created}，更新 %{updated}，同步 %{synced}
+
+      structure_changes_not_solved: |
+        本地有结构变更未解决！
+        这说明您的本地工作区存在未确认的移动或删除操作
+        **提示**：使用 `jv status` 查看结构变更
+
+      create_failed:
+        sheet_not_found: |
+          在上游库中不存在表 `%{name}`！
+          这意味着该表在上游库中已被删除，或该表不属于您
+
+        create_file_on_exist_path: |
+          追踪并创建文件失败！
+          您要追踪的文件路径 `%{path}` 在远程表中已存在，请更换至其他路径追踪

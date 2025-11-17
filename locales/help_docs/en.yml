@@ -2,6 +2,9 @@ common:
   confirm: |
     Confirm to perform the above operation? (Y/n):
 
+  word:
+    version: Version
+
 jvv:
   version:
     header: |
@@ -171,23 +174,24 @@ jv:
     account_not_exist: |
       The account `%{account}` set for the current workspace is not registered on your computer
 
+    outdated: |
+      Workspace info has not been updated for %{hour} hours %{minutes} minutes
+      Use `jv u` to get the latest information
+
   help: |
     **JustEnoughVCS**
     This program connects to upstream vaults to synchronize and commit changes to local workspace files for collaborative work.
 
     **ALIASES**:
-      jv u                          - Download latest information
-      jv t                          - Track files
-      jv mv -a                      - Auto-move files
-      jv [in|out]                   - Import or export files
-
-    **WORKSPACE**:
-      create <NAME>                 - Create workspace
-      init                          - Create workspace in current directory
+      jv u                          - Download latest information              [REMOTE]
+      jv t                          - Track files                              [REMOTE]
+      jv a                          - Align files to sheet
+      jv [in|out]                   - Import or export files                   [REMOTE]
 
     **UPSTREAM VAULT**:
-      direct <UPSTREAM>             - Direct workspace to upstream vault
+      direct <UPSTREAM>             - Direct workspace to upstream vault       [REMOTE]
       unstain                       - Unstain workspace, clear association
+      update                        - Download latest information              [REMOTE]
 
     **ACCOUNTS**:
       account [list|as|add|remove|movekey]
@@ -197,31 +201,32 @@ jv:
         remove  <ACCOUNT_NAME>      - Remove account from computer
         movekey <NAME> <KEY_FILE>   - Move private key file to specified account
 
-    **CONTEXT**：
-      here                          - Display path information
-
-    **SYNC**:
-      update - Download latest information
-
     **SHEETS**:
-      sheet [list|use|exit|make|drop]
+      sheet [list|use|exit|make|drop|align]
         list                        - List all sheets
         use                         - Use sheet, start work
         exit                        - Exit sheet, clear current modifications
-        make                        - Create a new sheet for yourself
-        drop                        - Drop the sheet for others to use
+        make                        - Create a new sheet for yourself          [REMOTE]
+        drop                        - Drop the sheet for others to use         [REMOTE]
+        align                       - Align files to sheet                     [REMOTE]
 
-    **FILE TRANSFER**
-      import <PACKAGE_NAME>         - Import files from import area
-      import <REFERENCE_SHEET_PATH> - Import files from reference sheet
-      export <FILE> <SHEET_NAME>    - Export files to other sheets
+    **CONTEXT**:
+      here                          - Display path information
+      status                        - Display current sheet status information
 
-    **FILE OPERATIONS**
-      move <FILE> <TO>              - Safely rename files
+    **FILE TRANSFER**:
+      import <PACKAGE_NAME>         - Import files from import area            [REMOTE]
+      import <REFERENCE_SHEET_PATH> - Import files from reference sheet        [REMOTE]
+      export <FILE> <SHEET_NAME>    - Export files to other sheets             [REMOTE]
+
+    **FILE OPERATIONS**:
+      move  <FILE> <TO>             - Safely rename files
       move auto                     - Automatically handle local file moves or renames
-      track <FILE>                  - Track and upload files to upstream vault
+      track <FILE>                  - Track files to latest version            [REMOTE]
+      hold  <FILE>                  - Hold, sync and lock file                 [REMOTE]
+      throw <FILE>                  - Throw, sync and unlock file              [REMOTE]
 
-    **DOCUMENTATION**
+    **DOCUMENTATION**:
       docs list                     - List all available documentation
       docs <DOC_NAME>               - View content of specified documentation
 
@@ -251,6 +256,12 @@ jv:
 
     jv sheet make <SHEET_NAME> - Create a new sheet for yourself
     jv sheet drop <SHEET_NAME> - Drop the sheet for others to use
+
+    **Align struct**：
+    jv sheet align --list - View all items that need alignment
+    jv sheet align <ALIGN_TASK> [local/remote] - Choose based on local or remote location
+    jv sheet align [local/remote] - All based on local or remote location
+    jv sheet align - Manually specify alignment method
 
     Sheets are core concepts in JustEnoughVCS, each sheet represents an independent file collection.
     You can switch work between different sheets, or export files from one sheet to another.
@@ -283,15 +294,30 @@ jv:
 
     This is a quick way to understand the current state of your workspace directory.
 
+  status: |
+      **Display Current Sheet Status Information**
+      **Usage**: jv status
+
+      Displays the file modification status of the current sheet:
+      - Added, deleted files
+      - Moved files
+      - Modified files
+
+      This is a quick way to understand the current file status of the sheet.
+
   track: |
-    **Track Local Files**
+    **Track or Pull Files**
     **Usage**: jv track <FILE_PATH>
 
     **Example**: jv track src/main.rs
-    First track - Create and upload the "First Version", then automatically hold them
-    Subsequent tracks - Update files with new versions
+    For new files:
+      Create and upload the "First Version", then automatically hold them
+    For *held* files:
+      Upload new versions to the upstream vault to update to the latest version
+    For *unheld* or *non-exist* files:
+      Download or update local file versions to the latest
 
-    Tracking files is the basic operation of version control, ensuring your changes can be synchronized to the upstream vault.
+    Tracking files is the basic operation of version control, ensuring your upstream and local files are always up to date.
 
   hold: |
     **Hold Files: Obtain File Edit Rights from Upstream Vault**
@@ -317,12 +343,10 @@ jv:
     **Move Local Files**
     **Usage**:
     jv move <SOURCE_FILE> <TARGET_LOCATION> - Safely rename or move files
-    jv move auto - Automatically handle local file moves or renames
 
     **Example**:
     jv move old_name.txt new_name.txt
     jv move src/old_dir/file.rs src/new_dir/file.rs
-    jv move auto
 
     Safe move operations preserve file version history, while auto-move detects and handles all renames.
 
@@ -387,6 +411,10 @@ jv:
     Built-in documentation includes JustEnoughVCS usage guides, collaboration paradigms, and best practices.
 
   confirm:
+    unstain: |
+      This operation will disconnect the current workspace from the upstream vault `%{upstream}`
+      If you reconnect to a vault with a mismatched identifier, it will cause serious problems, please operate with caution!
+
     direct: |
       Do you want to direct the current local workspace to the upstream vault %{upstream}?
 
@@ -396,11 +424,38 @@ jv:
           Sheet `%{sheet_name}` is no holder. Take ownership?
           If not, use a different name to create a sheet.
 
+        restore_ref: |
+          You can't just grab the reference sheet, it's the team's shared structure! :)
+
       drop: |
         Are you sure you want to drop sheet `%{sheet_name}`?
         After this, you will not be able to work in the sheet!
 
+    track:
+      prepare: |
+        You are tracking %{file_counts} file(s), these files will follow the following rules
+        1. New files will be uploaded and added to your sheet for management
+        2. For files you held, unless they don't exist locally or versions don't match, upload logic will always be executed
+        3. For files not held unless the version is frozen, download logic will always be executed to get the latest version
+
+        **CURRENT**:
+          **DOWN**: %{old_files} to update, %{download_files} to download
+          **UP**  : %{new_files} to track, %{modified_files} to commit
+
+      need_upload: |
+        Since your specified tracking operation involves uploading, you need to provide detailed description of your changes
+        Ready to commit? Use `jv track <files_to_upload> --work` to start filling in commit information
+        Don't want to use command line editor? Use `jv track <files_to_upload> --msg <commit_message>` to commit directly
+
   fail:
+    std:
+      current_dir: Failed to get current directory
+      current_dir_name: Failed to get current directory name
+      set_current_dir: Failed to set current directory to %{dir}
+
+    format_path: |
+      Failed to format directory %{path}: %{error}.
+
     path_not_found: |
       The directory `%{path}` cannot be found!
 
@@ -413,7 +468,7 @@ jv:
         Error: %{err}
         Cannot recognize *`%{str}`* as a valid address, please check your input!
 
-    from_just_version_control: |
+    from_core: |
       **Error**: `%{err}` (This error is from core call)
 
     account:
@@ -458,10 +513,20 @@ jv:
         Failed to open text editor preview: `%{err}!
         **Tip**: You can also use `jv docs %{docs_name} -d` to print directly
 
-  warn:
-    unstain: |
-      This operation will disconnect the current workspace from the upstream vault `%{upstream}`
-      If you reconnect to a vault with a mismatched identifier, it will cause serious problems, please operate with caution!
+    track:
+      no_selection: |
+        You did not select any files in this operation!
+
+        **Tip**: If you entered content and still see this,
+        it may be because the directory you passed is outside the workspace directory, paths outside the workspace will be ignored
+
+    status:
+      no_sheet_in_use: |
+        You are not using any sheet! Cannot analyze workspace status in this state
+        **Tip**: You can use `jv use <sheet_name>` to select and use a sheet
+
+      analyze: |
+        Failed to analyze local workspace status!
 
   success:
     account:
@@ -484,13 +549,13 @@ jv:
     sheet:
       list:
         your_sheet: |
-          **YOURS**：
+          **YOURS**:
         your_sheet_item: |
           %{number}. %{name}
         your_sheet_item_use: |
           %{number}. %{name} (CURRENT)
         other_sheet: |
-          **OTHERS**：
+          **OTHERS**:
         other_sheet_item: |
           %{number}. %{name} (AT `%{holder}`)
         other_sheet_item_no_holder: |
@@ -520,6 +585,7 @@ jv:
         editing: EDITING
 
       path_info: |
+        Updated in %{minutes} minutes ago
         CURRENT: %{upstream}/%{account}/%{sheet_name}/%{path}
 
       ghost_directory_item_info: |
@@ -565,6 +631,37 @@ jv:
       count_info: |
         %{dir_count} dir(s), %{file_count} file(s). Total %{size}.
 
+    status:
+      header: |
+        Viewing sheet %{sheet_name}. Before tracking file changes, please confirm:
+
+      content: |
+        Structure changes:
+        %{moved_items}%{lost_items}%{created_items}
+        Content modifications:
+        %{modified_items}
+
+      created_item: |
+        +   Created:      %{path}
+
+      lost_item: |
+        -      Lost:      %{path}
+
+      moved_item: |
+        >     Moved:      %{from} -> %{to}
+
+      modified_item: |
+        *  Modified:      %{path}
+
+      invalid_modified_item: |
+        *  Modified:      %{path} (INVALID)
+
+      no_structure_changes: |
+        No structural changes locally
+
+      no_file_modifications: |
+        No local content modifications
+
   result:
     common:
       authroize_failed: |
@@ -594,15 +691,21 @@ jv:
       success: |
         Synchronized to latest information!
 
+      fail:
+        sync_cached_sheet_fail:
+          path_already_exist: |
+            Error syncing upstream information to local: Local path %{path} already exists, but a move operation needs to move an item here.
+            Please try moving the item to a different path, then run `jv update` again
+
     sheet:
       make:
         success: |
           Successfully created sheet `%{name}`!
-          Upstream changed，use `jv update` to get the latest information
+          Upstream changed, use `jv update` to get the latest information
 
         success_restore: |
           Successfully restored sheet `%{name}`!
-          Upstream changed，use `jv update` to get the latest information
+          Upstream changed, use `jv update` to get the latest information
 
         sheet_already_exists: |
           Sheet `%{name}` already exists!
@@ -631,3 +734,22 @@ jv:
 
         not_owner: |
           You are not the holder of sheet `%{name}`, cannot drop it!
+
+    track:
+      done: |
+        Tracked %{count} files to latest!
+        **Total**: %{created} Created, %{updated} Updated, %{synced} Synced
+
+      structure_changes_not_solved: |
+        There are unresolved local structure changes!
+        This indicates there are unconfirmed move or delete operations in your local workspace
+        **Tip**: Use `jv status` to view structure changes
+
+      create_failed:
+        sheet_not_found: |
+          Sheet `%{name}` does not exist in the upstream vault!
+          This means the sheet has been deleted in the upstream vault, or the sheet does not belong to you
+
+        create_file_on_exist_path: |
+          Failed to track and create file!
+          The file path `%{path}` you want to track already exists in the remote sheet, please use a different path for tracking
