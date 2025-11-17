@@ -1474,16 +1474,37 @@ async fn jv_sheet_use(args: SheetUseArgs) {
         return;
     };
 
-    match local_cfg.use_sheet(args.sheet_name).await {
+    match local_cfg.use_sheet(args.sheet_name.clone()).await {
         Ok(_) => {
             let Ok(_) = LocalConfig::write(&local_cfg).await else {
                 eprintln!("{}", t!("jv.fail.write_cfg").trim().red());
                 return;
             };
         }
-        Err(e) => {
-            handle_err(e.into());
-        }
+        Err(e) => match e.kind() {
+            std::io::ErrorKind::AlreadyExists => {} // Already In Use
+            std::io::ErrorKind::NotFound => {
+                eprintln!(
+                    "{}",
+                    md(t!("jv.fail.use.sheet_not_exists", name = args.sheet_name)).red()
+                );
+                return;
+            }
+            std::io::ErrorKind::DirectoryNotEmpty => {
+                eprintln!(
+                    "{}",
+                    md(t!(
+                        "jv.fail.use.directory_not_empty",
+                        name = args.sheet_name
+                    ))
+                    .red()
+                );
+                return;
+            }
+            _ => {
+                handle_err(e.into());
+            }
+        },
     }
 }
 

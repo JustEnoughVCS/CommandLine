@@ -533,6 +533,15 @@ jv:
       analyze: |
         Failed to analyze local workspace status!
 
+    use:
+      sheet_not_exists: |
+        Sheet `%{name}` does not exist!
+        **Tip**: Please use `jv update` to update workspace status
+
+      directory_not_empty: |
+        When no sheet is in use, the workspace should not contain any files!
+        **Tip**: Please ensure the workspace is clean before using `jv use <sheet_name>` to select and use a sheet
+
   success:
     account:
       as: Successfully switched this workspace's account to `%{account}`

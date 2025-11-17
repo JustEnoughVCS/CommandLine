@@ -540,6 +540,15 @@ jv:
       analyze: |
         分析本地工作区的状态失败！
 
+    use:
+      sheet_not_exists: |
+        表 `%{name}` 不存在！
+        **提示**：请使用 `jv update` 更新工作区状态
+
+      directory_not_empty: |
+        在没有使用表的时候，工作区不应该存在任何文件！
+        **提示**：请保证工作区是干净的，再使用 `jv use <表名>` 选择并使用一张表
+
   success:
     account:
       as: 成功将此工作区的账户切换至 `%{account}`
