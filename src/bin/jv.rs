@@ -537,7 +537,7 @@ async fn main() {
     colored::control::set_virtual_terminal(true).unwrap();
 
     let Ok(parser) = JustEnoughVcsWorkspace::try_parse() else {
-        eprintln!("{}", md(t!("jv.fail.parse.parser_failed")).bright_red());
+        eprintln!("{}", md(t!("jv.fail.parse.parser_failed")).red());
 
         // Tips
         // Guide to create
@@ -545,7 +545,7 @@ async fn main() {
             // Check if workspace exist
             let Some(local_dir) = current_local_path() else {
                 println!();
-                println!("{}", t!("jv.tip.not_workspace").trim().bright_yellow());
+                println!("{}", t!("jv.tip.not_workspace").trim().yellow());
                 return;
             };
 
@@ -557,7 +557,7 @@ async fn main() {
             if let Ok(ids) = dir.account_ids() {
                 if ids.len() < 1 {
                     println!();
-                    println!("{}", t!("jv.tip.no_account").trim().bright_yellow());
+                    println!("{}", t!("jv.tip.no_account").trim().yellow());
                     return;
                 }
             }
@@ -566,7 +566,7 @@ async fn main() {
             if let Some(local_cfg) = LocalConfig::read().await.ok() {
                 if local_cfg.current_account() == "unknown" {
                     println!();
-                    println!("{}", t!("jv.tip.no_account_set").trim().bright_yellow());
+                    println!("{}", t!("jv.tip.no_account_set").trim().yellow());
                 } else {
                     if dir
                         .account_ids()
@@ -582,7 +582,7 @@ async fn main() {
                                 account = local_cfg.current_account()
                             )
                             .trim()
-                            .bright_yellow()
+                            .yellow()
                         );
                         return;
                     }
@@ -607,7 +607,7 @@ async fn main() {
                         "{}",
                         t!("jv.tip.outdated", hour = hours, minutes = minutes)
                             .trim()
-                            .bright_yellow()
+                            .yellow()
                     );
                 }
             }
@@ -677,7 +677,7 @@ async fn main() {
             let user_dir = match UserDirectory::current_doc_dir() {
                 Some(dir) => dir,
                 None => {
-                    eprintln!("{}", t!("jv.fail.account.no_user_dir").bright_red());
+                    eprintln!("{}", t!("jv.fail.account.no_user_dir").red());
                     return;
                 }
             };
@@ -856,7 +856,7 @@ async fn main() {
             let user_dir = match UserDirectory::current_doc_dir() {
                 Some(dir) => dir,
                 None => {
-                    eprintln!("{}", t!("jv.fail.account.no_user_dir").bright_red());
+                    eprintln!("{}", t!("jv.fail.account.no_user_dir").red());
                     return;
                 }
             };
@@ -873,7 +873,7 @@ async fn main() {
             let user_dir = match UserDirectory::current_doc_dir() {
                 Some(dir) => dir,
                 None => {
-                    eprintln!("{}", t!("jv.fail.account.no_user_dir").bright_red());
+                    eprintln!("{}", t!("jv.fail.account.no_user_dir").red());
                     return;
                 }
             };
@@ -942,10 +942,7 @@ async fn jv_create(args: CreateWorkspaceArgs) {
     };
 
     if !args.force && path.exists() && !is_directory_empty(&path).await {
-        eprintln!(
-            "{}",
-            t!("jv.fail.init_create_dir_not_empty").trim().bright_red()
-        );
+        eprintln!("{}", t!("jv.fail.init_create_dir_not_empty").trim().red());
         return;
     }
 
@@ -954,10 +951,7 @@ async fn jv_create(args: CreateWorkspaceArgs) {
             println!("{}", t!("jv.success.create"));
         }
         Err(e) => {
-            eprintln!(
-                "{}",
-                t!("jv.fail.create", error = e.to_string()).bright_red()
-            );
+            eprintln!("{}", t!("jv.fail.create", error = e.to_string()).red());
         }
     }
 }
@@ -968,17 +962,14 @@ async fn jv_init(args: InitWorkspaceArgs) {
         Err(e) => {
             eprintln!(
                 "{}",
-                t!("jv.fail.get_current_dir", error = e.to_string()).bright_red()
+                t!("jv.fail.get_current_dir", error = e.to_string()).red()
             );
             return;
         }
     };
 
     if !args.force && path.exists() && !is_directory_empty(&path).await {
-        eprintln!(
-            "{}",
-            t!("jv.fail.init_create_dir_not_empty").trim().bright_red()
-        );
+        eprintln!("{}", t!("jv.fail.init_create_dir_not_empty").trim().red());
         return;
     }
 
@@ -987,7 +978,7 @@ async fn jv_init(args: InitWorkspaceArgs) {
             println!("{}", t!("jv.success.init"));
         }
         Err(e) => {
-            eprintln!("{}", t!("jv.fail.init", error = e.to_string()).bright_red());
+            eprintln!("{}", t!("jv.fail.init", error = e.to_string()).red());
         }
     }
 }
@@ -1001,18 +992,18 @@ async fn is_directory_empty(path: &PathBuf) -> bool {
 
 async fn jv_here(_args: HereArgs) {
     let Some(local_dir) = current_local_path() else {
-        eprintln!("{}", t!("jv.fail.workspace_not_found").trim().bright_red());
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim().red());
         return;
     };
 
     let Ok(latest_info) = LatestInfo::read_from(local_dir.join(CLIENT_FILE_LATEST_INFO)).await
     else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).red());
         return;
     };
 
     let Ok(local_cfg) = LocalConfig::read_from(local_dir.join(CLIENT_FILE_WORKSPACE)).await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).red());
         return;
     };
 
@@ -1026,7 +1017,7 @@ async fn jv_here(_args: HereArgs) {
     let path = match current_dir() {
         Ok(path) => path,
         Err(_) => {
-            eprintln!("{}", t!("jv.fail.get_current_dir").bright_red());
+            eprintln!("{}", t!("jv.fail.get_current_dir").red());
             return;
         }
     };
@@ -1034,7 +1025,7 @@ async fn jv_here(_args: HereArgs) {
     let local_dir = match current_local_path() {
         Some(path) => path,
         None => {
-            eprintln!("{}", t!("jv.fail.workspace_not_found").trim().bright_red());
+            eprintln!("{}", t!("jv.fail.workspace_not_found").trim().red());
             return;
         }
     };
@@ -1052,9 +1043,9 @@ async fn jv_here(_args: HereArgs) {
         "{}",
         t!(
             "jv.success.here.path_info",
-            upstream = local_cfg.upstream_addr().to_string().bright_cyan(),
-            account = local_cfg.current_account().bright_green(),
-            sheet_name = sheet_name.bright_yellow(),
+            upstream = local_cfg.upstream_addr().to_string().cyan(),
+            account = local_cfg.current_account().green(),
+            sheet_name = sheet_name.yellow(),
             path = relative_path,
             minutes = minutes
         )
@@ -1098,7 +1089,7 @@ async fn jv_here(_args: HereArgs) {
                 if is_dir {
                     dir_count += 1;
                     table.push_item(vec![
-                        format!("{}/", file_name.bright_cyan()),
+                        format!("{}/", file_name.cyan()),
                         version.to_string(),
                         hold.to_string(),
                         size_str(size as usize),
@@ -1137,53 +1128,49 @@ async fn jv_here(_args: HereArgs) {
 
 async fn jv_status(_args: StatusArgs) {
     let Some(local_dir) = current_local_path() else {
-        eprintln!(
-            "{}",
-            md(t!("jv.fail.workspace_not_found")).trim().bright_red()
-        );
+        eprintln!("{}", md(t!("jv.fail.workspace_not_found")).trim().red());
         return;
     };
 
     let Ok(local_cfg) = LocalConfig::read_from(local_dir.join(CLIENT_FILE_WORKSPACE)).await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).red());
         return;
     };
 
     let account = local_cfg.current_account();
 
     let Ok(member_held_path) = MemberHeld::held_file_path(&account) else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).red());
         return;
     };
 
     let Ok(member_held) = MemberHeld::read_from(&member_held_path).await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).red());
         return;
     };
 
     let Some(sheet_name) = local_cfg.sheet_in_use().clone() else {
-        eprintln!(
-            "{}",
-            md(t!("jv.fail.status.no_sheet_in_use")).trim().bright_red()
-        );
+        eprintln!("{}", md(t!("jv.fail.status.no_sheet_in_use")).trim().red());
         return;
     };
 
     let Some(local_workspace) = LocalWorkspace::init_current_dir(local_cfg) else {
-        eprintln!(
-            "{}",
-            md(t!("jv.fail.workspace_not_found")).trim().bright_red()
-        );
+        eprintln!("{}", md(t!("jv.fail.workspace_not_found")).trim().red());
         return;
     };
 
     let Ok(local_sheet) = local_workspace.local_sheet(&account, &sheet_name).await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).red());
+        return;
+    };
+
+    let Ok(cached_sheet) = CachedSheet::cached_sheet_data(&sheet_name).await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).red());
         return;
     };
 
     let Ok(analyzed) = AnalyzeResult::analyze_local_status(&local_workspace).await else {
-        eprintln!("{}", md(t!("jv.fail.status.analyze")).trim().bright_red());
+        eprintln!("{}", md(t!("jv.fail.status.analyze")).trim().red());
         return;
     };
 
@@ -1202,7 +1189,7 @@ async fn jv_status(_args: StatusArgs) {
                 path = path.display().to_string()
             )
             .trim()
-            .bright_green()
+            .green()
             .to_string()
         })
         .collect();
@@ -1217,7 +1204,7 @@ async fn jv_status(_args: StatusArgs) {
                 path = path.display().to_string()
             )
             .trim()
-            .bright_red()
+            .red()
             .to_string()
         })
         .collect();
@@ -1233,7 +1220,7 @@ async fn jv_status(_args: StatusArgs) {
                 to = to.display()
             )
             .trim()
-            .bright_yellow()
+            .yellow()
             .to_string()
         })
         .collect();
@@ -1243,7 +1230,7 @@ async fn jv_status(_args: StatusArgs) {
         .modified
         .iter()
         .map(|path| {
-            let is_invalid_modify = {
+            let holder_match = {
                 if let Ok(mapping) = local_sheet.mapping_data(path) {
                     let vfid = mapping.mapping_vfid();
                     match member_held.file_holder(vfid) {
@@ -1254,23 +1241,51 @@ async fn jv_status(_args: StatusArgs) {
                     false
                 }
             };
-            if !is_invalid_modify {
-                t!(
+
+            let base_version_match = {
+                if let Ok(mapping) = local_sheet.mapping_data(path) {
+                    let ver = mapping.version_when_updated();
+                    if let Some(cached) = cached_sheet.mapping().get(path) {
+                        ver == &cached.version
+                    } else {
+                        true
+                    }
+                } else {
+                    true
+                }
+            };
+
+            // Holder dismatch
+            if !holder_match {
+                return t!(
                     "jv.success.status.invalid_modified_item",
-                    path = path.display().to_string()
+                    path = path.display().to_string(),
+                    reason = t!("jv.success.status.invalid_modified_reasons.not_holder")
                 )
                 .trim()
-                .bright_red()
-                .to_string()
-            } else {
-                t!(
-                    "jv.success.status.modified_item",
-                    path = path.display().to_string()
-                )
-                .trim()
-                .bright_cyan()
-                .to_string()
+                .red()
+                .to_string();
             }
+
+            // Base version mismatch
+            if !base_version_match {
+                return t!(
+                    "jv.success.status.invalid_modified_item",
+                    path = path.display().to_string(),
+                    reason = t!("jv.success.status.invalid_modified_reasons.base_version_mismatch")
+                )
+                .trim()
+                .red()
+                .to_string();
+            }
+
+            t!(
+                "jv.success.status.modified_item",
+                path = path.display().to_string()
+            )
+            .trim()
+            .cyan()
+            .to_string()
         })
         .collect();
 
@@ -1340,21 +1355,21 @@ async fn jv_status(_args: StatusArgs) {
 async fn jv_sheet_list(args: SheetListArgs) {
     let Some(_local_dir) = current_local_path() else {
         if !args.raw {
-            eprintln!("{}", t!("jv.fail.workspace_not_found").trim().bright_red());
+            eprintln!("{}", t!("jv.fail.workspace_not_found").trim().red());
         }
         return;
     };
 
     let Ok(latest_info) = LatestInfo::read().await else {
         if !args.raw {
-            eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
+            eprintln!("{}", md(t!("jv.fail.read_cfg")).red());
         }
         return;
     };
 
     let Ok(local_cfg) = LocalConfig::read().await else {
         if !args.raw {
-            eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
+            eprintln!("{}", md(t!("jv.fail.read_cfg")).red());
         }
         return;
     };
@@ -1450,19 +1465,19 @@ async fn jv_sheet_list(args: SheetListArgs) {
 
 async fn jv_sheet_use(args: SheetUseArgs) {
     let Some(_local_dir) = current_local_path() else {
-        eprintln!("{}", t!("jv.fail.workspace_not_found").trim().bright_red());
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim().red());
         return;
     };
 
     let Ok(mut local_cfg) = LocalConfig::read().await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).red());
         return;
     };
 
     match local_cfg.use_sheet(args.sheet_name).await {
         Ok(_) => {
             let Ok(_) = LocalConfig::write(&local_cfg).await else {
-                eprintln!("{}", t!("jv.fail.write_cfg").trim().bright_red());
+                eprintln!("{}", t!("jv.fail.write_cfg").trim().red());
                 return;
             };
         }
@@ -1474,19 +1489,19 @@ async fn jv_sheet_use(args: SheetUseArgs) {
 
 async fn jv_sheet_exit(_args: SheetExitArgs) {
     let Some(_local_dir) = current_local_path() else {
-        eprintln!("{}", t!("jv.fail.workspace_not_found").trim().bright_red());
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim().red());
         return;
     };
 
     let Ok(mut local_cfg) = LocalConfig::read().await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).red());
         return;
     };
 
     match local_cfg.exit_sheet().await {
         Ok(_) => {
             let Ok(_) = LocalConfig::write(&local_cfg).await else {
-                eprintln!("{}", t!("jv.fail.write_cfg").trim().bright_red());
+                eprintln!("{}", t!("jv.fail.write_cfg").trim().red());
                 return;
             };
         }
@@ -1502,9 +1517,7 @@ async fn jv_sheet_make(args: SheetMakeArgs) {
     if sheet_name == REF_SHEET_NAME {
         eprintln!(
             "{}",
-            t!("jv.confirm.sheet.make.restore_ref")
-                .trim()
-                .bright_yellow()
+            t!("jv.confirm.sheet.make.restore_ref").trim().yellow()
         );
         return;
     }
@@ -1522,7 +1535,7 @@ async fn jv_sheet_make(args: SheetMakeArgs) {
     let latest_info = match LatestInfo::read().await {
         Ok(info) => info,
         Err(_) => {
-            eprintln!("{}", t!("jv.fail.read_cfg").bright_red());
+            eprintln!("{}", t!("jv.fail.read_cfg").red());
             return;
         }
     };
@@ -1534,7 +1547,7 @@ async fn jv_sheet_make(args: SheetMakeArgs) {
     {
         println!(
             "{}",
-            md(t!("jv.confirm.sheet.make.restore", sheet_name = sheet_name)).bright_yellow()
+            md(t!("jv.confirm.sheet.make.restore", sheet_name = sheet_name)).yellow()
         );
         if !confirm_hint(t!("common.confirm")).await {
             return;
@@ -1561,7 +1574,7 @@ async fn jv_sheet_make(args: SheetMakeArgs) {
             MakeSheetActionResult::AuthorizeFailed(e) => {
                 eprintln!(
                     "{}",
-                    md(t!("jv.result.common.authroize_failed", err = e)).bright_red()
+                    md(t!("jv.result.common.authroize_failed", err = e)).red()
                 )
             }
             MakeSheetActionResult::SheetAlreadyExists => {
@@ -1571,13 +1584,13 @@ async fn jv_sheet_make(args: SheetMakeArgs) {
                         "jv.result.sheet.make.sheet_already_exists",
                         name = sheet_name
                     ))
-                    .bright_red()
+                    .red()
                 );
             }
             MakeSheetActionResult::SheetCreationFailed(e) => {
                 eprintln!(
                     "{}",
-                    md(t!("jv.result.sheet.make.sheet_creation_failed", err = e)).bright_red()
+                    md(t!("jv.result.sheet.make.sheet_creation_failed", err = e)).red()
                 )
             }
             MakeSheetActionResult::Unknown => todo!(),
@@ -1594,7 +1607,7 @@ async fn jv_sheet_drop(args: SheetDropArgs) {
             "{}",
             t!("jv.confirm.sheet.drop", sheet_name = sheet_name)
                 .trim()
-                .bright_yellow()
+                .yellow()
         );
         confirm_hint_or(t!("common.confirm"), || exit(1)).await;
     }
@@ -1620,13 +1633,13 @@ async fn jv_sheet_drop(args: SheetDropArgs) {
             DropSheetActionResult::SheetInUse => {
                 eprintln!(
                     "{}",
-                    md(t!("jv.result.sheet.drop.sheet_in_use", name = sheet_name)).bright_red()
+                    md(t!("jv.result.sheet.drop.sheet_in_use", name = sheet_name)).red()
                 )
             }
             DropSheetActionResult::AuthorizeFailed(e) => {
                 eprintln!(
                     "{}",
-                    md(t!("jv.result.common.authroize_failed", err = e)).bright_red()
+                    md(t!("jv.result.common.authroize_failed", err = e)).red()
                 )
             }
             DropSheetActionResult::SheetNotExists => {
@@ -1636,25 +1649,25 @@ async fn jv_sheet_drop(args: SheetDropArgs) {
                         "jv.result.sheet.drop.sheet_not_exists",
                         name = sheet_name
                     ))
-                    .bright_red()
+                    .red()
                 )
             }
             DropSheetActionResult::SheetDropFailed(e) => {
                 eprintln!(
                     "{}",
-                    md(t!("jv.result.sheet.drop.sheet_drop_failed", err = e)).bright_red()
+                    md(t!("jv.result.sheet.drop.sheet_drop_failed", err = e)).red()
                 )
             }
             DropSheetActionResult::NoHolder => {
                 eprintln!(
                     "{}",
-                    md(t!("jv.result.sheet.drop.no_holder", name = sheet_name)).bright_red()
+                    md(t!("jv.result.sheet.drop.no_holder", name = sheet_name)).red()
                 )
             }
             DropSheetActionResult::NotOwner => {
                 eprintln!(
                     "{}",
-                    md(t!("jv.result.sheet.drop.not_owner", name = sheet_name)).bright_red()
+                    md(t!("jv.result.sheet.drop.not_owner", name = sheet_name)).red()
                 )
             }
             _ => {}
@@ -1677,20 +1690,20 @@ async fn jv_track(args: TrackFileArgs) {
     };
 
     let Some(local_dir) = current_local_path() else {
-        eprintln!("{}", t!("jv.fail.workspace_not_found").trim().bright_red());
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim().red());
         return;
     };
 
     let Some(files) = get_relative_paths(local_dir, track_files).await else {
         eprintln!(
             "{}",
-            md(t!("jv.fail.track.parse_fail", param = "track_files")).bright_red()
+            md(t!("jv.fail.track.parse_fail", param = "track_files")).red()
         );
         return;
     };
 
     if files.iter().len() < 1 {
-        eprintln!("{}", md(t!("jv.fail.track.no_selection")).bright_red());
+        eprintln!("{}", md(t!("jv.fail.track.no_selection")).red());
         return;
     };
 
@@ -1729,13 +1742,13 @@ async fn jv_track(args: TrackFileArgs) {
             TrackFileActionResult::AuthorizeFailed(e) => {
                 eprintln!(
                     "{}",
-                    md(t!("jv.result.common.authroize_failed", err = e)).bright_red()
+                    md(t!("jv.result.common.authroize_failed", err = e)).red()
                 )
             }
             TrackFileActionResult::StructureChangesNotSolved => {
                 eprintln!(
                     "{}",
-                    md(t!("jv.result.track.structure_changes_not_solved")).bright_red()
+                    md(t!("jv.result.track.structure_changes_not_solved")).red()
                 )
             }
             TrackFileActionResult::CreateTaskFailed(create_task_result) => match create_task_result
@@ -1748,7 +1761,7 @@ async fn jv_track(args: TrackFileArgs) {
                             "jv.result.track.create_failed.create_file_on_exist_path",
                             path = path.display()
                         ))
-                        .bright_red()
+                        .red()
                     )
                 }
                 CreateTaskResult::SheetNotFound(sheet) => {
@@ -1758,7 +1771,7 @@ async fn jv_track(args: TrackFileArgs) {
                             "jv.result.track.create_failed.sheet_not_found",
                             name = sheet
                         ))
-                        .bright_red()
+                        .red()
                     )
                 }
             },
@@ -1802,7 +1815,7 @@ async fn jv_account_add(user_dir: UserDirectory, args: AccountAddArgs) {
         Err(_) => {
             eprintln!(
                 "{}",
-                t!("jv.fail.account.add", account = args.account_name).bright_red()
+                t!("jv.fail.account.add", account = args.account_name).red()
             );
         }
     }
@@ -1819,7 +1832,7 @@ async fn jv_account_remove(user_dir: UserDirectory, args: AccountRemoveArgs) {
         Err(_) => {
             eprintln!(
                 "{}",
-                t!("jv.fail.account.remove", account = args.account_name).bright_red()
+                t!("jv.fail.account.remove", account = args.account_name).red()
             );
         }
     }
@@ -1857,7 +1870,7 @@ async fn jv_account_list(user_dir: UserDirectory, args: AccountListArgs) {
             }
         }
         Err(_) => {
-            eprintln!("{}", t!("jv.fail.account.list").bright_red());
+            eprintln!("{}", t!("jv.fail.account.list").red());
         }
     }
 }
@@ -1867,28 +1880,28 @@ async fn jv_account_as(user_dir: UserDirectory, args: SetLocalWorkspaceAccountAr
     let Ok(member) = user_dir.account(&args.account_name).await else {
         eprintln!(
             "{}",
-            t!("jv.fail.account.not_found", account = args.account_name).bright_red()
+            t!("jv.fail.account.not_found", account = args.account_name).red()
         );
         return;
     };
 
     let Some(_local_dir) = current_local_path() else {
-        eprintln!("{}", t!("jv.fail.workspace_not_found").trim().bright_red());
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim().red());
         return;
     };
 
     let Ok(mut local_cfg) = LocalConfig::read().await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).red());
         return;
     };
 
     if let Err(_) = local_cfg.set_current_account(member.id()) {
-        eprintln!("{}", md(t!("jv.fail.account.as")).bright_red());
+        eprintln!("{}", md(t!("jv.fail.account.as")).red());
         return;
     };
 
     let Ok(_) = LocalConfig::write(&local_cfg).await else {
-        eprintln!("{}", t!("jv.fail.write_cfg").trim().bright_red());
+        eprintln!("{}", t!("jv.fail.write_cfg").trim().red());
         return;
     };
 
@@ -1903,7 +1916,7 @@ async fn jv_account_move_key(user_dir: UserDirectory, args: MoveKeyToAccountArgs
     if !args.key_path.exists() {
         eprintln!(
             "{}",
-            t!("jv.fail.path_not_found", path = args.key_path.display()).bright_red()
+            t!("jv.fail.path_not_found", path = args.key_path.display()).red()
         );
         return;
     }
@@ -1912,7 +1925,7 @@ async fn jv_account_move_key(user_dir: UserDirectory, args: MoveKeyToAccountArgs
     let Ok(_member) = user_dir.account(&args.account_name).await else {
         eprintln!(
             "{}",
-            t!("jv.fail.account.not_found", account = args.account_name).bright_red()
+            t!("jv.fail.account.not_found", account = args.account_name).red()
         );
         return;
     };
@@ -1925,7 +1938,7 @@ async fn jv_account_move_key(user_dir: UserDirectory, args: MoveKeyToAccountArgs
     .await
     {
         Ok(_) => println!("{}", t!("jv.success.account.move_key")),
-        Err(_) => eprintln!("{}", t!("jv.fail.account.move_key").bright_red()),
+        Err(_) => eprintln!("{}", t!("jv.fail.account.move_key").red()),
     }
 }
 
@@ -1949,7 +1962,7 @@ async fn jv_update(_update_file_args: UpdateArgs) {
             UpdateToLatestInfoResult::AuthorizeFailed(e) => {
                 eprintln!(
                     "{}",
-                    md(t!("jv.result.common.authroize_failed", err = e)).bright_red()
+                    md(t!("jv.result.common.authroize_failed", err = e)).red()
                 )
             }
             UpdateToLatestInfoResult::SyncCachedSheetFail(sync_cached_sheet_fail_reason) => {
@@ -1961,7 +1974,7 @@ async fn jv_update(_update_file_args: UpdateArgs) {
                                 "jv.result.update.fail.sync_cached_sheet_fail.path_already_exist",
                                 path = path_buf.display()
                             ))
-                            .bright_red()
+                            .red()
                         );
                     }
                 }
@@ -1979,9 +1992,7 @@ async fn jv_direct(args: DirectArgs) {
     if !args.confirm {
         println!(
             "{}",
-            t!("jv.confirm.direct", upstream = upstream)
-                .trim()
-                .bright_yellow()
+            t!("jv.confirm.direct", upstream = upstream).trim().yellow()
         );
         confirm_hint_or(t!("common.confirm"), || exit(1)).await;
     }
@@ -1997,7 +2008,7 @@ async fn jv_direct(args: DirectArgs) {
                     str = &upstream.trim(),
                     err = e
                 ))
-                .bright_red()
+                .red()
             );
             return;
         }
@@ -2031,25 +2042,22 @@ async fn jv_direct(args: DirectArgs) {
                 insert_recent_ip_address(upstream.to_string().trim()).await;
             }
             SetUpstreamVaultActionResult::AlreadyStained => {
-                eprintln!(
-                    "{}",
-                    md(t!("jv.result.direct.already_stained")).bright_red()
-                )
+                eprintln!("{}", md(t!("jv.result.direct.already_stained")).red())
             }
             SetUpstreamVaultActionResult::AuthorizeFailed(e) => {
                 eprintln!(
                     "{}",
-                    md(t!("jv.result.common.authroize_failed", err = e)).bright_red()
+                    md(t!("jv.result.common.authroize_failed", err = e)).red()
                 )
             }
             SetUpstreamVaultActionResult::RedirectFailed(e) => {
                 eprintln!(
                     "{}",
-                    md(t!("jv.result.direct.redirect_failed", err = e)).bright_red()
+                    md(t!("jv.result.direct.redirect_failed", err = e)).red()
                 )
             }
             SetUpstreamVaultActionResult::SameUpstream => {
-                eprintln!("{}", md(t!("jv.result.direct.same_upstream")).bright_red())
+                eprintln!("{}", md(t!("jv.result.direct.same_upstream")).red())
             }
             _ => {}
         },
@@ -2058,24 +2066,24 @@ async fn jv_direct(args: DirectArgs) {
 
 async fn jv_unstain(args: UnstainArgs) {
     let Some(_local_dir) = current_local_path() else {
-        eprintln!("{}", t!("jv.fail.workspace_not_found").trim().bright_red());
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim().red());
         return;
     };
 
     let Ok(mut local_cfg) = LocalConfig::read().await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).red());
         return;
     };
 
     if !local_cfg.stained() {
-        eprintln!("{}", md(t!("jv.fail.unstain")).bright_red());
+        eprintln!("{}", md(t!("jv.fail.unstain")).red());
         return;
     }
 
     if !args.confirm {
         println!(
             "{}",
-            md(t!("jv.confirm.unstain", upstream = local_cfg.vault_addr())).bright_yellow()
+            md(t!("jv.confirm.unstain", upstream = local_cfg.vault_addr())).yellow()
         );
         confirm_hint_or(t!("common.confirm"), || exit(1)).await;
     }
@@ -2083,7 +2091,7 @@ async fn jv_unstain(args: UnstainArgs) {
     local_cfg.unstain();
 
     let Ok(_) = LocalConfig::write(&local_cfg).await else {
-        eprintln!("{}", t!("jv.fail.write_cfg").trim().bright_red());
+        eprintln!("{}", t!("jv.fail.write_cfg").trim().red());
         return;
     };
 
@@ -2134,7 +2142,7 @@ async fn jv_docs(args: DocsArgs) {
     let Some(document) = document(name) else {
         eprintln!(
             "{}",
-            md(t!("jv.fail.docs.not_found", docs_name = docs_name)).bright_red()
+            md(t!("jv.fail.docs.not_found", docs_name = docs_name)).red()
         );
         return;
     };
@@ -2145,7 +2153,7 @@ async fn jv_docs(args: DocsArgs) {
         let Some(doc_dir) = current_doc_dir() else {
             eprintln!(
                 "{}",
-                md(t!("jv.fail.docs.no_doc_dir", docs_name = docs_name)).bright_red()
+                md(t!("jv.fail.docs.no_doc_dir", docs_name = docs_name)).red()
             );
             return;
         };
@@ -2158,14 +2166,14 @@ async fn jv_docs(args: DocsArgs) {
                     err = e,
                     docs_name = docs_name
                 ))
-                .bright_red()
+                .red()
             );
         }
     }
 }
 
 pub fn handle_err(err: TcpTargetError) {
-    eprintln!("{}", md(t!("jv.fail.from_core", err = err)).bright_red())
+    eprintln!("{}", md(t!("jv.fail.from_core", err = err)).red())
 }
 
 async fn connect(upstream: SocketAddr) -> Option<ConnectionInstance> {
@@ -2174,7 +2182,7 @@ async fn connect(upstream: SocketAddr) -> Option<ConnectionInstance> {
         match TcpSocket::new_v4() {
             Ok(socket) => socket,
             Err(_) => {
-                eprintln!("{}", t!("jv.fail.create_socket").trim().bright_red());
+                eprintln!("{}", t!("jv.fail.create_socket").trim().red());
                 return None;
             }
         }
@@ -2182,7 +2190,7 @@ async fn connect(upstream: SocketAddr) -> Option<ConnectionInstance> {
         match TcpSocket::new_v6() {
             Ok(socket) => socket,
             Err(_) => {
-                eprintln!("{}", t!("jv.fail.create_socket").trim().bright_red());
+                eprintln!("{}", t!("jv.fail.create_socket").trim().red());
                 return None;
             }
         }
@@ -2190,7 +2198,7 @@ async fn connect(upstream: SocketAddr) -> Option<ConnectionInstance> {
 
     // Connect
     let Ok(stream) = socket.connect(upstream).await else {
-        eprintln!("{}", t!("jv.fail.connection_failed").trim().bright_red());
+        eprintln!("{}", t!("jv.fail.connection_failed").trim().red());
         return None;
     };
 
@@ -2201,7 +2209,7 @@ async fn connect(upstream: SocketAddr) -> Option<ConnectionInstance> {
 // Returns LocalConfig if valid, None otherwise
 async fn precheck() -> Option<LocalConfig> {
     let Some(local_dir) = current_local_path() else {
-        eprintln!("{}", t!("jv.fail.workspace_not_found").trim().bright_red());
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim().red());
         return None;
     };
 
@@ -2213,18 +2221,18 @@ async fn precheck() -> Option<LocalConfig> {
                 dir = local_dir.display(),
                 error = e
             )
-            .bright_red()
+            .red()
         );
         return None;
     }
 
     let Ok(local_config) = LocalConfig::read().await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")).bright_red());
+        eprintln!("{}", md(t!("jv.fail.read_cfg")).red());
         return None;
     };
 
     if !local_config.stained() {
-        eprintln!("{}", md(t!("jv.fail.not_stained")).bright_red());
+        eprintln!("{}", md(t!("jv.fail.not_stained")).red());
         return None;
     }
 
