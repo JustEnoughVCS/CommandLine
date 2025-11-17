@@ -563,35 +563,42 @@ async fn main() {
             }
 
             // Check if the workspace has a registered account (account = unknown)
-            if let Some(local_cfg) = LocalConfig::read().await.ok() {
-                if local_cfg.current_account() == "unknown" {
+            let Some(local_cfg) = LocalConfig::read().await.ok() else {
+                eprintln!("{}", md(t!("jv.fail.read_cfg")));
+                return;
+            };
+
+            // Account exists check
+            if local_cfg.current_account() == "unknown" {
+                println!();
+                println!("{}", t!("jv.tip.no_account_set").trim().yellow());
+            } else {
+                if dir
+                    .account_ids()
+                    .ok()
+                    .map(|ids| !ids.contains(&local_cfg.current_account()))
+                    .unwrap_or(false)
+                {
                     println!();
-                    println!("{}", t!("jv.tip.no_account_set").trim().yellow());
-                } else {
-                    if dir
-                        .account_ids()
-                        .ok()
-                        .map(|ids| !ids.contains(&local_cfg.current_account()))
-                        .unwrap_or(false)
-                    {
-                        println!();
-                        println!(
-                            "{}",
-                            t!(
-                                "jv.tip.account_not_exist",
-                                account = local_cfg.current_account()
-                            )
-                            .trim()
-                            .yellow()
-                        );
-                        return;
-                    }
+                    println!(
+                        "{}",
+                        t!(
+                            "jv.tip.account_not_exist",
+                            account = local_cfg.current_account()
+                        )
+                        .trim()
+                        .yellow()
+                    );
+                    return;
                 }
             }
 
             // Outdated
-            let Ok(latest_info) =
-                LatestInfo::read_from(local_dir.join(CLIENT_FILE_LATEST_INFO)).await
+            let Ok(latest_info) = LatestInfo::read_from(LatestInfo::latest_info_path(
+                &local_dir,
+                &local_cfg.current_account(),
+            ))
+            .await
             else {
                 return;
             };
@@ -993,13 +1000,17 @@ async fn jv_here(_args: HereArgs) {
         return;
     };
 
-    let Ok(latest_info) = LatestInfo::read_from(local_dir.join(CLIENT_FILE_LATEST_INFO)).await
-    else {
+    let Ok(local_cfg) = LocalConfig::read_from(local_dir.join(CLIENT_FILE_WORKSPACE)).await else {
         eprintln!("{}", md(t!("jv.fail.read_cfg")));
         return;
     };
 
-    let Ok(local_cfg) = LocalConfig::read_from(local_dir.join(CLIENT_FILE_WORKSPACE)).await else {
+    let Ok(latest_info) = LatestInfo::read_from(LatestInfo::latest_info_path(
+        &local_dir,
+        &local_cfg.current_account(),
+    ))
+    .await
+    else {
         eprintln!("{}", md(t!("jv.fail.read_cfg")));
         return;
     };
@@ -1347,21 +1358,26 @@ async fn jv_status(_args: StatusArgs) {
 }
 
 async fn jv_sheet_list(args: SheetListArgs) {
-    let Some(_local_dir) = current_local_path() else {
+    let Some(local_dir) = current_local_path() else {
         if !args.raw {
             eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
         }
         return;
     };
 
-    let Ok(latest_info) = LatestInfo::read().await else {
+    let Ok(local_cfg) = LocalConfig::read().await else {
         if !args.raw {
             eprintln!("{}", md(t!("jv.fail.read_cfg")));
         }
         return;
     };
 
-    let Ok(local_cfg) = LocalConfig::read().await else {
+    let Ok(latest_info) = LatestInfo::read_from(LatestInfo::latest_info_path(
+        &local_dir,
+        &local_cfg.current_account(),
+    ))
+    .await
+    else {
         if !args.raw {
             eprintln!("{}", md(t!("jv.fail.read_cfg")));
         }
@@ -1546,7 +1562,17 @@ async fn jv_sheet_make(args: SheetMakeArgs) {
         None => return,
     };
 
-    let latest_info = match LatestInfo::read().await {
+    let Some(local_dir) = current_local_path() else {
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+        return;
+    };
+
+    let latest_info = match LatestInfo::read_from(LatestInfo::latest_info_path(
+        &local_dir,
+        &local_config.current_account(),
+    ))
+    .await
+    {
         Ok(info) => info,
         Err(_) => {
             eprintln!("{}", t!("jv.fail.read_cfg"));
