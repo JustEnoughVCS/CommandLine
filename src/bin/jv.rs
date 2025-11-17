@@ -213,7 +213,7 @@ enum AccountManage {
     As(SetLocalWorkspaceAccountArgs),
 
     /// Move private key file to account
-    #[command(alias = "mvkey", alias = "mvk")]
+    #[command(alias = "mvkey", alias = "mvk", alias = "movekey")]
     MoveKey(MoveKeyToAccountArgs),
 }
 
