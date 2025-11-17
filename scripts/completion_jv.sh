@@ -14,7 +14,7 @@ _jv_completion() {
     local subsubcmd="${words[2]}"
 
     # Subcommands
-    local base_commands="create init direct unstain account update sheet status here import export in out move mv docs exit use sheets accounts as make drop track hold throw"
+    local base_commands="create init direct unstain account update sheet status here import export in out move mv docs exit use sheets accounts as make drop track hold throw login"
 
     # Subcommands - Account
     local account_commands="list as add remove movekey mvkey mvk help"
@@ -84,6 +84,30 @@ _jv_completion() {
                 fi
                 ;;
         esac
+        return 0
+    fi
+
+    # Completion login
+    if [[ "$subcmd" == "login" ]]; then
+        if [[ $cword -eq 2 ]]; then
+            local accounts
+            accounts=$($cmd account list --raw 2>/dev/null)
+            COMPREPLY=($(compgen -W "$accounts" -- "$cur"))
+        elif [[ $cword -eq 3 ]]; then
+            local ip_history
+            ip_history=$($cmd _ip_history 2>/dev/null)
+            COMPREPLY=($(compgen -W "$ip_history" -- "$cur"))
+        fi
+        return 0
+    fi
+
+    # Completion direct
+    if [[ "$subcmd" == "direct" ]]; then
+        if [[ $cword -eq 2 ]]; then
+            local ip_history
+            ip_history=$($cmd _ip_history 2>/dev/null)
+            COMPREPLY=($(compgen -W "$ip_history" -- "$cur"))
+        fi
         return 0
     fi
 

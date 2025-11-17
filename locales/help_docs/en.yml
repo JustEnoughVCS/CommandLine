@@ -169,7 +169,8 @@ jv:
 
     no_account_set: |
       Current workspace account is `unknown`, meaning no account is set
-      Use `jv as <account_name>` to set account for workspace
+      Use    `jv as <account_name>` to set account for workspace
+      or use `jv login <account_name> <upstream_address>` to directly login to the upstream vault
 
     account_not_exist: |
       The account `%{account}` set for the current workspace is not registered on your computer
@@ -189,6 +190,7 @@ jv:
       jv [in|out]                   - Import or export files                   [REMOTE]
 
     **UPSTREAM VAULT**:
+      login  <ACCOUNT> <UPSTREAM>   - Login to upstream vault                  [REMOTE]
       direct <UPSTREAM>             - Direct workspace to upstream vault       [REMOTE]
       unstain                       - Unstain workspace, clear association
       update                        - Download latest information              [REMOTE]
@@ -411,6 +413,9 @@ jv:
     Built-in documentation includes JustEnoughVCS usage guides, collaboration paradigms, and best practices.
 
   confirm:
+    login: |
+      You are logging into upstream vault %{upstream} as %{account}, please confirm
+
     unstain: |
       This operation will disconnect the current workspace from the upstream vault `%{upstream}`
       If you reconnect to a vault with a mismatched identifier, it will cause serious problems, please operate with caution!

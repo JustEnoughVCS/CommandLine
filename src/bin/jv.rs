@@ -180,6 +180,14 @@ enum JustEnoughVcsWorkspaceCommand {
 
     /// Drop a sheet
     Drop(SheetDropArgs),
+
+    /// As Member, Direct, and Update
+    #[command(alias = "signin")]
+    Login(LoginArgs),
+
+    // Completion Helpers
+    #[command(name = "_ip_history")]
+    HistoryIpAddress,
 }
 
 #[derive(Parser, Debug)]
@@ -299,6 +307,23 @@ struct SheetDropArgs {
 
     /// Sheet name
     sheet_name: String,
+}
+
+#[derive(Parser, Debug)]
+struct LoginArgs {
+    /// Show help information
+    #[arg(short, long)]
+    help: bool,
+
+    /// Whether to skip confirmation
+    #[arg(short = 'C', long)]
+    confirm: bool,
+
+    /// Member ID
+    login_member_id: MemberId,
+
+    /// Upstream
+    upstream: String,
 }
 
 #[derive(Parser, Debug)]
@@ -859,6 +884,53 @@ async fn main() {
         }
         JustEnoughVcsWorkspaceCommand::Drop(args) => {
             jv_sheet_drop(args).await;
+        }
+        JustEnoughVcsWorkspaceCommand::Login(args) => {
+            if !args.confirm {
+                println!(
+                    "{}",
+                    t!(
+                        "jv.confirm.login",
+                        account = args.login_member_id,
+                        upstream = args.upstream
+                    )
+                    .trim()
+                    .yellow()
+                );
+                confirm_hint_or(t!("common.confirm"), || exit(1)).await;
+            }
+
+            let user_dir = match UserDirectory::current_doc_dir() {
+                Some(dir) => dir,
+                None => {
+                    eprintln!("{}", t!("jv.fail.account.no_user_dir").red());
+                    return;
+                }
+            };
+
+            jv_account_as(
+                user_dir,
+                SetLocalWorkspaceAccountArgs {
+                    help: false,
+                    account_name: args.login_member_id,
+                },
+            )
+            .await;
+
+            jv_direct(DirectArgs {
+                help: false,
+                upstream: Some(args.upstream.clone()),
+                confirm: true,
+            })
+            .await;
+
+            jv_update(UpdateArgs { help: false }).await;
+        }
+        JustEnoughVcsWorkspaceCommand::HistoryIpAddress => {
+            get_recent_ip_address()
+                .await
+                .iter()
+                .for_each(|ip| println!("{}", ip));
         }
     }
 }
