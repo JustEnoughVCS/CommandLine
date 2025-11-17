@@ -16,12 +16,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let copied_files = export(target_dir, publish_dir, publish_binaries, copy_configs)?;
 
     let duration = start_time.elapsed();
-    println!();
     println!(
-        "Done (in {:.1}s) Publish {} {}",
-        duration.as_secs_f32(),
+        "    {} publish {} {} in {:.1}s",
+        "Finished".green().bold(),
         copied_files,
-        if copied_files == 1 { "file" } else { "files" }
+        if copied_files == 1 { "file" } else { "files" },
+        duration.as_secs_f32(),
     );
 
     Ok(())
@@ -77,8 +77,8 @@ fn export(
                 }
 
                 println!(
-                    "        {} `{}` ({})",
-                    "Copy".green().bold(),
+                    "      {} `{}` ({})",
+                    "Binary".green().bold(),
                     file_name,
                     path.display()
                 );
@@ -100,8 +100,8 @@ fn export(
 
         if source_path.exists() {
             println!(
-                "        {} `{}` -> `{}` ({})",
-                "Copy".green().bold(),
+                "       {} `{}` -> `{}` ({})",
+                "Other".green().bold(),
                 config.from,
                 config.to,
                 source_path.display()
