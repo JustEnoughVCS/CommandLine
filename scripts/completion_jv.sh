@@ -14,7 +14,7 @@ _jv_completion() {
     local subsubcmd="${words[2]}"
 
     # Subcommands
-    local base_commands="create init direct unstain account update sheet here import export in out move mv docs exit use sheets accounts as make drop track hold throw"
+    local base_commands="create init direct unstain account update sheet status here import export in out move mv docs exit use sheets accounts as make drop track hold throw"
 
     # Subcommands - Account
     local account_commands="list as add remove movekey mvkey mvk help"

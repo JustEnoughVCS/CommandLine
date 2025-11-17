@@ -18,6 +18,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 alias jj='jv here'
 alias jvu='jv update'
 alias jvt='jv track'
+alias jmv='jv move'
 
 ##################
 ### COMPLETION ###
