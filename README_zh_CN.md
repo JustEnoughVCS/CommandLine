@@ -20,5 +20,5 @@
 
 ```bash
 # Linux
-curl -s https://raw.githubusercontent.com/JustEnoughVCS/CommandLine/main/scripts/installation.sh | bash
+curl -s https://raw.githubusercontent.com/JustEnoughVCS/CommandLine/main/scripts/inst.sh | bash
 ```
