@@ -1,4 +1,5 @@
 #!/bin/bash
+# The JustEnoughVCS CommandLine Completion
 
 _jvv_completion() {
     local cur prev words cword
