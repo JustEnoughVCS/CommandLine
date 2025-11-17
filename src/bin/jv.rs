@@ -28,10 +28,11 @@ use just_enough_vcs::{
         current::{current_doc_dir, current_local_path},
         data::{
             local::{
-                LocalWorkspace, config::LocalConfig, file_status::AnalyzeResult,
-                latest_info::LatestInfo, local_files::get_relative_paths, member_held::MemberHeld,
+                LocalWorkspace, cached_sheet::CachedSheet, config::LocalConfig,
+                file_status::AnalyzeResult, latest_info::LatestInfo,
+                local_files::get_relative_paths, member_held::MemberHeld,
             },
-            member::Member,
+            member::{Member, MemberId},
             user::UserDirectory,
         },
         docs::{ASCII_YIZI, document, documents},
@@ -50,7 +51,10 @@ use just_enough_vcs::{
     vcs::{actions::local_actions::proc_set_upstream_vault_action, registry::client_registry},
 };
 use just_enough_vcs_cli::{
-    data::compile_info::CompileInfo,
+    data::{
+        compile_info::CompileInfo,
+        ipaddress_history::{get_recent_ip_address, insert_recent_ip_address},
+    },
     utils::{
         display::{SimpleTable, md, size_str},
         env::current_locales,
@@ -1944,13 +1948,15 @@ async fn jv_direct(args: DirectArgs) {
                         "jv.result.direct.directed_and_stained",
                         upstream = upstream
                     ))
-                )
+                );
+                insert_recent_ip_address(upstream.to_string().trim()).await;
             }
             SetUpstreamVaultActionResult::Redirected => {
                 println!(
                     "{}",
                     md(t!("jv.result.direct.redirected", upstream = upstream))
-                )
+                );
+                insert_recent_ip_address(upstream.to_string().trim()).await;
             }
             SetUpstreamVaultActionResult::AlreadyStained => {
                 eprintln!(
