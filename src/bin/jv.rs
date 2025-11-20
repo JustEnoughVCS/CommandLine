@@ -17,32 +17,36 @@ use just_enough_vcs::{
                 proc_make_sheet_action,
             },
             virtual_file_actions::{
-                CreateTaskResult, TrackFileActionArguments, TrackFileActionResult,
+                CreateTaskResult, NextVersion, SyncTaskResult, TrackFileActionArguments,
+                TrackFileActionResult, UpdateDescription, UpdateTaskResult, VerifyFailReason,
                 proc_track_file_action,
             },
         },
         constants::{
-            CLIENT_FILE_LATEST_INFO, CLIENT_FILE_WORKSPACE, CLIENT_FOLDER_WORKSPACE_ROOT_NAME,
+            CLIENT_FILE_WORKSPACE, CLIENT_FOLDER_WORKSPACE_ROOT_NAME, CLIENT_PATH_WORKSPACE_ROOT,
             PORT, REF_SHEET_NAME,
         },
         current::{current_doc_dir, current_local_path},
         data::{
             local::{
                 LocalWorkspace, cached_sheet::CachedSheet, config::LocalConfig,
-                file_status::AnalyzeResult, latest_info::LatestInfo,
-                local_files::get_relative_paths, member_held::MemberHeld,
+                file_status::AnalyzeResult, latest_file_data::LatestFileData,
+                latest_info::LatestInfo, local_files::get_relative_paths,
             },
             member::{Member, MemberId},
             user::UserDirectory,
+            vault::virtual_file::VirtualFileVersion,
         },
         docs::{ASCII_YIZI, document, documents},
     },
 };
 use std::{
+    collections::{HashMap, HashSet},
     env::{current_dir, set_current_dir},
     net::SocketAddr,
     path::PathBuf,
     process::exit,
+    str::FromStr,
 };
 
 use clap::{Parser, Subcommand, arg, command};
@@ -59,7 +63,7 @@ use just_enough_vcs_cli::{
         display::{SimpleTable, md, size_str},
         env::current_locales,
         fs::move_across_partitions,
-        input::{confirm_hint, confirm_hint_or, input_with_editor},
+        input::{confirm_hint, confirm_hint_or, input_with_editor, show_in_pager},
         socket_addr_helper,
         sort::quick_sort_with_cmp,
     },
@@ -419,7 +423,7 @@ struct MoveKeyToAccountArgs {
     key_path: PathBuf,
 }
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone)]
 struct TrackFileArgs {
     /// Show help information
     #[arg(short, long)]
@@ -428,13 +432,17 @@ struct TrackFileArgs {
     /// Track files
     track_files: Option<Vec<PathBuf>>,
 
+    /// Commit - Description
+    #[arg(short, long)]
+    desc: Option<String>,
+
+    /// Commit - Description
+    #[arg(short, long)]
+    next_version: Option<String>,
+
     /// Commit - Editor mode
     #[arg(short, long)]
     work: bool,
-
-    /// Commit - Text mode
-    #[arg(short, long)]
-    msg: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -1015,11 +1023,46 @@ async fn jv_here(_args: HereArgs) {
         return;
     };
 
+    let Ok(latest_file_data_path) = LatestFileData::data_path(&local_cfg.current_account()) else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return;
+    };
+
+    let Ok(latest_file_data) = LatestFileData::read_from(&latest_file_data_path).await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return;
+    };
+
     // Print path information
     let sheet_name = if let Some(sheet_name) = local_cfg.sheet_in_use() {
         sheet_name.to_string()
     } else {
         "".to_string()
+    };
+
+    // Read cached sheet
+    let Ok(cached_sheet) = CachedSheet::cached_sheet_data(&sheet_name).await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return;
+    };
+
+    let Some(local_workspace) = LocalWorkspace::init_current_dir(local_cfg.clone()) else {
+        eprintln!("{}", md(t!("jv.fail.workspace_not_found")).trim());
+        return;
+    };
+
+    let Ok(analyzed) = AnalyzeResult::analyze_local_status(&local_workspace).await else {
+        eprintln!("{}", md(t!("jv.fail.status.analyze")).trim());
+        return;
+    };
+
+    // Read local sheet
+    let Ok(local_sheet) = local_workspace
+        .local_sheet(&local_cfg.current_account(), &sheet_name)
+        .await
+    else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return;
     };
 
     let path = match current_dir() {
@@ -1051,23 +1094,22 @@ async fn jv_here(_args: HereArgs) {
         "{}",
         t!(
             "jv.success.here.path_info",
-            upstream = local_cfg.upstream_addr().to_string().cyan(),
-            account = local_cfg.current_account().green(),
+            upstream = local_cfg.upstream_addr().to_string(),
+            account = local_cfg.current_account(),
             sheet_name = sheet_name.yellow(),
             path = relative_path,
             minutes = minutes
         )
         .trim()
     );
-    println!();
 
     // Print file info
     let mut table = SimpleTable::new(vec![
-        t!("jv.success.here.items.name"),
-        t!("jv.success.here.items.version"),
-        t!("jv.success.here.items.hold"),
-        t!("jv.success.here.items.size"),
         t!("jv.success.here.items.editing"),
+        t!("jv.success.here.items.holder"),
+        t!("jv.success.here.items.size"),
+        t!("jv.success.here.items.version"),
+        t!("jv.success.here.items.name"),
     ]);
 
     let mut dir_count = 0;
@@ -1090,30 +1132,138 @@ async fn jv_here(_args: HereArgs) {
 
                 let size = metadata.len();
                 let is_dir = file_type.is_dir();
-                let version = "-";
-                let hold = "-";
-                let editing = "-";
+                let mut version = "-".to_string();
+                let mut hold = "-".to_string();
+                let mut editing = "-".to_string();
 
                 if is_dir {
+                    // Directory
+                    // Add directory count
                     dir_count += 1;
-                    table.push_item(vec![
-                        format!("{}/", file_name.cyan()),
-                        version.to_string(),
-                        hold.to_string(),
-                        size_str(size as usize),
-                        editing.to_string(),
-                    ]);
+
+                    // Add directory item
+                    table.insert_item(
+                        0,
+                        vec![
+                            editing.to_string(),
+                            hold.to_string(),
+                            "-".to_string(),
+                            version.to_string(),
+                            t!(
+                                "jv.success.here.append_info.name",
+                                name = format!("{}/", file_name.cyan())
+                            )
+                            .trim()
+                            .to_string(),
+                        ],
+                    );
                 } else {
+                    // File
+                    // Add file count
                     file_count += 1;
+
+                    // Get current path
+                    let current_path = PathBuf::from_str(relative_path.as_ref())
+                        .unwrap()
+                        .join(file_name.clone());
+
+                    // Get mapping
+                    if let Some(mapping) = cached_sheet.mapping().get(&current_path) {
+                        let mut is_file_held = false;
+                        let mut is_version_match = false;
+
+                        // Hold status
+                        let id = mapping.id.clone();
+                        if let Some(holder) = latest_file_data.file_holder(&id) {
+                            if holder == &local_cfg.current_account() {
+                                hold = t!("jv.success.here.append_info.holder.yourself")
+                                    .trim()
+                                    .to_string();
+                                is_file_held = true;
+                            } else {
+                                let holder_text = t!(
+                                    "jv.success.here.append_info.holder.others",
+                                    holder = holder
+                                )
+                                .trim()
+                                .truecolor(128, 128, 128);
+                                hold = holder_text.to_string();
+                            }
+                        }
+
+                        // Version status
+                        if let Some(latest_version) = latest_file_data.file_version(&id) {
+                            let local_version = local_sheet.mapping_data(&current_path);
+                            if let Ok(local_mapping) = local_version {
+                                let local_version = local_mapping.version_when_updated();
+                                if latest_version == local_version {
+                                    version = t!(
+                                        "jv.success.here.append_info.version.match",
+                                        version = latest_version
+                                    )
+                                    .trim()
+                                    .to_string();
+                                    is_version_match = true;
+                                } else {
+                                    version = t!(
+                                        "jv.success.here.append_info.version.unmatch",
+                                        remote_version = local_version,
+                                    )
+                                    .trim()
+                                    .red()
+                                    .to_string();
+                                }
+                            }
+                        }
+
+                        // Editing status
+                        let modified = analyzed.modified.contains(&current_path);
+                        if !is_file_held || !is_version_match {
+                            if modified {
+                                editing = t!(
+                                    "jv.success.here.append_info.editing.cant_edit_but_modified"
+                                )
+                                .trim()
+                                .red()
+                                .to_string();
+                            } else {
+                                editing = t!("jv.success.here.append_info.editing.cant_edit")
+                                    .trim()
+                                    .truecolor(128, 128, 128)
+                                    .to_string();
+                            }
+                        } else {
+                            if modified {
+                                editing = t!("jv.success.here.append_info.editing.modified")
+                                    .trim()
+                                    .cyan()
+                                    .to_string();
+                            } else {
+                                editing = t!("jv.success.here.append_info.editing.can_edit")
+                                    .trim()
+                                    .to_string();
+                            }
+                        }
+                    }
+
                     table.push_item(vec![
-                        file_name,
-                        version.to_string(),
-                        hold.to_string(),
-                        size_str(size as usize),
                         editing.to_string(),
+                        hold.to_string(),
+                        t!(
+                            "jv.success.here.append_info.size",
+                            size = size_str(size as usize)
+                        )
+                        .trim()
+                        .yellow()
+                        .to_string(),
+                        version.to_string(),
+                        t!("jv.success.here.append_info.name", name = file_name)
+                            .trim()
+                            .to_string(),
                     ]);
                 }
 
+                // Total Size
                 total_size += size;
             }
         }
@@ -1145,14 +1295,24 @@ async fn jv_status(_args: StatusArgs) {
         return;
     };
 
-    let account = local_cfg.current_account();
-
-    let Ok(member_held_path) = MemberHeld::held_file_path(&account) else {
+    let Ok(latest_info) = LatestInfo::read_from(LatestInfo::latest_info_path(
+        &local_dir,
+        &local_cfg.current_account(),
+    ))
+    .await
+    else {
         eprintln!("{}", md(t!("jv.fail.read_cfg")));
         return;
     };
 
-    let Ok(member_held) = MemberHeld::read_from(&member_held_path).await else {
+    let account = local_cfg.current_account();
+
+    let Ok(latest_file_data_path) = LatestFileData::data_path(&account) else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return;
+    };
+
+    let Ok(latest_file_data) = LatestFileData::read_from(&latest_file_data_path).await else {
         eprintln!("{}", md(t!("jv.fail.read_cfg")));
         return;
     };
@@ -1212,6 +1372,7 @@ async fn jv_status(_args: StatusArgs) {
                 path = path.display().to_string()
             )
             .trim()
+            .red()
             .to_string()
         })
         .collect();
@@ -1240,7 +1401,7 @@ async fn jv_status(_args: StatusArgs) {
             let holder_match = {
                 if let Ok(mapping) = local_sheet.mapping_data(path) {
                     let vfid = mapping.mapping_vfid();
-                    match member_held.file_holder(vfid) {
+                    match latest_file_data.file_holder(vfid) {
                         Some(holder) => holder == &account,
                         None => false,
                     }
@@ -1251,9 +1412,10 @@ async fn jv_status(_args: StatusArgs) {
 
             let base_version_match = {
                 if let Ok(mapping) = local_sheet.mapping_data(path) {
+                    let vfid = mapping.mapping_vfid();
                     let ver = mapping.version_when_updated();
-                    if let Some(cached) = cached_sheet.mapping().get(path) {
-                        ver == &cached.version
+                    if let Some(latest_version) = latest_file_data.file_version(&vfid) {
+                        ver == latest_version
                     } else {
                         true
                     }
@@ -1270,6 +1432,7 @@ async fn jv_status(_args: StatusArgs) {
                     reason = t!("jv.success.status.invalid_modified_reasons.not_holder")
                 )
                 .trim()
+                .red()
                 .to_string();
             }
 
@@ -1281,6 +1444,7 @@ async fn jv_status(_args: StatusArgs) {
                     reason = t!("jv.success.status.invalid_modified_reasons.base_version_mismatch")
                 )
                 .trim()
+                .red()
                 .to_string();
             }
 
@@ -1306,6 +1470,13 @@ async fn jv_status(_args: StatusArgs) {
     if has_file_modifications {
         sort_paths(&mut modified_items);
     }
+
+    // Calculate duration since last update
+    let update_instant = latest_info.update_instant.unwrap_or(Instant::now());
+    let duration = Instant::now().duration_since(update_instant);
+    let h = duration.as_secs() / 3600;
+    let m = (duration.as_secs() % 3600) / 60;
+    let s = duration.as_secs() % 60;
 
     println!(
         "{}",
@@ -1345,13 +1516,16 @@ async fn jv_status(_args: StatusArgs) {
                 if modified_items.is_empty() {
                     "".to_string()
                 } else {
-                    modified_items.join("\n") + "\n"
+                    modified_items.join("\n")
                 }
             } else {
                 t!("jv.success.status.no_file_modifications")
                     .trim()
                     .to_string()
-            }
+            },
+            h = h,
+            m = m,
+            s = s
         ))
         .trim()
     );
@@ -1709,7 +1883,12 @@ async fn jv_sheet_drop(args: SheetDropArgs) {
 }
 
 async fn jv_track(args: TrackFileArgs) {
-    let Some(track_files) = args.track_files else {
+    let track_files = if let Some(files) = args.track_files.clone() {
+        files
+            .iter()
+            .map(|f| current_dir().unwrap().join(f))
+            .collect()
+    } else {
         println!("{}", md(t!("jv.track")));
         return;
     };
@@ -1721,12 +1900,17 @@ async fn jv_track(args: TrackFileArgs) {
         }
     };
 
+    let Some(local_workspace) = LocalWorkspace::init_current_dir(local_config.clone()) else {
+        eprintln!("{}", md(t!("jv.fail.workspace_not_found")).trim());
+        return;
+    };
+
     let Some(local_dir) = current_local_path() else {
         eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
         return;
     };
 
-    let Some(files) = get_relative_paths(local_dir, track_files).await else {
+    let Some(files) = get_relative_paths(&local_dir, &track_files).await else {
         eprintln!(
             "{}",
             md(t!("jv.fail.track.parse_fail", param = "track_files"))
@@ -1744,12 +1928,16 @@ async fn jv_track(args: TrackFileArgs) {
         None => return,
     };
 
+    let files = files.iter().cloned().collect();
+    let update_info = get_update_info(local_workspace, &files, args).await;
+
     match proc_track_file_action(
         &pool,
         ctx,
         TrackFileActionArguments {
-            relative_pathes: files.iter().cloned().collect(),
-            display_progressbar: true,
+            relative_pathes: files,
+            file_update_info: update_info,
+            print_infos: true,
         },
     )
     .await
@@ -1799,11 +1987,233 @@ async fn jv_track(args: TrackFileArgs) {
                     )
                 }
             },
-            TrackFileActionResult::UpdateTaskFailed(update_task_result) => todo!(),
-            TrackFileActionResult::SyncTaskFailed(sync_task_result) => todo!(),
+            TrackFileActionResult::UpdateTaskFailed(update_task_result) => match update_task_result
+            {
+                UpdateTaskResult::Success(_) => {} // Success is not handled here
+                UpdateTaskResult::VerifyFailed { path, reason } => match reason {
+                    VerifyFailReason::SheetNotFound(sheet_name) => {
+                        eprintln!(
+                            "{}",
+                            md(t!(
+                                "jv.result.track.update_failed.verify.sheet_not_found",
+                                sheet_name = sheet_name
+                            ))
+                        )
+                    }
+                    VerifyFailReason::MappingNotFound => {
+                        eprintln!(
+                            "{}",
+                            md(t!(
+                                "jv.result.track.update_failed.verify.mapping_not_found",
+                                path = path.display()
+                            ))
+                        )
+                    }
+                    VerifyFailReason::VirtualFileNotFound(vfid) => {
+                        eprintln!(
+                            "{}",
+                            md(t!(
+                                "jv.result.track.update_failed.verify.virtual_file_not_found",
+                                vfid = vfid
+                            ))
+                        )
+                    }
+                    VerifyFailReason::VirtualFileReadFailed(vfid) => {
+                        eprintln!(
+                            "{}",
+                            md(t!(
+                                "jv.result.track.update_failed.verify.virtual_file_read_failed",
+                                vfid = vfid
+                            ))
+                        )
+                    }
+                    VerifyFailReason::NotHeld => {
+                        eprintln!(
+                            "{}",
+                            md(t!(
+                                "jv.result.track.update_failed.verify.not_held",
+                                path = path.display()
+                            ))
+                        )
+                    }
+                    VerifyFailReason::VersionDismatch(current_version, latest_version) => {
+                        eprintln!(
+                            "{}",
+                            md(t!(
+                                "jv.result.track.update_failed.verify.version_dismatch",
+                                version_current = current_version,
+                                version_latest = latest_version
+                            ))
+                        )
+                    }
+                    VerifyFailReason::UpdateButNoDescription => {
+                        eprintln!(
+                            "{}",
+                            md(t!(
+                                "jv.result.track.update_failed.verify.update_but_no_description"
+                            ))
+                        )
+                    }
+                    VerifyFailReason::VersionAlreadyExist(latest_version) => {
+                        eprintln!(
+                            "{}",
+                            md(t!(
+                                "jv.result.track.update_failed.verify.version_already_exist",
+                                path = path.display(),
+                                version = latest_version
+                            ))
+                        )
+                    }
+                },
+            },
+            TrackFileActionResult::SyncTaskFailed(sync_task_result) => match sync_task_result {
+                SyncTaskResult::Success(_) => {} // Success is not handled here
+            },
         },
         Err(e) => handle_err(e),
     }
+}
+
+async fn get_update_info(
+    workspace: LocalWorkspace,
+    files: &HashSet<PathBuf>,
+    args: TrackFileArgs,
+) -> HashMap<PathBuf, (NextVersion, UpdateDescription)> {
+    let mut result = HashMap::new();
+
+    if files.len() == 1 {
+        if let (Some(desc), Some(ver)) = (&args.desc, &args.next_version) {
+            if let Some(file) = files.iter().next() {
+                result.insert(file.clone(), (ver.clone(), desc.clone()));
+                return result;
+            }
+        }
+    }
+    if args.work {
+        return start_update_editor(workspace, files, &args).await;
+    }
+
+    result
+}
+
+async fn start_update_editor(
+    workspace: LocalWorkspace,
+    files: &HashSet<PathBuf>,
+    args: &TrackFileArgs,
+) -> HashMap<PathBuf, (NextVersion, UpdateDescription)> {
+    // Get files
+    let Ok(analyzed) = AnalyzeResult::analyze_local_status(&workspace).await else {
+        return HashMap::new();
+    };
+    // Has unsolved moves, skip
+    if analyzed.lost.len() > 0 || analyzed.moved.len() > 0 {
+        return HashMap::new();
+    }
+    // No modified, skip
+    if analyzed.modified.len() < 1 {
+        return HashMap::new();
+    }
+    // No sheet, skip
+    let Some(sheet) = workspace.config().lock().await.sheet_in_use().clone() else {
+        return HashMap::new();
+    };
+    // No cached sheet, skip
+    let Ok(cached_sheet) = CachedSheet::cached_sheet_data(&sheet).await else {
+        return HashMap::new();
+    };
+    let files: Vec<(PathBuf, VirtualFileVersion)> = files
+        .iter()
+        .filter_map(|file| {
+            if analyzed.modified.contains(file) {
+                if let Some(mapping_item) = cached_sheet.mapping().get(file) {
+                    return Some((file.clone(), mapping_item.version.clone()));
+                }
+            }
+            None
+        })
+        .collect();
+
+    // Generate editor text
+    let mut table = SimpleTable::new_with_padding(
+        vec![
+            t!("editor.modified_line.header.file_path").trim(),
+            t!("editor.modified_line.header.old_version").trim(),
+            "",
+            t!("editor.modified_line.header.new_version").trim(),
+        ],
+        2,
+    );
+    for item in files {
+        table.push_item(vec![
+            item.0.display().to_string(),
+            item.1.to_string(),
+            t!("editor.modified_line.content.arrow").trim().to_string(),
+            " ".to_string(),
+        ]);
+    }
+    let lines = table.to_string();
+
+    let str = t!(
+        "editor.update_editor",
+        modified_lines = lines,
+        description = args.desc.clone().unwrap_or_default()
+    );
+
+    let path = workspace
+        .local_path()
+        .join(CLIENT_PATH_WORKSPACE_ROOT)
+        .join(".UPDATE.md");
+    let result = input_with_editor(str, path, "#").await.unwrap_or_default();
+
+    let mut update_info = HashMap::new();
+
+    // Parse the result returned from the editor
+    let lines: Vec<&str> = result.lines().collect();
+    let mut i = 0;
+
+    // Find the separator line
+    let mut separator_index = None;
+    while i < lines.len() {
+        let line = lines[i].trim();
+        if line.chars().all(|c| c == '-') && line.len() >= 5 {
+            separator_index = Some(i);
+            break;
+        }
+        i += 1;
+    }
+
+    if let Some(sep_idx) = separator_index {
+        // Parse path and version information before the separator
+        for line in &lines[..sep_idx] {
+            let trimmed_line = line.trim();
+            if trimmed_line.is_empty() {
+                continue;
+            }
+
+            // Parse format: /directory/file.extension version -> new_version
+            if let Some(arrow_pos) = trimmed_line.find("->") {
+                let before_arrow = &trimmed_line[..arrow_pos].trim();
+                let after_arrow = &trimmed_line[arrow_pos + 2..].trim();
+
+                // Separate path and old version
+                if let Some(last_space) = before_arrow.rfind(' ') {
+                    let path_str = &before_arrow[..last_space].trim();
+                    let _old_version = &before_arrow[last_space + 1..].trim(); // Old version, needs parsing but not used
+                    let new_version = after_arrow.trim();
+
+                    if !path_str.is_empty() && !new_version.is_empty() {
+                        let path = PathBuf::from(path_str);
+                        // Get description (all content after the separator)
+                        let description = lines[sep_idx + 1..].join("\n").trim().to_string();
+
+                        update_info.insert(path, (new_version.to_string(), description));
+                    }
+                }
+            }
+        }
+    }
+
+    update_info
 }
 
 async fn jv_hold(_args: HoldFileArgs) {
@@ -2168,7 +2578,7 @@ async fn jv_docs(args: DocsArgs) {
             return;
         };
         let file = doc_dir.join("DOCS.MD");
-        if let Err(e) = input_with_editor(document, file, "").await {
+        if let Err(e) = show_in_pager(document, file).await {
             eprintln!(
                 "{}",
                 md(t!(
