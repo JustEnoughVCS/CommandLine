@@ -177,7 +177,7 @@ jv:
 
     outdated: |
       Workspace info has not been updated for %{hour} hours %{minutes} minutes
-      Use `jv u` to get the latest information
+      Use `jv update` to get the latest information
 
   help: |
     **JustEnoughVCS**
@@ -215,6 +215,7 @@ jv:
     **CONTEXT**:
       here                          - Display path information
       status                        - Display current sheet status information
+      info                          - Display individual file status
 
     **FILE TRANSFER**:
       import <PACKAGE_NAME>         - Import files from import area            [REMOTE]
@@ -227,6 +228,7 @@ jv:
       track <FILE>                  - Track files to latest version            [REMOTE]
       hold  <FILE>                  - Hold, sync and lock file                 [REMOTE]
       throw <FILE>                  - Throw, sync and unlock file              [REMOTE]
+      jump  <FILE> <VERSION>        - Jump file to other version               [REMOTE]
 
     **DOCUMENTATION**:
       docs list                     - List all available documentation
@@ -592,15 +594,14 @@ jv:
 
     here:
       items:
-        name: FILE_NAME
-        version: VERSION
-        hold: HOLD
-        size: SIZE
-        editing: EDITING
+        name: Name
+        version: Version
+        holder: Holder
+        size: Size
+        editing: Status
 
       path_info: |
-        Updated in %{minutes} minutes ago
-        CURRENT: %{upstream}/%{account}/%{sheet_name}/%{path}
+        CURRENT: %{upstream}/%{account}/%{sheet_name}/%{path} (%{minutes} min age)
 
       ghost_directory_item_info: |
         ? %{directory_name}/
@@ -617,43 +618,53 @@ jv:
       append_info:
         holder:
           yourself: |
-            Hold
+            You
 
           others: |
-            `%{holder}` held
+            %{holder}
 
         size: |
           %{size}
 
+        name: |
+          %{name}
+
         version:
           unmatch: |
-            %{version} -> %{remote_version}
+            %{remote_version}*
 
           match: |
             %{version}
 
         editing:
           cant_edit: |
-            Not allowed
+            Read
+
+          cant_edit_but_modified: |
+            Read*
 
           can_edit: |
-            Allowed
+            ReadWrite
 
-          edited: |
-            Modified
+          modified: |
+            ReadWrite*
 
       count_info: |
         %{dir_count} dir(s), %{file_count} file(s). Total %{size}.
 
     status:
       header: |
-        Viewing sheet %{sheet_name}. Before tracking file changes, please confirm:
+        Viewing sheet %{sheet_name}.
+        Before tracking file changes, please confirm:
 
       content: |
         Structure changes:
         %{moved_items}%{lost_items}%{created_items}
         Content modifications:
         %{modified_items}
+
+        **Note**: Results are based on information from %{h} hours %{m} minutes %{s} seconds ago and may not match actual information
+        Use `jv update` to get the latest information from upstream.
 
       created_item: |
         +   Created:      %{path}
@@ -771,3 +782,77 @@ jv:
         create_file_on_exist_path: |
           Failed to track and create file!
           The file path `%{path}` you want to track already exists in the remote sheet, please use a different path for tracking
+
+      update_failed:
+        verify:
+          sheet_not_found: Sheet %{sheet_name} does not exist!
+          mapping_not_found: |
+            Cannot get mapping for path %{path} from the sheet!
+            This means the file does not exist in the sheet. If it exists locally, it may have been deleted
+            Please use `jv update` to update the workspace and try again
+
+          virtual_file_not_found: |
+            Cannot read virtual file ID %{vfid} from the mapping!
+            This means the mapping exists in the sheet, but the actual file information is missing!
+            Please contact the upstream vault administrator for assistance
+
+          virtual_file_read_failed: |
+            Cannot read metadata for virtual file %{vfid} from the mapping!
+            This means the file exists, but the mapping information is corrupted!
+            Please contact the upstream vault administrator for assistance
+
+          not_held: |
+            You are not holding file %{path}!
+            This means you modified the file without holding it, and the upstream vault blocked your commit attempt
+            (Sorry, JustEnoughVCS collaboration is based on serial editing - parallel editing and merging is not allowed)
+
+            **Tip**: If you really need to commit this file, you can follow these steps:
+            1. First move the file outside the workspace and commit the correct version here
+            2. Use `jv info <this_file> --holder` to query the member currently editing it
+            3. Try to contact them, describe your situation, and wait for them to release editing rights
+            4. After editing rights are released, use `jv track <this_file>` to get the latest version from that member
+            5. Manually merge your backed-up version into the latest version
+            6. Commit your modified latest version, then release editing rights
+
+            Finally: You can use `jv here` to check file status in the directory before editing files to ensure you can edit
+
+          version_dismatch: |
+            The base version of the file you edited does not match the version in the upstream vault!
+            Your version is %{version_current} while the upstream version is %{version_latest}, the upstream vault blocked your commit
+
+            **Tip**:
+            You can use `jv jump <file> %{version_current}` to jump the version to your local version and commit again
+            If you don't want to force override the version, you can backup the file version, commit your local version to the latest, then manually merge the files and commit
+
+            Finally: You can use `jv here` to check file status in the directory before editing files to ensure you can edit
+
+          update_but_no_description: |
+            You are committing files to the latest version, but we don't know your modification content and new version number
+            You can use `jv track <file> --desc <description> -v <version>` to commit files
+            or use `jv track . --work` to enter the editor environment for committing
+
+          version_already_exist: |
+            The version %{version} of file %{path} you are committing already exists in the upstream vault, please use a different version number!
+
+editor:
+  update_editor: |
+    # You are using editor mode to track and update files
+    # The following files will be updated:
+    # - Adding `#` at the beginning of a line will skip the update,
+    # - Fill in the version after the arrow
+
+    %{modified_lines}
+
+    ----------------------------------------------------------------
+    # Update description
+    %{description}
+
+  modified_line:
+    header:
+      file_path: |
+        # PATH
+
+      old_version: OLD
+      new_version: NEW
+    content:
+      arrow: ->

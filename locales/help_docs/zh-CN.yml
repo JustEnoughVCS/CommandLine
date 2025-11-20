@@ -169,7 +169,7 @@ jv:
 
     outdated: |
       工作区内信息已经 %{hour} 小时 %{minutes} 分钟没有更新了
-      请使用 `jv u` 拿到最新信息
+      请使用 `jv update` 拿到最新信息
 
   help: |
     **JustEnoughVCS 本地工作区命令**
@@ -206,6 +206,7 @@ jv:
     **上下文查询**：
       here                    - 显示当前路径的相关信息
       status                  - 显示当前表的状态信息
+      info                    - 显示单个文件的状态
 
     **文件传递**：
       import <文件包名称>     - 从导入区导入文件                [远程]
@@ -214,9 +215,10 @@ jv:
 
     **文件操作**：
       move  <文件> <到>       - 安全地重命名文件
-      track <文件>            - 跟踪文件内容到最新版本          [远程]
+      track <文件>            - 追踪文件内容到最新版本          [远程]
       hold  <文件>            - 拿取文件，同步版本并获得编辑权  [远程]
       throw <文件>            - 丢弃文件，同步版本并放弃编辑权  [远程]
+      jump  <文件> <版本>     - 将文件的版本跳转至其他版本      [远程]
 
     **内建文档**：
       docs list               - 列出所有可用的文档
@@ -439,19 +441,19 @@ jv:
 
     track:
       prepare: |
-        您正在准备跟踪 %{file_counts} 个文件的变更，这些文件将遵循如下规则：
+        您正在准备追踪 %{file_counts} 个文件的变更，这些文件将遵循如下规则：
         1. 新文件，将被上传并加入您的表中管理
         2. 已持有文件，除非本地不存在或版本不匹配，否则永远执行上传操作
         3. 未持有文件，除非冻结版本，否则永远执行下载和更新最新版本
 
         **当前**：
         **下行**：%{old_files} 个待更新，%{download_files} 个待下载
-        **上行**：%{new_files} 个待跟踪，%{modified_files} 个待提交
+        **上行**：%{new_files} 个待追踪，%{modified_files} 个待提交
 
       need_upload: |
         因为您指定的追踪操作涉及上传，所以需要详细说明您的更改
         准备好提交了么？使用 `jv track <待上传文件> --work` 开始填写提交信息
-        不想使用命令行编辑器？使用 `jv track <待上传文件> --msg <本次修改信息>` 直接提交
+        不想使用命令行编辑器？使用 `jv track <待上传文件> --desc <本次修改信息>` 直接提交
 
   fail:
     std:
@@ -599,15 +601,14 @@ jv:
 
     here:
       items:
-        name: 文件名
-        version: 版本状态
-        hold: 持有状态
+        name: 名称
+        version: 版本
+        holder: 持有者
         size: 大小
-        editing: 编辑状态
+        editing: 状态
 
       path_info: |
-        信息更新自 %{minutes} 分钟前
-        所在：%{upstream}/%{account}/%{sheet_name}/%{path}
+        所在：%{upstream}/%{account}/%{sheet_name}/%{path}（%{minutes} 分钟前）
 
       ghost_directory_item_info: |
         ? %{directory_name}/
@@ -624,30 +625,36 @@ jv:
       append_info:
         holder:
           yourself: |
-            持有
+            你
 
           others: |
-            `%{holder}` 持有
+            %{holder}
 
         size: |
           %{size}
 
+        name: |
+          %{name}
+
         version:
           unmatch: |
-            %{version} 至 %{remote_version}
+            %{remote_version}*
 
           match: |
             %{version}
 
         editing:
           cant_edit: |
-            不可编辑
+            只读
+
+          cant_edit_but_modified: |
+            只读*
 
           can_edit: |
-            可编辑
+            读写
 
-          edited: |
-            已修改
+          modified: |
+            读写*
 
       count_info: |
         %{dir_count} 目录、%{file_count} 文件，共计 %{size}
@@ -661,6 +668,9 @@ jv:
         %{moved_items}%{lost_items}%{created_items}
         内容修改：
         %{modified_items}
+
+        **注意**：结果基于 %{h} 小时 %{m} 分钟 %{s} 秒前的信息推算，可能与实际信息不符
+        您可以使用 `jv update` 从上游获得最新的信息。
 
       created_item: |
         +   创建：      %{path}
@@ -776,5 +786,77 @@ jv:
           这意味着该表在上游库中已被删除，或该表不属于您
 
         create_file_on_exist_path: |
-          追踪并创建文件失败！
-          您要追踪的文件路径 `%{path}` 在远程表中已存在，请更换至其他路径追踪
+          提交并创建文件失败！
+          您要提交的文件路径 `%{path}` 在远程表中已存在，请更换至其他路径提交
+
+      update_failed:
+        verify:
+          sheet_not_found: 表 %{sheet_name} 不存在！
+          mapping_not_found: |
+            无法从表中获得路径 %{path} 的映射！
+            这说明文件在表中不存在，如果您本地存在该路径，可能说明文件被删除了
+            请使用 `jv update` 更新工作区后再尝试
+
+          virtual_file_not_found: |
+            无法从映射中读取虚拟文件ID %{vfid}
+            这说明映射存在于表中，但实际的文件信息丢失！
+            请联系上游库管理员了解情况
+
+          virtual_file_read_failed: |
+            无法从映射中读取虚拟文件 %{vfid} 的元数据
+            这说明虽然文件存在，但是映射信息损坏了！
+            请联系上游库管理员了解情况
+
+          not_held: |
+            您并未持有文件 %{path}！
+            这说明，您在未持有文件的时修改了它，并在尝试提交时被上游库阻拦
+            （非常抱歉，JustEnoughVCS 协作基于串行编辑，并行编辑后合并是不允许的）
+
+            **提示**：如果您确实需要提交该文件，可以参考以下步骤：
+            1. 首先将文件移动到工作区以外的地方，并重新在此处提交正确的版本
+            2. 使用 `jv info <该文件> --holder` 查询正在编辑的成员
+            3. 尝试联系他，并描述您的情况，并等待该成员释放编辑权
+            4. 释放编辑权后，使用 `jv track <该文件>` 拿到该成员的最新版本
+            5. 手动地将您备份的版本合并至最新版本中
+            6. 将您修改的最新版提交，然后释放编辑权
+
+            最后：您可以在编辑文件前，使用 `jv here` 查看所在目录的文件状态，以确保自己可以编辑
+
+          version_dismatch: |
+            您编辑的文件基准版本和上游库中的版本不匹配！
+            您的版本是 %{version_current} 而上游版本是 %{version_latest}，上游库禁止了您的提交
+
+            **提示**：
+            您可以使用 `jv jump <文件> %{version_current}` 将版本跳转至您的本地版本，并再次提交
+            若您不期望强制覆盖版本，可以选择将文件版本备份，并提交本地版本至最新后，再手动地合并文件并提交
+
+            最后：您可以在编辑文件前，使用 `jv here` 查看所在目录的文件状态，以确保自己可以编辑
+
+          update_but_no_description: |
+            您正在提交文件至最新版本，但是我们并不知道您的修改内容和新的版本号
+            使用 `jv track <文件> --desc <描述> -v <版本>` 提交文件
+            或使用 `jv track . --work` 进入编辑器环境提交
+
+          version_already_exist: |
+            您正在提交的文件 %{path} 的版本 %{version} 在上游库中已存在，请使用其他版本号！
+
+editor:
+  update_editor: |
+    # 您正在使用编辑器模式追踪和提交文件
+    # 以下文件将被提交：（行首添加 `#` 视为放弃提交，尾部箭头后请填写版本）
+
+    %{modified_lines}
+
+    ----------------------------------------------------------------------
+    # 请在后续填写提交描述，以告诉其他成员您做了什么
+    %{description}
+
+  modified_line:
+    header:
+      file_path: |
+        # 文件
+
+      old_version: 旧
+      new_version: 新
+    content:
+      arrow: ->
