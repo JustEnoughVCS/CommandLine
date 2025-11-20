@@ -55,6 +55,30 @@ impl SimpleTable {
         self.line.push(processed_items);
     }
 
+    /// Insert a new row of items at the specified index
+    pub fn insert_item(&mut self, index: usize, items: Vec<impl Into<String>>) {
+        let items: Vec<String> = items.into_iter().map(|v| v.into()).collect();
+
+        let mut processed_items = Vec::with_capacity(self.items.len());
+
+        for i in 0..self.items.len() {
+            if i < items.len() {
+                processed_items.push(items[i].clone());
+            } else {
+                processed_items.push(String::new());
+            }
+        }
+
+        for (i, d) in processed_items.iter().enumerate() {
+            let d_len = display_width(d);
+            if d_len > self.length[i] {
+                self.length[i] = d_len;
+            }
+        }
+
+        self.line.insert(index, processed_items);
+    }
+
     /// Get the current maximum column widths
     fn get_column_widths(&self) -> &[usize] {
         &self.length
