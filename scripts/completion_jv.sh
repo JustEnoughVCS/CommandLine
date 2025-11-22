@@ -22,7 +22,7 @@ _jv_completion() {
                          jump align"
 
     # Subcommands - Account
-    local account_commands="list as add remove movekey mvkey mvk help"
+    local account_commands="list as add remove movekey mvkey mvk genpub help"
 
     # Subcommands - Sheet
     local sheet_commands="list use exit make drop help"
@@ -44,14 +44,23 @@ _jv_completion() {
         fi
 
         case "$subsubcmd" in
-            "as"|"remove"|"mvkey"|"mvk"|"movekey")
+            "as"|"remove"|"mvkey"|"mvk"|"movekey"|"genpub")
                 if [[ $cword -eq 3 ]]; then
                     # Use jv account list --raw
                     local accounts
                     accounts=$($cmd account list --raw 2>/dev/null)
                     COMPREPLY=($(compgen -W "$accounts" -- "$cur"))
-                elif [[ $cword -eq 4 && ("$subsubcmd" == "mvkey" || "$subsubcmd" == "mvk" || "$subsubcmd" == "movekey") ]]; then
+                elif [[ $cword -eq 4 && ("$subsubcmd" == "mvkey" || "$subsubcmd" == "mvk" || "$subsubcmd" == "movekey" || "$subsubcmd" == "genpub") ]]; then
                     COMPREPLY=($(compgen -f -- "$cur"))
+                fi
+                ;;
+            "add")
+                if [[ $cword -eq 3 ]]; then
+                    # No completion for account name, let user type it
+                    COMPREPLY=()
+                elif [[ $cword -eq 4 && "$cur" == -* ]]; then
+                    # Complete --keygen option
+                    COMPREPLY=($(compgen -W "--keygen" -- "$cur"))
                 fi
                 ;;
             "-"|"rm")

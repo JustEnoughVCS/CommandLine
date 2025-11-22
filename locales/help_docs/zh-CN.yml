@@ -185,7 +185,7 @@ jv:
       update                  - 同步最新的信息                  [远程]
 
     **账户**：
-      account [list|as|add|remove|movekey]
+      account [list|as|add|remove|movekey|genpub]
         list                  - 列出所有账户
         as      <账户名称>    - 设置该工作区使用的账户
 
@@ -193,6 +193,7 @@ jv:
         remove  <账户名称>    - 从计算机删除账户
 
         movekey <账户> <私钥> - 移动私钥文件到指定账户
+        genpub  <账户> <目录> - 输出公钥文件到指定目录
 
     **表操作**：
       sheet [list|use|exit|make|drop|align]
@@ -236,6 +237,10 @@ jv:
     jv account add <账户名称> - 为当前计算机添加账户
     jv account remove <账户名称> - 删除该账户
     jv account movekey <账户名称> <私钥文件> - 移动私钥到指定账户
+    jv account genpub <账户名称> <输出目录> - 将公钥输出至某个目录，留空为当前
+
+    **提示**：使用 jv account add <账户名称> --keygen 可以自动为您的账户生成 ED25519 私钥
+    **注意**：`--keygen` 和 `genpub` 都需要您的计算机能够直接调用 OpenSSL 命令行工具
 
     账户是本地计算机上的身份标识，每个账户可以关联不同的私钥
     您需要先设置账户才能与上游库进行交互
@@ -486,7 +491,15 @@ jv:
       list: 获取账户列表失败！
       move_key: 将该私钥移动至账户目录失败！
       not_found: 无法找到账户 `%{account}`!
+      no_key_registered: 账户 `%{account}` 没有注册私钥！
       as: 设置当前账户失败，请确保当前表已退出
+      keygen: 生成私钥失败！请尝试手动生成私钥
+      keygen_exec: |
+        运行 OpenSSL 失败！
+        请检查您的计算机中是否安装 OpenSSL
+      generate_pub_key: |
+        生成公钥失败！
+        请检查 OpenSSL 是否安装，或手动生成公钥
 
     init_create_dir_not_empty: |
       当前目录并不是空的！
@@ -561,6 +574,7 @@ jv:
 
         status_has_key: (已注册私钥)
       move_key: 成功将该私钥移动至账户目录！
+      generate_pub_key: 成功在 `%{export}` 生成公钥，请将它交给上游库管理员！
     create: 成功创建本地工作区！
     init: 成功在此处创建工作区！
     unstain: |

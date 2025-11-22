@@ -69,7 +69,7 @@ use just_enough_vcs_cli::{
     },
 };
 use rust_i18n::{set_locale, t};
-use tokio::{fs, net::TcpSocket, time::Instant};
+use tokio::{fs, net::TcpSocket, process::Command, time::Instant};
 
 // Import i18n files
 rust_i18n::i18n!("locales", fallback = "en");
@@ -227,6 +227,10 @@ enum AccountManage {
     /// Move private key file to account
     #[command(alias = "mvkey", alias = "mvk", alias = "movekey")]
     MoveKey(MoveKeyToAccountArgs),
+
+    /// Output public key file to specified directory
+    #[command(alias = "genpub")]
+    GeneratePublicKey(GeneratePublicKeyArgs),
 }
 
 #[derive(Subcommand, Debug)]
@@ -377,6 +381,10 @@ struct AccountAddArgs {
 
     /// Account name
     account_name: String,
+
+    /// Auto generate ED25519 private key
+    #[arg(short = 'K', long = "keygen")]
+    keygen: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -421,6 +429,19 @@ struct MoveKeyToAccountArgs {
 
     /// Private key file path
     key_path: PathBuf,
+}
+
+#[derive(Parser, Debug)]
+struct GeneratePublicKeyArgs {
+    /// Show help information
+    #[arg(short, long)]
+    help: bool,
+
+    /// Account name
+    account_name: String,
+
+    /// Private key file path
+    output_dir: Option<PathBuf>,
 }
 
 #[derive(Parser, Debug, Clone)]
@@ -735,6 +756,13 @@ async fn main() {
                         return;
                     }
                     jv_account_move_key(user_dir, move_key_to_account_args).await;
+                }
+                AccountManage::GeneratePublicKey(generate_public_key_args) => {
+                    if generate_public_key_args.help {
+                        println!("{}", md(t!("jv.account")));
+                        return;
+                    }
+                    jv_account_generate_pub_key(user_dir, generate_public_key_args).await;
                 }
             }
         }
@@ -2248,6 +2276,40 @@ async fn jv_account_add(user_dir: UserDirectory, args: AccountAddArgs) {
         }
         Err(_) => {
             eprintln!("{}", t!("jv.fail.account.add", account = args.account_name));
+            return;
+        }
+    }
+    if args.keygen {
+        let output_path = current_local_path().unwrap().join("tempkey.pem");
+
+        match Command::new("openssl")
+            .args([
+                "genpkey",
+                "-algorithm",
+                "ed25519",
+                "-out",
+                &output_path.to_string_lossy(),
+            ])
+            .status()
+            .await
+        {
+            Ok(status) if status.success() => {
+                jv_account_move_key(
+                    user_dir,
+                    MoveKeyToAccountArgs {
+                        help: false,
+                        account_name: args.account_name,
+                        key_path: output_path,
+                    },
+                )
+                .await
+            }
+            Ok(_) => {
+                eprintln!("{}", t!("jv.fail.account.keygen"));
+            }
+            Err(_) => {
+                eprintln!("{}", t!("jv.fail.account.keygen_exec"));
+            }
         }
     }
 }
@@ -2370,6 +2432,43 @@ async fn jv_account_move_key(user_dir: UserDirectory, args: MoveKeyToAccountArgs
     {
         Ok(_) => println!("{}", t!("jv.success.account.move_key")),
         Err(_) => eprintln!("{}", t!("jv.fail.account.move_key")),
+    }
+}
+
+async fn jv_account_generate_pub_key(user_dir: UserDirectory, args: GeneratePublicKeyArgs) {
+    let private_key_path = user_dir.account_private_key_path(&args.account_name);
+    let target_path = args
+        .output_dir
+        .unwrap_or(current_dir().unwrap())
+        .join(format!("{}.pem", args.account_name));
+
+    match Command::new("openssl")
+        .args([
+            "pkey",
+            "-in",
+            &private_key_path.to_string_lossy(),
+            "-pubout",
+            "-out",
+            &target_path.to_string_lossy(),
+        ])
+        .status()
+        .await
+    {
+        Ok(status) if status.success() => {
+            println!(
+                "{}",
+                t!(
+                    "jv.success.account.generate_pub_key",
+                    export = target_path.display()
+                )
+            );
+        }
+        Ok(_) => {
+            eprintln!("{}", t!("jv.fail.account.keygen"));
+        }
+        Err(_) => {
+            eprintln!("{}", t!("jv.fail.account.keygen_exec"));
+        }
     }
 }
 

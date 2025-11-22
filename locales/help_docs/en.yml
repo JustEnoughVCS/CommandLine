@@ -196,12 +196,13 @@ jv:
       update                        - Download latest information              [REMOTE]
 
     **ACCOUNTS**:
-      account [list|as|add|remove|movekey]
+      account [list|as|add|remove|movekey|genpub]
         list                        - List accounts
         as      <ACCOUNT_NAME>      - Switch account in workspace
         add     <ACCOUNT_NAME>      - Add account to this computer
         remove  <ACCOUNT_NAME>      - Remove account from computer
         movekey <NAME> <KEY_FILE>   - Move private key file to specified account
+        genpub  <NAME> <DIRECTORY>  - Output public key file to specified directory
 
     **SHEETS**:
       sheet [list|use|exit|make|drop|align]
@@ -246,6 +247,10 @@ jv:
     jv account add <ACCOUNT_NAME> - Add an account to this computer
     jv account remove <ACCOUNT_NAME> - Delete this account
     jv account movekey <ACCOUNT_NAME> <PRIVATE_KEY_FILE> - Move private key to specified account
+    jv account genpub <ACCOUNT_NAME> <OUTPUT_DIR> - Output public key to specified directory, leave empty for current directory
+
+    **Tip**: Use jv account add <ACCOUNT_NAME> --keygen to automatically generate ED25519 private key for your account
+    **Note**: Both `--keygen` and `genpub` require your computer to be able to directly call OpenSSL command-line tools
 
     Accounts are identity identifiers on the local computer, each account can be associated with different private keys.
     You need to set up accounts before interacting with upstream vaults.
@@ -484,7 +489,15 @@ jv:
       remove: Failed to remove account `%{account}`, please check if the account exists.
       list: Failed to get account list!
       not_found: Cannot find account `%{account}`!
+      no_key_registered: Account `%{account}` has no registered private key!
       as: Failed to set current account, please ensure the current sheet has been exited
+      keygen: Failed to generate private key! Please try generating private key manually
+      keygen_exec: |
+        Failed to run OpenSSL!
+        Please check if OpenSSL is installed on your computer
+      generate_pub_key: |
+        Failed to generate public key!
+        Please check if OpenSSL is installed, or manually generate the public key
 
     init_create_dir_not_empty: |
       The current directory is not empty!
@@ -555,6 +568,7 @@ jv:
 
         status_has_key: (REGISTERED)
       move_key: Successfully moved the private key to the account directory!
+      generate_pub_key: Successfully generated public key at `%{export}`, please give it to the upstream vault administrator!
     create: Successfully created local workspace!
     init: Successfully created workspace here!
     unstain: |
