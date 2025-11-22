@@ -258,10 +258,18 @@ jv:
     jv sheet drop <表名称> - 将表抛弃，以供其他人使用
 
     **对齐**：
-    jv sheet align --list - 查看所有需要对齐的项目
-    jv sheet align [local/remote] - 全部基于本地位置或远程位置
-    jv sheet align <对齐任务> [local/remote] - 选择基于本地位置或远程位置
-    jv sheet align - 手动指定对齐方式
+    jv sheet align tasks - 查看所有需要对齐的项
+
+    对于移动项：
+    jv sheet align <项> [local/remote] - 对齐指定移动项
+    jv sheet align moved [local/remote] - 对齐所有移动项
+
+    对于丢失项：
+    jv sheet align <项> <创建项> - 指向创建项，以确认移动
+    jv sheet align <项> confirm - 确认该文件已丢失
+    jv sheet align lost confirm - 确认所有丢失项
+
+    jv sheet align --work - 使用编辑器模式对齐文件
 
     表是 JustEnoughVCS 中的核心概念，每个表代表一块独立的文件集合
     您可以在不同的表之间切换工作，或者将文件从一张表导出到另一张表
@@ -484,6 +492,16 @@ jv:
     from_core: |
       **错误**：`%{err}`（该错误来自核心调用）
 
+    sheet:
+      align:
+        no_direction: |
+          无法确认对齐的方向！
+          **提示**：使用 local 或 remote 来表示您要保留本地或远程的路径
+
+        align_item_not_found: |
+          无法找到该对齐项！
+          **提示**：使用 `jv align` 查看可用对齐项
+
     account:
       no_user_dir: 无法找到用户目录！
       add: 添加账户 `%{account}` 失败，请检查账户是否已存在。
@@ -601,6 +619,18 @@ jv:
         tip_no_sheet: |
           **没有可以编辑的表！**
           您没有任何一张表，可使用 `jv make <表名>` 创建一张新表
+
+      align:
+        list: |
+          您的本地工作区有如下变更待处理：
+          %{tasks}
+
+        task_name: 项名称
+        local_path: 本地文件
+        remote_path: 远程文件
+
+        no_changes: |
+          很好，本地工作区并没有结构变更！
 
     docs:
       list:

@@ -25,10 +25,10 @@ _jv_completion() {
     local account_commands="list as add remove movekey mvkey mvk genpub help"
 
     # Subcommands - Sheet
-    local sheet_commands="list use exit make drop help"
+    local sheet_commands="list use exit make drop help align"
 
     # Subcommands - Sheet
-    local sheet_commands="list use exit make drop help"
+    local sheet_commands="list use exit make drop help align"
 
     # Completion subcommands
     if [[ $cword -eq 1 ]]; then
@@ -97,7 +97,60 @@ _jv_completion() {
                     COMPREPLY=($(compgen -W "$all_sheets" -- "$cur"))
                 fi
                 ;;
+            "align")
+                if [[ $cword -eq 3 ]]; then
+                    local align_items="lost moved"
+                    local unsolved_items
+                    unsolved_items=$($cmd sheet align --unsolved --raw 2>/dev/null)
+                    COMPREPLY=($(compgen -W "$align_items $unsolved_items" -- "$cur"))
+                elif [[ $cword -eq 4 ]]; then
+                    local item="${words[3]}"
+                    local align_operations=""
+                    local created_items
+                    created_items=$($cmd sheet align --created --raw 2>/dev/null)
+
+                    if [[ "$item" == "lost" ]]; then
+                        align_operations="confirm"
+                    elif [[ "$item" == lost:* ]]; then
+                        align_operations="confirm $created_items"
+                    elif [[ "$item" == "moved" || "$item" == moved:* ]]; then
+                        align_operations="local remote"
+                    else
+                        align_operations="local remote confirm $created_items"
+                    fi
+
+                    COMPREPLY=($(compgen -W "$align_operations" -- "$cur"))
+                fi
+                ;;
         esac
+        return 0
+    fi
+
+    # Completion align
+    if [[ "$subcmd" == "align" ]]; then
+        if [[ $cword -eq 2 ]]; then
+            local align_items="lost moved"
+            local unsolved_items
+            unsolved_items=$($cmd sheet align --unsolved --raw 2>/dev/null)
+            COMPREPLY=($(compgen -W "$align_items $unsolved_items" -- "$cur"))
+        elif [[ $cword -eq 3 ]]; then
+            local item="${words[2]}"
+            local align_operations=""
+            local created_items
+            created_items=$($cmd sheet align --created --raw 2>/dev/null)
+
+            if [[ "$item" == "lost" ]]; then
+                align_operations="confirm"
+            elif [[ "$item" == lost:* ]]; then
+                align_operations="confirm $created_items"
+            elif [[ "$item" == "moved" || "$item" == moved:* ]]; then
+                align_operations="local remote"
+            else
+                align_operations="local remote confirm $created_items"
+            fi
+
+            COMPREPLY=($(compgen -W "$align_operations" -- "$cur"))
+        fi
         return 0
     fi
 

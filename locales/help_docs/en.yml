@@ -266,11 +266,19 @@ jv:
     jv sheet make <SHEET_NAME> - Create a new sheet for yourself
     jv sheet drop <SHEET_NAME> - Drop the sheet for others to use
 
-    **Align struct**：
-    jv sheet align --list - View all items that need alignment
-    jv sheet align [local/remote] - All based on local or remote location
-    jv sheet align <ALIGN_TASK> [local/remote] - Choose based on local or remote location
-    jv sheet align - Manually specify alignment method
+    **Align**:
+    jv sheet align - View all items that need alignment
+
+    For moved items:
+    jv sheet align <ITEM> [local/remote] - Align specified moved item
+    jv sheet align moved [local/remote] - Align all moved items
+
+    For lost items:
+    jv sheet align <ITEM> <CREATED_ITEM> - Point to created item to confirm move
+    jv sheet align <ITEM> confirm - Confirm this file is lost
+    jv sheet align lost confirm - Confirm all lost items
+
+    jv sheet align --work - Use editor mode to align files
 
     Sheets are core concepts in JustEnoughVCS, each sheet represents an independent file collection.
     You can switch work between different sheets, or export files from one sheet to another.
@@ -483,6 +491,16 @@ jv:
     from_core: |
       **Error**: `%{err}` (This error is from core call)
 
+    sheet:
+      align:
+        no_direction: |
+          Cannot confirm alignment direction!
+          **Tip**: Use local or remote to indicate whether you want to keep local or remote paths
+
+        align_item_not_found: |
+          Cannot find this alignment item!
+          **Tip**: Use `jv align` to view available alignment items
+
     account:
       no_user_dir: Cannot find user directory!
       add: Failed to add account `%{account}`, please check if the account already exists.
@@ -594,6 +612,18 @@ jv:
           You are not on any sheet, you can use `jv use <SHEET_NAME>` to use a sheet
         tip_no_sheet: |
           You don't have any sheets, you can use `jv make <SHEET_NAME>` to create a new sheet
+
+      align:
+        list: |
+          Your local workspace has the following alignment tasks pending:
+          %{tasks}
+
+        task_name: TASK
+        local_path: LOCAL_FILE
+        remote_path: REMOTE_FILE
+
+        no_changes: |
+          Great, there are no struct changes in the local workspace!
 
     docs:
       list:

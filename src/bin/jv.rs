@@ -24,13 +24,13 @@ use just_enough_vcs::{
             },
         },
         constants::{
-            CLIENT_FILE_WORKSPACE, CLIENT_FOLDER_WORKSPACE_ROOT_NAME, CLIENT_PATH_WORKSPACE_ROOT,
-            PORT, REF_SHEET_NAME,
+            CLIENT_FILE_TODOLIST, CLIENT_FILE_WORKSPACE, CLIENT_FOLDER_WORKSPACE_ROOT_NAME,
+            CLIENT_PATH_WORKSPACE_ROOT, PORT, REF_SHEET_NAME,
         },
         current::{current_doc_dir, current_local_path},
         data::{
             local::{
-                LocalWorkspace, cached_sheet::CachedSheet, config::LocalConfig,
+                LocalWorkspace, align::AlignTasks, cached_sheet::CachedSheet, config::LocalConfig,
                 file_status::AnalyzeResult, latest_file_data::LatestFileData,
                 latest_info::LatestInfo, local_files::get_relative_paths,
             },
@@ -176,6 +176,9 @@ enum JustEnoughVcsWorkspaceCommand {
     /// List all accounts
     Accounts,
 
+    /// Align file structure
+    Align(SheetAlignArgs),
+
     /// Set current local workspace account
     As(SetLocalWorkspaceAccountArgs),
 
@@ -255,6 +258,9 @@ enum SheetManage {
 
     /// Drop current sheet
     Drop(SheetDropArgs),
+
+    /// Align file structure
+    Align(SheetAlignArgs),
 }
 
 #[derive(Parser, Debug)]
@@ -315,6 +321,39 @@ struct SheetDropArgs {
 
     /// Sheet name
     sheet_name: String,
+}
+
+#[derive(Parser, Debug)]
+struct SheetAlignArgs {
+    /// Show help information
+    #[arg(short, long)]
+    help: bool,
+
+    /// Align task
+    task: Option<String>,
+
+    /// Align operation
+    to: Option<String>,
+
+    /// List Option: All
+    #[arg(long = "all")]
+    list_all: bool,
+
+    /// List Option: Unsolved
+    #[arg(long = "unsolved")]
+    list_unsolved: bool,
+
+    /// List Option: Created
+    #[arg(long = "created")]
+    list_created: bool,
+
+    /// Editor mode
+    #[arg(short, long)]
+    work: bool,
+
+    /// Show raw output (for list)
+    #[arg(short, long)]
+    raw: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -804,6 +843,7 @@ async fn main() {
             SheetManage::Exit(sheet_exit_args) => jv_sheet_exit(sheet_exit_args).await,
             SheetManage::Make(sheet_make_args) => jv_sheet_make(sheet_make_args).await,
             SheetManage::Drop(sheet_drop_args) => jv_sheet_drop(sheet_drop_args).await,
+            SheetManage::Align(sheet_align_args) => jv_sheet_align(sheet_align_args).await,
         },
         JustEnoughVcsWorkspaceCommand::Track(track_file_args) => {
             if track_file_args.help {
@@ -911,6 +951,9 @@ async fn main() {
                 },
             )
             .await
+        }
+        JustEnoughVcsWorkspaceCommand::Align(sheet_align_args) => {
+            jv_sheet_align(sheet_align_args).await
         }
         JustEnoughVcsWorkspaceCommand::As(args) => {
             let user_dir = match UserDirectory::current_doc_dir() {
@@ -1908,6 +1951,116 @@ async fn jv_sheet_drop(args: SheetDropArgs) {
         },
         Err(e) => handle_err(e),
     }
+}
+
+async fn jv_sheet_align(args: SheetAlignArgs) {
+    let Some(local_dir) = current_local_path() else {
+        eprintln!("{}", md(t!("jv.fail.workspace_not_found")).trim());
+        return;
+    };
+
+    let Ok(local_cfg) = LocalConfig::read_from(local_dir.join(CLIENT_FILE_WORKSPACE)).await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return;
+    };
+    let Some(local_workspace) = LocalWorkspace::init_current_dir(local_cfg) else {
+        eprintln!("{}", md(t!("jv.fail.workspace_not_found")).trim());
+        return;
+    };
+
+    let Ok(analyzed) = AnalyzeResult::analyze_local_status(&local_workspace).await else {
+        eprintln!("{}", md(t!("jv.fail.status.analyze")).trim());
+        return;
+    };
+
+    let align_tasks = AlignTasks::from_analyze_result(analyzed);
+
+    // No task input, list mode
+    let Some(task) = args.task else {
+        // Raw output
+        if args.raw {
+            if args.list_all {
+                align_tasks.created.iter().for_each(|i| println!("{}", i.0));
+                align_tasks.moved.iter().for_each(|i| println!("{}", i.0));
+                align_tasks.lost.iter().for_each(|i| println!("{}", i.0));
+                return;
+            }
+            if args.list_created {
+                align_tasks.created.iter().for_each(|i| println!("{}", i.0));
+                return;
+            }
+            if args.list_unsolved {
+                align_tasks.moved.iter().for_each(|i| println!("{}", i.0));
+                align_tasks.lost.iter().for_each(|i| println!("{}", i.0));
+                return;
+            }
+            return;
+        }
+
+        let mut table = SimpleTable::new(vec![
+            t!("jv.success.sheet.align.task_name").to_string(),
+            t!("jv.success.sheet.align.local_path").to_string(),
+            if !align_tasks.moved.is_empty() {
+                t!("jv.success.sheet.align.remote_path").to_string()
+            } else {
+                "".to_string()
+            },
+        ]);
+
+        let mut empty_count = 0;
+
+        if !align_tasks.created.is_empty() {
+            align_tasks.created.iter().for_each(|(n, p)| {
+                table.push_item(vec![
+                    format!("+ {}", n).green().to_string(),
+                    p.display().to_string().green().to_string(),
+                    "".to_string(),
+                ]);
+            });
+        } else {
+            empty_count += 1;
+        }
+
+        if !align_tasks.lost.is_empty() {
+            align_tasks.lost.iter().for_each(|(n, p)| {
+                table.push_item(vec![
+                    format!("- {}", n).red().to_string(),
+                    p.display().to_string().red().to_string(),
+                    "".to_string(),
+                ]);
+            });
+        } else {
+            empty_count += 1;
+        }
+
+        if !align_tasks.moved.is_empty() {
+            align_tasks.moved.iter().for_each(|(n, (rp, lp))| {
+                table.push_item(vec![
+                    format!("> {}", n).yellow().to_string(),
+                    lp.display().to_string().yellow().to_string(),
+                    rp.display().to_string(),
+                ]);
+            });
+        } else {
+            empty_count += 1;
+        }
+
+        if empty_count == 3 {
+            println!("{}", md(t!("jv.success.sheet.align.no_changes").trim()));
+        } else {
+            println!(
+                "{}",
+                md(t!("jv.success.sheet.align.list", tasks = table.to_string()))
+            );
+        }
+
+        return;
+    };
+
+    let Some(to) = args.to else {
+        eprintln!("{}", md(t!("jv.fail.sheet.align.no_direction")));
+        return;
+    };
 }
 
 async fn jv_track(args: TrackFileArgs) {
