@@ -1832,7 +1832,7 @@ async fn jv_sheet_make(args: SheetMakeArgs) {
     if latest_info
         .other_sheets
         .iter()
-        .any(|sheet| sheet.sheet_name == sheet_name)
+        .any(|sheet| sheet.sheet_name == sheet_name && sheet.holder_name.is_none())
     {
         println!(
             "{}",
