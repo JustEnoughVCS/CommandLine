@@ -2437,7 +2437,7 @@ async fn jv_account_add(user_dir: UserDirectory, args: AccountAddArgs) {
         }
     }
     if args.keygen {
-        let output_path = current_local_path().unwrap().join("tempkey.pem");
+        let output_path = current_dir().unwrap().join("tempkey.pem");
 
         match Command::new("openssl")
             .args([
