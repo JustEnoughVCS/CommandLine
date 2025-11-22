@@ -1011,6 +1011,10 @@ async fn main() {
             .await;
 
             jv_update(UpdateArgs { help: false }).await;
+
+            if let Some(local_dir) = current_local_path() {
+                let _ = fs::remove_file(local_dir.join(CLIENT_FILE_TODOLIST)).await;
+            };
         }
         JustEnoughVcsWorkspaceCommand::HistoryIpAddress => {
             get_recent_ip_address()
