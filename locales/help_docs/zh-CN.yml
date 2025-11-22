@@ -723,13 +723,14 @@ jv:
         -   丢失：      %{path}
 
       moved_item: |
-        >   移动：      %{from} 至 %{to}
+        >   移动：      %{from}
+              至：      %{to}
 
       modified_item: |
         *   修改：      %{path}
 
       invalid_modified_item: |
-        *   修改：      %{path}（%{reason}）
+        x   修改：      %{path}（%{reason}）
 
       invalid_modified_reasons:
         not_holder: 不持有但被修改
@@ -787,7 +788,7 @@ jv:
           上游信息已变更，请使用 `jv update` 同步至最新信息
 
         sheet_already_exists: |
-          表 `%{name}` 已存在！
+          表 `%{name}` 已存在，并由其他成员所持有！
 
         sheet_creation_failed: |
           表创建失败：`%{err}`
@@ -820,9 +821,8 @@ jv:
         其中，创建 %{created}，更新 %{updated}，同步 %{synced}
 
       structure_changes_not_solved: |
-        本地有结构变更未解决！
-        这说明您的本地工作区存在未确认的移动或删除操作
-        **提示**：使用 `jv status` 查看结构变更
+        本地存在丢失项和移动项未解决！
+        **提示**：使用 `jv align` 查看需要解决的项
 
       create_failed:
         sheet_not_found: |

@@ -638,11 +638,11 @@ jv:
 
     here:
       items:
-        name: Name
-        version: Version
-        holder: Holder
-        size: Size
-        editing: Status
+        name: NAME
+        version: VERSION
+        holder: HOLDER
+        size: SIZE
+        editing: STATUS
 
       path_info: |
         CURRENT: %{upstream}/%{account}/%{sheet_name}/%{path} (%{minutes} min age)
@@ -717,13 +717,14 @@ jv:
         -      Lost:      %{path}
 
       moved_item: |
-        >     Moved:      %{from} -> %{to}
+        >     Moved:      %{from}
+                 To:      %{to}
 
       modified_item: |
         *  Modified:      %{path}
 
       invalid_modified_item: |
-        *  Modified:      %{path} (%{reason})
+        x  Modified:      %{path} (%{reason})
 
       invalid_modified_reasons:
         not_holder: Modified without holding
@@ -781,7 +782,7 @@ jv:
           Upstream changed, use `jv update` to get the latest information
 
         sheet_already_exists: |
-          Sheet `%{name}` already exists!
+          Sheet `%{name}` already exists and is held by other members!
 
         sheet_creation_failed: |
           Sheet creation failed: `%{error}`
@@ -814,9 +815,8 @@ jv:
         **Total**: %{created} Created, %{updated} Updated, %{synced} Synced
 
       structure_changes_not_solved: |
-        There are unresolved local structure changes!
-        This indicates there are unconfirmed move or delete operations in your local workspace
-        **Tip**: Use `jv status` to view structure changes
+        There are unresolved local lost and moved items!
+        **Tip**: Use `jv align` to view items that need to be resolved
 
       create_failed:
         sheet_not_found: |
