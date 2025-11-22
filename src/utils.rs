@@ -4,4 +4,3 @@ pub mod fs;
 pub mod input;
 pub mod logger;
 pub mod socket_addr_helper;
-pub mod sort;

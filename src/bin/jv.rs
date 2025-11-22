@@ -3,6 +3,7 @@ use just_enough_vcs::{
     system::action_system::{action::ActionContext, action_pool::ActionPool},
     utils::{
         cfg_file::config::ConfigFile,
+        data_struct::dada_sort::quick_sort_with_cmp,
         string_proc::{self, snake_case},
         tcp_connection::instance::ConnectionInstance,
     },
@@ -65,7 +66,6 @@ use just_enough_vcs_cli::{
         fs::move_across_partitions,
         input::{confirm_hint, confirm_hint_or, input_with_editor, show_in_pager},
         socket_addr_helper,
-        sort::quick_sort_with_cmp,
     },
 };
 use rust_i18n::{set_locale, t};
