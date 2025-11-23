@@ -1,4 +1,5 @@
-# JustEnoughVCS PowerShell Completion
+# The JustEnoughVCS CommandLine Completion
+
 Register-ArgumentCompleter -Native -CommandName jv -ScriptBlock {
     param($wordToComplete, $commandAst, $cursorPosition)
 
