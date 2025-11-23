@@ -5,7 +5,7 @@ Register-ArgumentCompleter -Native -CommandName jv -ScriptBlock {
     $words = $commandAst.CommandElements | ForEach-Object { $_.ToString() }
     $currentIndex = $words.IndexOf($wordToComplete)
     if ($currentIndex -lt 0) { $currentIndex = $words.Count }
-    
+
     $cmd = "jv"
     $subcmd = if ($words.Count -gt 1) { $words[1] } else { $null }
     $subsubcmd = if ($words.Count -gt 2) { $words[2] } else { $null }
