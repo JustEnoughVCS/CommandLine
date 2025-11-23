@@ -2072,7 +2072,7 @@ async fn jv_track(args: TrackFileArgs) {
         files
             .iter()
             .map(|f| current_dir().unwrap().join(f))
-            .collect()
+            .collect::<Vec<_>>()
     } else {
         println!("{}", md(t!("jv.track")));
         return;
