@@ -2,10 +2,11 @@
 target-dir = "./.temp/target/"
 
 [alias]
-pub = "run --manifest-path crates/build_helper/Cargo.toml --bin exporter"
+# Use `cargo export` to export the project
+export = "run --manifest-path crates/build_helper/Cargo.toml --bin exporter"
 
 [publish]
-target-dir = "./.temp/publish/"
+target-dir = "./export/"
 binaries = [
     "jv",
     "jv.exe",
@@ -14,14 +15,38 @@ binaries = [
     "jvv.exe",
 ]
 
-[copies.completion_jv]
+############
+### Bash ###
+############
+
+# Completions
+[copies.completion_jv_bash]
 from = "scripts/completion_jv.sh"
 to = "completion_jv.sh"
 
-[copies.completion_jvv]
+[copies.completion_jvv_bash]
 from = "scripts/completion_jvv.sh"
 to = "completion_jvv.sh"
 
-[copies.entry]
+# Entries
+[copies.entry_bash]
 from = "scripts/cli.sh"
 to = "cli.sh"
+
+##################
+### Powershell ###
+##################
+
+# Completions
+[copies.completion_jv_powershell]
+from = "scripts/completion_jv.ps1"
+to = "completion_jv.ps1"
+
+[copies.completion_jvv_powershell]
+from = "scripts/completion_jvv.ps1"
+to = "completion_jvv.ps1"
+
+# Entries
+[copies.entry_powershell]
+from = "scripts/cli.ps1"
+to = "cli.ps1"

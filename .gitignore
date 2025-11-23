@@ -17,5 +17,8 @@
 # Target directory
 /target/
 
+# Export directory
+/export/
+
 # Compile info
 /src/data/compile_info.rs
