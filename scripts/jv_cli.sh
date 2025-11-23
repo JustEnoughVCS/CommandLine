@@ -1,6 +1,4 @@
 #!/bin/bash
-
-# Get the real directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 ##############
@@ -15,7 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ### ALIASES ###
 ###############
 
-alias jj='jv here'
+alias jvh='jv here'
 alias jvu='jv update'
 alias jvt='jv track'
 alias jmv='jv move'
@@ -24,11 +22,11 @@ alias jmv='jv move'
 ### COMPLETION ###
 ##################
 
-if [ -f "$SCRIPT_DIR/completion_jv.sh" ]; then
-    source "$SCRIPT_DIR/completion_jv.sh"
+if [ -f "$SCRIPT_DIR/completions/bash/completion_jv.sh" ]; then
+    source "$SCRIPT_DIR/completions/bash/completion_jv.sh"
 fi
-if [ -f "$SCRIPT_DIR/completion_jvv.sh" ]; then
-    source "$SCRIPT_DIR/completion_jvv.sh"
+if [ -f "$SCRIPT_DIR/completions/bash/completion_jvv.sh" ]; then
+    source "$SCRIPT_DIR/completions/bash/completion_jvv.sh"
 fi
 
 ##################
