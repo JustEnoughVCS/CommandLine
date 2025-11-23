@@ -21,17 +21,17 @@ binaries = [
 
 # Completions
 [copies.completion_jv_bash]
-from = "scripts/completion_jv.sh"
-to = "completion_jv.sh"
+from = "scripts/completions/bash/completion_jv.sh"
+to = "completions/bash/completion_jv.sh"
 
 [copies.completion_jvv_bash]
-from = "scripts/completion_jvv.sh"
-to = "completion_jvv.sh"
+from = "scripts/completions/bash/completion_jvv.sh"
+to = "completions/bash/completion_jvv.sh"
 
 # Entries
 [copies.entry_bash]
-from = "scripts/cli.sh"
-to = "cli.sh"
+from = "scripts/jv_cli.sh"
+to = "jv_cli.sh"
 
 ##################
 ### Powershell ###
@@ -39,14 +39,14 @@ to = "cli.sh"
 
 # Completions
 [copies.completion_jv_powershell]
-from = "scripts/completion_jv.ps1"
-to = "completion_jv.ps1"
+from = "scripts/completions/powershell/completion_jv.ps1"
+to = "completions/powershell/completion_jv.ps1"
 
 [copies.completion_jvv_powershell]
-from = "scripts/completion_jvv.ps1"
-to = "completion_jvv.ps1"
+from = "scripts/completions/powershell/completion_jvv.ps1"
+to = "completions/powershell/completion_jvv.ps1"
 
 # Entries
 [copies.entry_powershell]
-from = "scripts/cli.ps1"
-to = "cli.ps1"
+from = "scripts/jv_cli.ps1"
+to = "jv_cli.ps1"
