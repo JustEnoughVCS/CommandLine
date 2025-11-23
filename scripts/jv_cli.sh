@@ -9,6 +9,11 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # Supported: en, zh-CN
 # export JV_LANG=en
 
+# Use JV_AUTO_UPDATE to set auto content update (yes/no)
+# After local operations that change Upstream Vault content
+# Next `jv` command will auto-run `jv update`
+export JV_AUTO_UPDATE=yes
+
 ###############
 ### ALIASES ###
 ###############

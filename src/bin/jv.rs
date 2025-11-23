@@ -33,6 +33,7 @@ use just_enough_vcs::{
                 LocalWorkspace, align::AlignTasks, cached_sheet::CachedSheet, config::LocalConfig,
                 file_status::AnalyzeResult, latest_file_data::LatestFileData,
                 latest_info::LatestInfo, local_files::get_relative_paths,
+                vault_modified::check_vault_modified,
             },
             member::{Member, MemberId},
             user::UserDirectory,
@@ -62,7 +63,7 @@ use just_enough_vcs_cli::{
     },
     utils::{
         display::{SimpleTable, md, size_str},
-        env::current_locales,
+        env::{current_locales, enable_auto_update},
         fs::move_across_partitions,
         input::{confirm_hint, confirm_hint_or, input_with_editor, show_in_pager},
         socket_addr_helper,
@@ -603,6 +604,11 @@ async fn main() {
     // Init colored
     #[cfg(windows)]
     colored::control::set_virtual_terminal(true).unwrap();
+
+    // Auto update
+    if enable_auto_update() && check_vault_modified().await {
+        jv_update(UpdateArgs { help: false }).await;
+    }
 
     let Ok(parser) = JustEnoughVcsWorkspace::try_parse() else {
         eprintln!("{}", md(t!("jv.fail.parse.parser_failed")));

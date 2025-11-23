@@ -8,6 +8,11 @@ $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Definition
 # Supported: en, zh-CN
 # $env:JV_LANG = "en"
 
+# Use JV_AUTO_UPDATE to set auto content update (yes/no)
+# After local operations that change Upstream Vault content
+# Next `jv` command will auto-run `jv update`
+$env:JV_AUTO_UPDATE = "yes"
+
 ###############
 ### ALIASES ###
 ###############

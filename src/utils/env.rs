@@ -26,3 +26,24 @@ pub fn current_locales() -> String {
 
     "en".to_string()
 }
+
+/// Checks if auto update is enabled based on environment variables.
+///
+/// The function checks the JV_AUTO_UPDATE environment variable and compares
+/// its value (after trimming and converting to lowercase) against known
+/// positive and negative values.
+///
+/// # Returns
+/// `true` if the value matches "yes", "y", or "true"
+/// `false` if the value matches "no", "n", or "false", or if the variable is not set
+pub fn enable_auto_update() -> bool {
+    if let Ok(auto_update) = std::env::var("JV_AUTO_UPDATE") {
+        let normalized = auto_update.trim().to_lowercase();
+        match normalized.as_str() {
+            "yes" | "y" | "true" => return true,
+            "no" | "n" | "false" => return false,
+            _ => {}
+        }
+    }
+    false
+}
