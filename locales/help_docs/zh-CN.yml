@@ -258,7 +258,7 @@ jv:
     jv sheet drop <表名称> - 将表抛弃，以供其他人使用
 
     **对齐**：
-    jv sheet align tasks - 查看所有需要对齐的项
+    jv sheet align - 查看所有需要对齐的项
 
     对于移动项：
     jv sheet align <项> [local/remote] - 对齐指定移动项
