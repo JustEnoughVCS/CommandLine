@@ -48,7 +48,7 @@ chmod +x setup.sh
 echo "Building CLI..."
 cd ../CommandLine
 cargo build --release
-cargo pub
+cargo export
 
 # Configure shell to include CLI in PATH
 echo "Now adding JustEnoughVCS CLI to your environment. Please select your target shell:"
@@ -80,7 +80,7 @@ case $choice in
         ;;
 esac
 
-cli_path="$(pwd)/.temp/publish/cli.sh"
+cli_path="$(pwd)/export/jv_cli.sh"
 echo "# JustEnoughVCS CLI" >> "$config_file"
 echo "source \"$cli_path\"" >> "$config_file"
 echo "CLI has been added to $config_file"
