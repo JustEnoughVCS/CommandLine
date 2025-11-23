@@ -110,7 +110,7 @@ fn export(
             copied_files += 1;
         } else {
             println!(
-                "        {} `{}` (file not found)",
+                "     {} `{}` (file not found)",
                 "Warning".yellow().bold(),
                 config.from
             );
