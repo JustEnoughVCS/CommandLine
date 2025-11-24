@@ -546,6 +546,10 @@ struct UpdateArgs {
     /// Show help information
     #[arg(short, long)]
     help: bool,
+
+    /// Silent mode
+    #[arg(short, long)]
+    silent: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -607,7 +611,11 @@ async fn main() {
 
     // Auto update
     if enable_auto_update() && check_vault_modified().await {
-        jv_update(UpdateArgs { help: false }).await;
+        jv_update(UpdateArgs {
+            help: false,
+            silent: true,
+        })
+        .await;
     }
 
     let Ok(parser) = JustEnoughVcsWorkspace::try_parse() else {
@@ -1016,7 +1024,11 @@ async fn main() {
             })
             .await;
 
-            jv_update(UpdateArgs { help: false }).await;
+            jv_update(UpdateArgs {
+                help: false,
+                silent: true,
+            })
+            .await;
 
             if let Some(local_dir) = current_local_path() {
                 let _ = fs::remove_file(local_dir.join(CLIENT_FILE_TODOLIST)).await;
@@ -2635,7 +2647,7 @@ async fn jv_account_generate_pub_key(user_dir: UserDirectory, args: GeneratePubl
     }
 }
 
-async fn jv_update(_update_file_args: UpdateArgs) {
+async fn jv_update(update_file_args: UpdateArgs) {
     let local_config = match precheck().await {
         Some(config) => config,
         None => return,
@@ -2648,27 +2660,31 @@ async fn jv_update(_update_file_args: UpdateArgs) {
 
     match proc_update_to_latest_info_action(&pool, ctx, ()).await {
         Err(e) => handle_err(e),
-        Ok(result) => match result {
-            UpdateToLatestInfoResult::Success => {
-                println!("{}", md(t!("jv.result.update.success")));
-            }
-            UpdateToLatestInfoResult::AuthorizeFailed(e) => {
-                eprintln!("{}", md(t!("jv.result.common.authroize_failed", err = e)))
-            }
-            UpdateToLatestInfoResult::SyncCachedSheetFail(sync_cached_sheet_fail_reason) => {
-                match sync_cached_sheet_fail_reason {
-                    SyncCachedSheetFailReason::PathAlreadyExist(path_buf) => {
-                        eprintln!(
-                            "{}",
-                            md(t!(
-                                "jv.result.update.fail.sync_cached_sheet_fail.path_already_exist",
-                                path = path_buf.display()
-                            ))
-                        );
+        Ok(result) => {
+            if !update_file_args.silent {
+                match result {
+                    UpdateToLatestInfoResult::Success => {
+                        println!("{}", md(t!("jv.result.update.success")));
                     }
+                    UpdateToLatestInfoResult::AuthorizeFailed(e) => {
+                        eprintln!("{}", md(t!("jv.result.common.authroize_failed", err = e)))
+                    }
+                    UpdateToLatestInfoResult::SyncCachedSheetFail(
+                        sync_cached_sheet_fail_reason,
+                    ) => match sync_cached_sheet_fail_reason {
+                        SyncCachedSheetFailReason::PathAlreadyExist(path_buf) => {
+                            eprintln!(
+                                "{}",
+                                md(t!(
+                                    "jv.result.update.fail.sync_cached_sheet_fail.path_already_exist",
+                                    path = path_buf.display()
+                                ))
+                            );
+                        }
+                    },
                 }
             }
-        },
+        }
     }
 }
 
