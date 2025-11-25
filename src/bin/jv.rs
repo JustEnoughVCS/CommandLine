@@ -17,7 +17,7 @@ use just_enough_vcs::{
                 DropSheetActionResult, MakeSheetActionResult, proc_drop_sheet_action,
                 proc_make_sheet_action,
             },
-            virtual_file_actions::{
+            track_action::{
                 CreateTaskResult, NextVersion, SyncTaskResult, TrackFileActionArguments,
                 TrackFileActionResult, UpdateDescription, UpdateTaskResult, VerifyFailReason,
                 proc_track_file_action,
