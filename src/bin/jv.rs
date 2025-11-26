@@ -31,7 +31,7 @@ use just_enough_vcs::{
             CLIENT_FILE_TODOLIST, CLIENT_FILE_WORKSPACE, CLIENT_FOLDER_WORKSPACE_ROOT_NAME,
             CLIENT_PATH_WORKSPACE_ROOT, PORT, REF_SHEET_NAME,
         },
-        current::{current_doc_dir, current_local_path},
+        current::{correct_current_dir, current_doc_dir, current_local_path},
         data::{
             local::{
                 LocalWorkspace,
@@ -2478,6 +2478,8 @@ async fn jv_hold(args: HoldFileArgs) {
         return;
     };
 
+    let _ = correct_current_dir();
+
     jv_change_edit_right(
         hold_files,
         EditRightChangeBehaviour::Hold,
@@ -2497,6 +2499,8 @@ async fn jv_throw(args: ThrowFileArgs) {
         println!("{}", md(t!("jv.throw")));
         return;
     };
+
+    let _ = correct_current_dir();
 
     jv_change_edit_right(
         throw_files,
