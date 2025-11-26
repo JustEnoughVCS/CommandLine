@@ -542,6 +542,31 @@ jv:
       The current workspace is not stained, cannot perform the next operation!
       **Tip**: Please first use `jv direct <upstream_address>` to direct to an upstream vault
 
+    change_edit_right:
+      no_selection: No files selected!
+      check_failed: |
+        In the %{num} selected files, there are items that failed pre-check!
+        Add `--details` after the command to view specific details
+
+        **Tip**: Add `--skip-failed` after the command to skip the current failed items and proceed with the operation
+
+      check_failed_details:
+        In the %{num} selected files, %{failed} files failed pre-check!
+        %{items}
+
+      check_fail_item: |
+        %{path} (%{reason})
+
+      check_fail_reason:
+        not_found_in_local: File Not Found
+        not_found_in_sheet: Mapping Not Found In Sheet
+        not_a_tracked_file: File Not Tracked
+        base_version_unmatch: Version Mismatch
+        not_holder: Not Holder
+        has_holder: Held by %{holder}
+        already_held: Already Held
+        already_modified: Already Modified
+
     docs:
       not_found: Doc `%{docs_name}` not found!
       no_doc_dir: |
@@ -808,6 +833,22 @@ jv:
 
         not_owner: |
           You are not the holder of sheet `%{name}`, cannot drop it!
+
+    change_edit_right:
+      failed:
+        none: |
+          Do nothing!
+
+      success:
+        hold: |
+          Held %{num} files!
+
+        throw: |
+          Threw %{num} files!
+
+        mixed: |
+          Successfully modified edit rights for %{num} files!
+          Held %{num_hold}, Threw %{num_throw}
 
     track:
       done: |

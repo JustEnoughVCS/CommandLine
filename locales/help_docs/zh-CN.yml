@@ -544,6 +544,31 @@ jv:
       当前工作区并未被染色，无法执行下一步操作！
       **提示**：请先使用 `jv direct <上游地址>` 定向到上游库
 
+    change_edit_right:
+      no_selection: 您未选中任何文件！
+      check_failed: |
+        在您选中的 %{num} 个文件中，存在预检查失败的项！
+        在命令后添加 `--details` 查看具体事项
+
+        **提示**：命令后添加 `--skip-failed` 可跳过当前检查失败的项进行操作
+
+      check_failed_details: |
+        在您选中的 %{num} 个文件中，有 %{failed} 个文件预先检查未通过！
+        %{items}
+
+      check_fail_item: |
+        %{path}（%{reason}）
+
+      check_fail_reason:
+        not_found_in_local: 文件未找到
+        not_found_in_sheet: 表中不存在
+        not_a_tracked_file: 文件未被跟踪
+        base_version_unmatch: 基准版本不匹配
+        not_holder: 期望丢弃，但不是持有者
+        has_holder: 期望持有，但被 %{holder} 持有
+        already_held: 文件已持有
+        already_modified: 文件已修改
+
     docs:
       not_found: 文档 `%{docs_name}` 未找到！
       no_doc_dir: |
@@ -814,6 +839,22 @@ jv:
 
         not_owner: |
           您不是表 `%{name}` 的持有人，无法放弃该表！
+
+    change_edit_right:
+      failed:
+        none: |
+          没有处理任何文件！
+
+      success:
+        hold: |
+          成功持有 %{num} 个文件！
+
+        throw: |
+          成功丢弃 %{num} 个文件！
+
+        mixed: |
+          成功修改 %{num} 个文件的编辑权！
+          持有 %{num_hold}，丢弃 %{num_throw}
 
     track:
       done: |

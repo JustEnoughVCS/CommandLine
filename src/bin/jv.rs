@@ -22,6 +22,10 @@ use just_enough_vcs::{
                 TrackFileActionResult, UpdateDescription, UpdateTaskResult, VerifyFailReason,
                 proc_track_file_action,
             },
+            user_actions::{
+                ChangeVirtualFileEditRightResult, EditRightChangeBehaviour,
+                proc_change_virtual_file_edit_right_action,
+            },
         },
         constants::{
             CLIENT_FILE_TODOLIST, CLIENT_FILE_WORKSPACE, CLIENT_FOLDER_WORKSPACE_ROOT_NAME,
@@ -30,9 +34,14 @@ use just_enough_vcs::{
         current::{current_doc_dir, current_local_path},
         data::{
             local::{
-                LocalWorkspace, align::AlignTasks, cached_sheet::CachedSheet, config::LocalConfig,
-                file_status::AnalyzeResult, latest_file_data::LatestFileData,
-                latest_info::LatestInfo, local_files::get_relative_paths,
+                LocalWorkspace,
+                align::AlignTasks,
+                cached_sheet::CachedSheet,
+                config::LocalConfig,
+                file_status::AnalyzeResult,
+                latest_file_data::LatestFileData,
+                latest_info::LatestInfo,
+                local_files::{RelativeFiles, get_relative_paths},
                 vault_modified::check_vault_modified,
             },
             member::{Member, MemberId},
@@ -511,6 +520,17 @@ struct HoldFileArgs {
     /// Show help information
     #[arg(short, long)]
     help: bool,
+
+    /// Hold files
+    hold_files: Option<Vec<PathBuf>>,
+
+    /// Show fail details
+    #[arg(short = 'd', long = "details")]
+    show_fail_details: bool,
+
+    /// Skip failed items
+    #[arg(short = 'S', long)]
+    skip_failed: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -518,6 +538,17 @@ struct ThrowFileArgs {
     /// Show help information
     #[arg(short, long)]
     help: bool,
+
+    /// Throw files
+    throw_files: Option<Vec<PathBuf>>,
+
+    /// Show fail details
+    #[arg(short = 'd', long = "details")]
+    show_fail_details: bool,
+
+    /// Skip failed items
+    #[arg(short = 'S', long)]
+    skip_failed: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -1421,11 +1452,6 @@ async fn jv_status(_args: StatusArgs) {
     };
 
     let Ok(local_sheet) = local_workspace.local_sheet(&account, &sheet_name).await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
-        return;
-    };
-
-    let Ok(cached_sheet) = CachedSheet::cached_sheet_data(&sheet_name).await else {
         eprintln!("{}", md(t!("jv.fail.read_cfg")));
         return;
     };
@@ -2419,12 +2445,403 @@ async fn start_update_editor(
     update_info
 }
 
-async fn jv_hold(_args: HoldFileArgs) {
-    todo!()
+async fn jv_hold(args: HoldFileArgs) {
+    let hold_files = if let Some(files) = args.hold_files.clone() {
+        files
+            .iter()
+            .map(|f| current_dir().unwrap().join(f))
+            .collect::<Vec<_>>()
+    } else {
+        println!("{}", md(t!("jv.hold")));
+        return;
+    };
+
+    jv_change_edit_right(
+        hold_files,
+        EditRightChangeBehaviour::Hold,
+        args.show_fail_details,
+        args.skip_failed,
+    )
+    .await;
 }
 
-async fn jv_throw(_args: ThrowFileArgs) {
-    todo!()
+async fn jv_throw(args: ThrowFileArgs) {
+    let throw_files = if let Some(files) = args.throw_files.clone() {
+        files
+            .iter()
+            .map(|f| current_dir().unwrap().join(f))
+            .collect::<Vec<_>>()
+    } else {
+        println!("{}", md(t!("jv.throw")));
+        return;
+    };
+
+    jv_change_edit_right(
+        throw_files,
+        EditRightChangeBehaviour::Throw,
+        args.show_fail_details,
+        args.skip_failed,
+    )
+    .await;
+}
+
+async fn jv_change_edit_right(
+    files: Vec<PathBuf>,
+    behaviour: EditRightChangeBehaviour,
+    show_fail_details: bool,
+    mut skip_failed: bool,
+) {
+    // If both `--details` and `--skip-failed` are set, only enable `--details`
+    if show_fail_details && skip_failed {
+        skip_failed = false;
+    }
+
+    let Some(local_dir) = current_local_path() else {
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+        return;
+    };
+
+    let Ok(local_cfg) = LocalConfig::read_from(local_dir.join(CLIENT_FILE_WORKSPACE)).await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return;
+    };
+
+    let Some(local_workspace) = LocalWorkspace::init_current_dir(local_cfg.clone()) else {
+        eprintln!("{}", md(t!("jv.fail.workspace_not_found")).trim());
+        return;
+    };
+
+    // Get files
+    let Ok(analyzed) = AnalyzeResult::analyze_local_status(&local_workspace).await else {
+        eprintln!("{}", md(t!("jv.fail.status.analyze")).trim());
+        return;
+    };
+
+    let account = local_cfg.current_account();
+
+    let Ok(latest_file_data_path) = LatestFileData::data_path(&account) else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return;
+    };
+
+    let Ok(latest_file_data) = LatestFileData::read_from(&latest_file_data_path).await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return;
+    };
+
+    let Some(sheet_name) = local_cfg.sheet_in_use().clone() else {
+        eprintln!("{}", md(t!("jv.fail.status.no_sheet_in_use")).trim());
+        return;
+    };
+
+    let Ok(local_sheet) = local_workspace.local_sheet(&account, &sheet_name).await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return;
+    };
+
+    let Ok(cached_sheet) = CachedSheet::cached_sheet_data(&sheet_name).await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return;
+    };
+
+    // Precheck and filter
+    let Some(filtered_files) = get_relative_paths(&local_dir, &files).await else {
+        eprintln!(
+            "{}",
+            md(t!("jv.fail.track.parse_fail", param = "track_files"))
+        );
+        return;
+    };
+    let num = filtered_files.iter().len();
+    if num < 1 {
+        eprintln!("{}", md(t!("jv.fail.change_edit_right.no_selection")));
+        return;
+    }
+
+    let mut passed_files = Vec::new();
+    let mut details = Vec::new();
+    let mut failed = 0;
+
+    for file in filtered_files {
+        let full_path = local_dir.join(&file);
+
+        // File exists
+        if !full_path.exists() {
+            if show_fail_details {
+                details.push(
+                    t!(
+                        "jv.fail.change_edit_right.check_fail_item",
+                        path = file.display(),
+                        reason =
+                            t!("jv.fail.change_edit_right.check_fail_reason.not_found_in_local")
+                    )
+                    .trim()
+                    .to_string(),
+                );
+                failed += 1;
+                continue;
+            } else {
+                eprintln!(
+                    "{}",
+                    md(t!("jv.fail.change_edit_right.check_failed", num = num))
+                );
+                return;
+            }
+        }
+
+        // Mapping exists
+        if !cached_sheet.mapping().contains_key(&file) {
+            if show_fail_details {
+                details.push(
+                    t!(
+                        "jv.fail.change_edit_right.check_fail_item",
+                        path = file.display(),
+                        reason =
+                            t!("jv.fail.change_edit_right.check_fail_reason.not_found_in_sheet")
+                    )
+                    .trim()
+                    .to_string(),
+                );
+                failed += 1;
+                continue;
+            } else {
+                eprintln!(
+                    "{}",
+                    md(t!("jv.fail.change_edit_right.check_failed", num = num))
+                );
+                return;
+            }
+        }
+
+        // Not tracked
+        let Ok(local_mapping) = local_sheet.mapping_data(&file) else {
+            if show_fail_details {
+                details.push(
+                    t!(
+                        "jv.fail.change_edit_right.check_fail_item",
+                        path = file.display(),
+                        reason =
+                            t!("jv.fail.change_edit_right.check_fail_reason.not_a_tracked_file")
+                    )
+                    .trim()
+                    .to_string(),
+                );
+                failed += 1;
+                continue;
+            } else {
+                eprintln!(
+                    "{}",
+                    md(t!("jv.fail.change_edit_right.check_failed", num = num))
+                );
+                return;
+            }
+        };
+
+        let vfid = local_mapping.mapping_vfid();
+        let local_version = local_mapping.version_when_updated();
+
+        // Base version unmatch
+        if local_version
+            != latest_file_data
+                .file_version(vfid)
+                .unwrap_or(&String::default())
+        {
+            if show_fail_details {
+                details.push(
+                    t!(
+                        "jv.fail.change_edit_right.check_fail_item",
+                        path = file.display(),
+                        reason =
+                            t!("jv.fail.change_edit_right.check_fail_reason.base_version_unmatch")
+                    )
+                    .trim()
+                    .to_string(),
+                );
+                failed += 1;
+                continue;
+            } else {
+                eprintln!(
+                    "{}",
+                    md(t!("jv.fail.change_edit_right.check_failed", num = num))
+                );
+                return;
+            }
+        }
+
+        // Hold
+        let holder = latest_file_data.file_holder(vfid);
+        match behaviour {
+            EditRightChangeBehaviour::Hold => {
+                if holder.is_some_and(|h| h != &account) {
+                    if show_fail_details {
+                        details.push(
+                            t!(
+                                "jv.fail.change_edit_right.check_fail_item",
+                                path = file.display(),
+                                reason = t!(
+                                    "jv.fail.change_edit_right.check_fail_reason.has_holder",
+                                    holder = holder.unwrap()
+                                )
+                            )
+                            .trim()
+                            .to_string(),
+                        );
+                        failed += 1;
+                        continue;
+                    } else {
+                        eprintln!(
+                            "{}",
+                            md(t!("jv.fail.change_edit_right.check_failed", num = num))
+                        );
+                        return;
+                    }
+                }
+
+                if holder.is_some_and(|h| h == &account) {
+                    if show_fail_details {
+                        details.push(
+                            t!(
+                                "jv.fail.change_edit_right.check_fail_item",
+                                path = file.display(),
+                                reason =
+                                    t!("jv.fail.change_edit_right.check_fail_reason.already_held")
+                            )
+                            .trim()
+                            .to_string(),
+                        );
+                        failed += 1;
+                        continue;
+                    } else {
+                        eprintln!(
+                            "{}",
+                            md(t!("jv.fail.change_edit_right.check_failed", num = num))
+                        );
+                        return;
+                    }
+                }
+            }
+            EditRightChangeBehaviour::Throw => {
+                if holder.is_some_and(|h| h != &account) {
+                    if show_fail_details {
+                        details.push(
+                            t!(
+                                "jv.fail.change_edit_right.check_fail_item",
+                                path = file.display(),
+                                reason =
+                                    t!("jv.fail.change_edit_right.check_fail_reason.not_holder")
+                            )
+                            .trim()
+                            .to_string(),
+                        );
+                        failed += 1;
+                        continue;
+                    } else {
+                        eprintln!(
+                            "{}",
+                            md(t!("jv.fail.change_edit_right.check_failed", num = num))
+                        );
+                        return;
+                    }
+                }
+                if analyzed.modified.contains(&file) {
+                    if show_fail_details {
+                        details.push(
+                            t!(
+                                "jv.fail.change_edit_right.check_fail_item",
+                                path = file.display(),
+                                reason = t!(
+                                    "jv.fail.change_edit_right.check_fail_reason.already_modified"
+                                )
+                            )
+                            .trim()
+                            .to_string(),
+                        );
+                        failed += 1;
+                        continue;
+                    } else {
+                        eprintln!(
+                            "{}",
+                            md(t!("jv.fail.change_edit_right.check_failed", num = num))
+                        );
+                        return;
+                    }
+                }
+            }
+        }
+        passed_files.push(file);
+    }
+    if failed > 0 && show_fail_details {
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.change_edit_right.check_failed_details",
+                num = num,
+                failed = failed,
+                items = details.join("\n").trim()
+            ))
+        );
+        return;
+    }
+
+    if !(failed > 0 && skip_failed) && failed != 0 {
+        return;
+    }
+
+    let (pool, ctx) = match build_pool_and_ctx(&local_cfg).await {
+        Some(result) => result,
+        None => return,
+    };
+
+    let passed = passed_files
+        .iter()
+        .map(|f| (f.clone(), behaviour.clone()))
+        .collect();
+
+    match proc_change_virtual_file_edit_right_action(&pool, ctx, (passed, true)).await {
+        Ok(r) => match r {
+            ChangeVirtualFileEditRightResult::Success {
+                success_hold,
+                success_throw,
+            } => {
+                if success_hold.len() > 0 && success_throw.len() == 0 {
+                    println!(
+                        "{}",
+                        md(t!(
+                            "jv.result.change_edit_right.success.hold",
+                            num = success_hold.len()
+                        ))
+                    )
+                } else if success_hold.len() == 0 && success_throw.len() > 0 {
+                    println!(
+                        "{}",
+                        md(t!(
+                            "jv.result.change_edit_right.success.throw",
+                            num = success_throw.len()
+                        ))
+                    )
+                } else if success_hold.len() > 0 && success_throw.len() > 0 {
+                    println!(
+                        "{}",
+                        md(t!(
+                            "jv.result.change_edit_right.success.mixed",
+                            num = success_hold.len() + success_throw.len(),
+                            num_hold = success_hold.len(),
+                            num_throw = success_throw.len()
+                        ))
+                    )
+                } else {
+                    eprintln!("{}", md(t!("jv.result.change_edit_right.failed.none")))
+                }
+            }
+            ChangeVirtualFileEditRightResult::AuthorizeFailed(e) => {
+                eprintln!("{}", md(t!("jv.result.common.authroize_failed", err = e)))
+            }
+            ChangeVirtualFileEditRightResult::DoNothing => {
+                eprintln!("{}", md(t!("jv.result.change_edit_right.failed.none")))
+            }
+        },
+        Err(e) => handle_err(e),
+    }
 }
 
 async fn jv_move(_args: MoveFileArgs) {
