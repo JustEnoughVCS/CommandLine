@@ -642,11 +642,33 @@ async fn main() {
 
     // Auto update
     if enable_auto_update() && check_vault_modified().await {
+        // Record current directory
+        let path = match current_dir() {
+            Ok(path) => path,
+            Err(e) => {
+                eprintln!("{}", t!("jv.fail.get_current_dir", error = e.to_string()));
+                return;
+            }
+        };
+        // Update
+        // This will change the current current_dir
         jv_update(UpdateArgs {
             help: false,
             silent: true,
         })
         .await;
+        // Restore current directory
+        if let Err(e) = set_current_dir(&path) {
+            eprintln!(
+                "{}",
+                t!(
+                    "jv.fail.std.set_current_dir",
+                    dir = path.display(),
+                    error = e
+                )
+            );
+            return;
+        }
     }
 
     let Ok(parser) = JustEnoughVcsWorkspace::try_parse() else {
