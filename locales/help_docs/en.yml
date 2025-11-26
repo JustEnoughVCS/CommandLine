@@ -645,7 +645,7 @@ jv:
         editing: STATUS
 
       path_info: |
-        CURRENT: %{upstream}/%{account}/%{sheet_name}/%{path} (%{minutes} min age)
+        CURRENT: %{upstream}/%{account}/%{sheet_name}/%{path} (%{minutes} min ago)
 
       ghost_directory_item_info: |
         ? %{directory_name}/
