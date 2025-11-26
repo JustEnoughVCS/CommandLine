@@ -2799,7 +2799,7 @@ async fn jv_change_edit_right(
                 "jv.fail.change_edit_right.check_failed_details",
                 num = num,
                 failed = failed,
-                items = details.join("\n").trim()
+                items = details.join("\n").trim().yellow()
             ))
         );
         return;
