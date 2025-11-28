@@ -2588,79 +2588,79 @@ async fn jv_change_edit_right(
     let mut details = Vec::new();
     let mut failed = 0;
 
+    // Helper function to handle validation failures
+    fn handle_validation_failure(
+        show_fail_details: bool,
+        details: &mut Vec<String>,
+        failed: &mut usize,
+        num: usize,
+        reason: String,
+    ) -> bool {
+        if show_fail_details {
+            details.push(reason);
+            *failed += 1;
+            true // Continue to next file
+        } else {
+            eprintln!(
+                "{}",
+                md(t!("jv.fail.change_edit_right.check_failed", num = num))
+            );
+            false // Break processing
+        }
+    }
+
     for file in filtered_files {
         let full_path = local_dir.join(&file);
 
         // File exists
         if !full_path.exists() {
-            if show_fail_details {
-                details.push(
-                    t!(
-                        "jv.fail.change_edit_right.check_fail_item",
-                        path = file.display(),
-                        reason =
-                            t!("jv.fail.change_edit_right.check_fail_reason.not_found_in_local")
-                    )
-                    .trim()
-                    .to_string(),
-                );
-                failed += 1;
-                continue;
-            } else {
-                eprintln!(
-                    "{}",
-                    md(t!("jv.fail.change_edit_right.check_failed", num = num))
-                );
+            let reason = t!(
+                "jv.fail.change_edit_right.check_fail_item",
+                path = file.display(),
+                reason = t!("jv.fail.change_edit_right.check_fail_reason.not_found_in_local")
+            )
+            .trim()
+            .to_string();
+
+            if !handle_validation_failure(show_fail_details, &mut details, &mut failed, num, reason)
+            {
                 return;
             }
+            continue;
         }
 
         // Mapping exists
         if !cached_sheet.mapping().contains_key(&file) {
-            if show_fail_details {
-                details.push(
-                    t!(
-                        "jv.fail.change_edit_right.check_fail_item",
-                        path = file.display(),
-                        reason =
-                            t!("jv.fail.change_edit_right.check_fail_reason.not_found_in_sheet")
-                    )
-                    .trim()
-                    .to_string(),
-                );
-                failed += 1;
-                continue;
-            } else {
-                eprintln!(
-                    "{}",
-                    md(t!("jv.fail.change_edit_right.check_failed", num = num))
-                );
+            let reason = t!(
+                "jv.fail.change_edit_right.check_fail_item",
+                path = file.display(),
+                reason = t!("jv.fail.change_edit_right.check_fail_reason.not_found_in_sheet")
+            )
+            .trim()
+            .to_string();
+
+            if !handle_validation_failure(show_fail_details, &mut details, &mut failed, num, reason)
+            {
                 return;
             }
+            continue;
         }
 
         // Not tracked
         let Ok(local_mapping) = local_sheet.mapping_data(&file) else {
-            if show_fail_details {
-                details.push(
-                    t!(
-                        "jv.fail.change_edit_right.check_fail_item",
-                        path = file.display(),
-                        reason =
-                            t!("jv.fail.change_edit_right.check_fail_reason.not_a_tracked_file")
-                    )
-                    .trim()
-                    .to_string(),
-                );
-                failed += 1;
-                continue;
-            } else {
-                eprintln!(
-                    "{}",
-                    md(t!("jv.fail.change_edit_right.check_failed", num = num))
-                );
+            let reason = t!(
+                "jv.fail.change_edit_right.check_fail_item",
+                path = file.display(),
+                reason = t!("jv.fail.change_edit_right.check_fail_reason.not_a_tracked_file")
+            )
+            .trim()
+            .to_string();
+
+            if !handle_validation_failure(show_fail_details, &mut details, &mut failed, num, reason)
+            {
                 return;
             }
+            continue;
         };
 
         let vfid = local_mapping.mapping_vfid();
@@ -2672,130 +2672,125 @@ async fn jv_change_edit_right(
                 .file_version(vfid)
                 .unwrap_or(&String::default())
         {
-            if show_fail_details {
-                details.push(
-                    t!(
-                        "jv.fail.change_edit_right.check_fail_item",
-                        path = file.display(),
-                        reason =
-                            t!("jv.fail.change_edit_right.check_fail_reason.base_version_unmatch")
-                    )
-                    .trim()
-                    .to_string(),
-                );
-                failed += 1;
-                continue;
-            } else {
-                eprintln!(
-                    "{}",
-                    md(t!("jv.fail.change_edit_right.check_failed", num = num))
-                );
+            let reason = t!(
+                "jv.fail.change_edit_right.check_fail_item",
+                path = file.display(),
+                reason = t!("jv.fail.change_edit_right.check_fail_reason.base_version_unmatch")
+            )
+            .trim()
+            .to_string();
+
+            if !handle_validation_failure(show_fail_details, &mut details, &mut failed, num, reason)
+            {
                 return;
             }
+            continue;
         }
 
-        // Hold
+        // Hold validation
         let holder = latest_file_data.file_holder(vfid);
-        match behaviour {
+        let validation_passed = match behaviour {
             EditRightChangeBehaviour::Hold => {
                 if holder.is_some_and(|h| h != &account) {
-                    if show_fail_details {
-                        details.push(
-                            t!(
-                                "jv.fail.change_edit_right.check_fail_item",
-                                path = file.display(),
-                                reason = t!(
-                                    "jv.fail.change_edit_right.check_fail_reason.has_holder",
-                                    holder = holder.unwrap()
-                                )
-                            )
-                            .trim()
-                            .to_string(),
-                        );
-                        failed += 1;
-                        continue;
-                    } else {
-                        eprintln!(
-                            "{}",
-                            md(t!("jv.fail.change_edit_right.check_failed", num = num))
-                        );
-                        return;
-                    }
-                }
+                    // Has holder but not current account
+                    let holder_name = holder.unwrap();
+                    let reason = t!(
+                        "jv.fail.change_edit_right.check_fail_item",
+                        path = file.display(),
+                        reason = t!(
+                            "jv.fail.change_edit_right.check_fail_reason.has_holder",
+                            holder = holder_name
+                        )
+                    )
+                    .trim()
+                    .to_string();
 
-                if holder.is_some_and(|h| h == &account) {
-                    if show_fail_details {
-                        details.push(
-                            t!(
-                                "jv.fail.change_edit_right.check_fail_item",
-                                path = file.display(),
-                                reason =
-                                    t!("jv.fail.change_edit_right.check_fail_reason.already_held")
-                            )
-                            .trim()
-                            .to_string(),
-                        );
-                        failed += 1;
-                        continue;
-                    } else {
-                        eprintln!(
-                            "{}",
-                            md(t!("jv.fail.change_edit_right.check_failed", num = num))
-                        );
+                    if !handle_validation_failure(
+                        show_fail_details,
+                        &mut details,
+                        &mut failed,
+                        num,
+                        reason,
+                    ) {
                         return;
                     }
+                    false
+                } else if holder.is_some_and(|h| h == &account) {
+                    // Already held by current account
+                    let reason = t!(
+                        "jv.fail.change_edit_right.check_fail_item",
+                        path = file.display(),
+                        reason = t!("jv.fail.change_edit_right.check_fail_reason.already_held")
+                    )
+                    .trim()
+                    .to_string();
+
+                    if !handle_validation_failure(
+                        show_fail_details,
+                        &mut details,
+                        &mut failed,
+                        num,
+                        reason,
+                    ) {
+                        return;
+                    }
+                    false
+                } else {
+                    true
                 }
             }
             EditRightChangeBehaviour::Throw => {
                 if holder.is_some_and(|h| h != &account) {
-                    if show_fail_details {
-                        details.push(
-                            t!(
-                                "jv.fail.change_edit_right.check_fail_item",
-                                path = file.display(),
-                                reason =
-                                    t!("jv.fail.change_edit_right.check_fail_reason.not_holder")
-                            )
-                            .trim()
-                            .to_string(),
-                        );
-                        failed += 1;
-                        continue;
-                    } else {
-                        eprintln!(
-                            "{}",
-                            md(t!("jv.fail.change_edit_right.check_failed", num = num))
-                        );
+                    // Not the holder
+                    let reason = t!(
+                        "jv.fail.change_edit_right.check_fail_item",
+                        path = file.display(),
+                        reason = t!("jv.fail.change_edit_right.check_fail_reason.not_holder")
+                    )
+                    .trim()
+                    .to_string();
+
+                    if !handle_validation_failure(
+                        show_fail_details,
+                        &mut details,
+                        &mut failed,
+                        num,
+                        reason,
+                    ) {
                         return;
                     }
-                }
-                if analyzed.modified.contains(&file) {
-                    if show_fail_details {
-                        details.push(
-                            t!(
-                                "jv.fail.change_edit_right.check_fail_item",
-                                path = file.display(),
-                                reason = t!(
-                                    "jv.fail.change_edit_right.check_fail_reason.already_modified"
-                                )
-                            )
-                            .trim()
-                            .to_string(),
-                        );
-                        failed += 1;
-                        continue;
-                    } else {
-                        eprintln!(
-                            "{}",
-                            md(t!("jv.fail.change_edit_right.check_failed", num = num))
-                        );
+                    false
+                } else if analyzed.modified.contains(&file) {
+                    // Already modified
+                    let reason = t!(
+                        "jv.fail.change_edit_right.check_fail_item",
+                        path = file.display(),
+                        reason = t!("jv.fail.change_edit_right.check_fail_reason.already_modified")
+                    )
+                    .trim()
+                    .to_string();
+
+                    if !handle_validation_failure(
+                        show_fail_details,
+                        &mut details,
+                        &mut failed,
+                        num,
+                        reason,
+                    ) {
                         return;
                     }
+                    false
+                } else {
+                    true
                 }
             }
+        };
+
+        if validation_passed {
+            passed_files.push(file);
         }
-        passed_files.push(file);
     }
+
     if failed > 0 && show_fail_details {
         eprintln!(
             "{}",
