@@ -707,16 +707,19 @@ jv:
 
         editing:
           cant_edit: |
-            Read
+            R
 
           cant_edit_but_modified: |
-            Read*
+            R*
 
           can_edit: |
-            ReadWrite
+            R/W
 
           modified: |
-            ReadWrite*
+            R/W *
+
+          not_local: |
+            Remote
 
       count_info: |
         %{dir_count} dir(s), %{file_count} file(s). Total %{size}.

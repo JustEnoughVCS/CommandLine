@@ -725,6 +725,9 @@ jv:
           modified: |
             读写*
 
+          not_local: |
+            远程
+
       count_info: |
         %{dir_count} 目录、%{file_count} 文件，共计 %{size}
 

@@ -40,7 +40,7 @@ use just_enough_vcs::{
                 vault_modified::check_vault_modified,
             },
             member::{Member, MemberId},
-            sheet::SheetData,
+            sheet::{SheetData, SheetMappingMetadata},
             user::UserDirectory,
             vault::virtual_file::VirtualFileVersion,
         },
@@ -1268,7 +1268,7 @@ async fn jv_here(_args: HereArgs) {
         Err(_) => path.display().to_string(),
     };
 
-    let remote_files = mapping_names_here(&path, &local_dir, &cached_sheet);
+    let mut remote_files = mapping_names_here(&path, &local_dir, &cached_sheet);
 
     let duration_updated =
         Instant::now().duration_since(latest_info.update_instant.unwrap_or(Instant::now()));
@@ -1325,6 +1325,11 @@ async fn jv_here(_args: HereArgs) {
                     // Add directory count
                     dir_count += 1;
 
+                    let dir_name = format!("{}/", file_name);
+
+                    // Remove remote dirs items that already exist locally
+                    remote_files.remove(&dir_name);
+
                     // Add directory item
                     table.insert_item(
                         0,
@@ -1335,7 +1340,7 @@ async fn jv_here(_args: HereArgs) {
                             version.to_string(),
                             t!(
                                 "jv.success.here.append_info.name",
-                                name = format!("{}/", file_name.cyan())
+                                name = dir_name.to_string().cyan()
                             )
                             .trim()
                             .to_string(),
@@ -1432,6 +1437,10 @@ async fn jv_here(_args: HereArgs) {
                         }
                     }
 
+                    // Remove remote file items that already exist locally
+                    remote_files.remove(&file_name);
+
+                    // Add Table Item
                     table.push_item(vec![
                         editing.to_string(),
                         hold.to_string(),
@@ -1455,6 +1464,53 @@ async fn jv_here(_args: HereArgs) {
         }
     }
 
+    for mapping in remote_files {
+        if let Some(metadata) = mapping.1 {
+            let mut hold = "-".to_string();
+            if let Some(holder) = latest_file_data.file_holder(&metadata.id) {
+                if holder == &local_cfg.current_account() {
+                    hold = t!("jv.success.here.append_info.holder.yourself")
+                        .trim()
+                        .green()
+                        .to_string();
+                } else {
+                    let holder_text =
+                        t!("jv.success.here.append_info.holder.others", holder = holder)
+                            .trim()
+                            .truecolor(128, 128, 128);
+                    hold = holder_text.to_string();
+                }
+            }
+
+            // File
+            table.push_item(vec![
+                t!("jv.success.here.append_info.editing.not_local")
+                    .trim()
+                    .truecolor(128, 128, 128)
+                    .to_string(),
+                hold.to_string(),
+                "-".to_string(),
+                metadata.version,
+                t!("jv.success.here.append_info.name", name = mapping.0)
+                    .trim()
+                    .truecolor(128, 128, 128)
+                    .to_string(),
+            ]);
+        } else {
+            // Directory
+            table.push_item(vec![
+                "-".to_string(),
+                "-".to_string(),
+                "-".to_string(),
+                "-".to_string(),
+                t!("jv.success.here.append_info.name", name = mapping.0)
+                    .trim()
+                    .truecolor(128, 128, 128)
+                    .to_string(),
+            ]);
+        }
+    }
+
     println!("{}", table);
 
     // Print directory info
@@ -1468,8 +1524,6 @@ async fn jv_here(_args: HereArgs) {
         )
         .trim()
     );
-
-    remote_files.iter().for_each(|f| println!("{}", f));
 }
 
 async fn jv_status(_args: StatusArgs) {
@@ -3447,29 +3501,29 @@ fn mapping_names_here(
     current_dir: &PathBuf,
     local_dir: &PathBuf,
     cached_sheet: &SheetData,
-) -> Vec<String> {
+) -> HashMap<String, Option<SheetMappingMetadata>> {
     let Ok(relative_path) = current_dir.strip_prefix(local_dir) else {
-        return Vec::new();
+        return HashMap::new();
     };
 
     // Collect files directly under current directory
-    let files_here: Vec<String> = cached_sheet
+    let files_here: HashMap<String, Option<SheetMappingMetadata>> = cached_sheet
         .mapping()
         .iter()
-        .filter_map(|(f, _)| {
+        .filter_map(|(f, mapping)| {
             // Check if the file is directly under the current directory
             f.parent()
                 .filter(|&parent| parent == relative_path)
                 .and_then(|_| f.file_name())
                 .and_then(|name| name.to_str())
-                .map(|s| s.to_string())
+                .map(|s| (s.to_string(), Some(mapping.clone())))
         })
         .collect();
 
     // Collect directories that appear in the mapping
     let mut dirs_set = std::collections::HashSet::new();
 
-    for (f, _) in cached_sheet.mapping().iter() {
+    for (f, _mapping) in cached_sheet.mapping().iter() {
         // Get all parent directories of the file relative to the current directory
         let mut current = f.as_path();
 
@@ -3490,12 +3544,13 @@ fn mapping_names_here(
     }
 
     // Filter out directories that are actually files
-    let filtered_dirs: Vec<String> = dirs_set
+    let filtered_dirs: HashMap<String, Option<SheetMappingMetadata>> = dirs_set
         .into_iter()
         .filter(|dir_with_slash| {
             let dir_name = dir_with_slash.trim_end_matches('/');
-            !files_here.iter().any(|file_name| file_name == dir_name)
+            !files_here.contains_key(dir_name)
         })
+        .map(|dir_name| (dir_name, None))
         .collect();
 
     // Combine results
