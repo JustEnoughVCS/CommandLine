@@ -198,18 +198,23 @@ enum JustEnoughVcsWorkspaceCommand {
     Login(LoginArgs),
 
     // Completion Helpers
+    /// Display History IP Address
     #[command(name = "_ip_history")]
     GetHistoryIpAddress,
 
+    /// Display Workspace Directory
     #[command(name = "_workspace_dir")]
     GetWorkspaceDir,
 
+    /// Display Current Account
     #[command(name = "_account")]
     GetCurrentAccount,
 
+    /// Display Current Upstream Vault
     #[command(name = "_upstream")]
     GetCurrentUpstream,
 
+    /// Display Current Sheet
     #[command(name = "_sheet")]
     GetCurrentSheet,
 }
