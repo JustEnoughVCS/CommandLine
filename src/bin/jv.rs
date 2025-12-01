@@ -31,7 +31,7 @@ use just_enough_vcs::{
             CLIENT_FILE_TODOLIST, CLIENT_FILE_WORKSPACE, CLIENT_FOLDER_WORKSPACE_ROOT_NAME,
             CLIENT_PATH_WORKSPACE_ROOT, PORT, REF_SHEET_NAME,
         },
-        current::{correct_current_dir, current_local_path},
+        current::{correct_current_dir, current_cfg_dir, current_local_path},
         data::{
             local::{
                 LocalWorkspace, align::AlignTasks, cached_sheet::CachedSheet, config::LocalConfig,
@@ -3318,7 +3318,7 @@ async fn jv_docs(args: DocsArgs) {
     if args.direct {
         println!("{}", document.trim());
     } else {
-        let Some(doc_dir) = current_doc_dir() else {
+        let Some(doc_dir) = current_cfg_dir() else {
             eprintln!(
                 "{}",
                 md(t!("jv.fail.docs.no_doc_dir", docs_name = docs_name))
