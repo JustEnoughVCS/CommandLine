@@ -2,10 +2,12 @@ use std::path::Path;
 
 use colored::Colorize;
 use env_logger::{Builder, Target};
-use just_enough_vcs::utils::string_proc::format_path::format_path;
+use just_enough_vcs::{
+    utils::string_proc::format_path::format_path, vcs::data::vault::config::LoggerLevel,
+};
 use log::{Level, LevelFilter};
 
-pub fn build_env_logger(log_path: impl AsRef<Path>) {
+pub fn build_env_logger(log_path: impl AsRef<Path>, logger_level: LoggerLevel) {
     use std::io::{self, Write};
 
     struct MultiWriter<A, B> {
@@ -70,10 +72,16 @@ pub fn build_env_logger(log_path: impl AsRef<Path>) {
     let log_file = std::fs::File::create(log_path).expect("Failed to create log file");
     let combined_target = Target::Pipe(Box::new(MultiWriter::new(std::io::stdout(), log_file)));
 
+    let level = match logger_level {
+        LoggerLevel::Debug => LevelFilter::Debug,
+        LoggerLevel::Trace => LevelFilter::Trace,
+        LoggerLevel::Info => LevelFilter::Info,
+    };
+
     builder
         .format(log_format)
-        .filter(None, LevelFilter::Info)
-        .filter_module("just_enough_vcs", LevelFilter::Trace)
+        .filter(None, level.clone())
+        .filter_module("just_enough_vcs", level)
         .target(combined_target)
         .init();
 }

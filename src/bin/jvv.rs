@@ -174,9 +174,13 @@ struct ListenArgs {
     #[arg(short, long)]
     help: bool,
 
-    /// Disable logging
+    /// Disable logging (Override profile)
     #[arg(short, long)]
     no_log: bool,
+
+    /// Show logging (Override profile)
+    #[arg(short, long)]
+    show_log: bool,
 
     /// Custom port
     #[arg(short, long)]
@@ -465,22 +469,7 @@ async fn jvv_init(_args: InitVaultArgs) {
     };
     let vault_name = pascal_case!(vault_name);
 
-    if let Err(err) = Vault::setup_vault(current_dir.clone()).await {
-        eprintln!("{}", t!("jvv.fail.jvcs", err = err.to_string()));
-        return;
-    }
-
-    // Read vault cfg
-    let mut vault_cfg = match VaultConfig::read().await {
-        Ok(cfg) => cfg,
-        Err(err) => {
-            eprintln!("{}", t!("jvv.fail.jvcs", err = err.to_string()));
-            return;
-        }
-    };
-
-    vault_cfg.change_name(vault_name);
-    if let Err(err) = VaultConfig::write(&vault_cfg).await {
+    if let Err(err) = Vault::setup_vault(current_dir.clone(), vault_name).await {
         eprintln!("{}", t!("jvv.fail.jvcs", err = err.to_string()));
         return;
     }
@@ -523,34 +512,7 @@ async fn jvv_create(args: CreateVaultArgs) {
 
     // Setup vault
     let vault_name = pascal_case!(args.vault_name);
-    if let Err(err) = Vault::setup_vault(target_dir.clone()).await {
-        eprintln!("{}", t!("jvv.fail.jvcs", err = err.to_string()));
-        return;
-    }
-
-    // Enter target_dir
-    if set_current_dir(&target_dir).is_err() {
-        eprintln!(
-            "{}",
-            t!(
-                "jvv.fail.std.set_current_dir",
-                dir = target_dir.to_string_lossy()
-            )
-        );
-        return;
-    }
-
-    // Read vault cfg
-    let mut vault_cfg = match VaultConfig::read().await {
-        Ok(cfg) => cfg,
-        Err(err) => {
-            eprintln!("{}", t!("jvv.fail.jvcs", err = err.to_string()));
-            return;
-        }
-    };
-
-    vault_cfg.change_name(vault_name);
-    if let Err(err) = VaultConfig::write(&vault_cfg).await {
+    if let Err(err) = Vault::setup_vault(target_dir.clone(), vault_name).await {
         eprintln!("{}", t!("jvv.fail.jvcs", err = err.to_string()));
         return;
     }
@@ -652,7 +614,24 @@ async fn jvv_service_listen(args: ListenArgs) {
         return;
     };
 
-    if !args.no_log {
+    let Ok(vault_cfg) = VaultConfig::read().await else {
+        eprintln!("{}", t!("jvv.fail.here.cfg_not_found").trim());
+        return;
+    };
+
+    let show_logger = if args.no_log && !args.show_log {
+        false
+    } else if !args.no_log && args.show_log {
+        true
+    } else if !args.no_log && !args.show_log {
+        // Read profile
+        vault_cfg.server_config().is_logger_enabled()
+    } else {
+        eprintln!("{}", md(t!("jvv.fail.service.wtf_show_log_and_no_log")));
+        return;
+    };
+
+    if show_logger {
         let logs_dir = current_vault.join("logs");
         if let Err(_) = fs::create_dir_all(&logs_dir).await {
             eprintln!(
@@ -666,7 +645,10 @@ async fn jvv_service_listen(args: ListenArgs) {
         }
         let now = chrono::Local::now();
         let log_filename = format!("log_{}.txt", now.format("%Y.%m.%d-%H:%M:%S"));
-        build_env_logger(logs_dir.join(log_filename));
+        build_env_logger(
+            logs_dir.join(log_filename),
+            vault_cfg.server_config().logger_level(),
+        );
         info!(
             "{}",
             t!(

@@ -117,6 +117,18 @@ jvv:
         Server forced to close due to error!
         Error message: %{error}
 
+      wtf_show_log_and_no_log: |
+        You cannot both show and hide log output at the same time!
+
+        "
+        This reminds me of the old saying: 'You can't have your cake and eat it too.'
+        Or perhaps the classic logical puzzle: 'This statement is false.'
+        "
+
+        Your command is a paradox: show the logs, and do not show the logs. Which contradictory order should I follow?
+
+        **Tip**: Use `jvv listen --no-log` or `jvv listen --show-log` to override the default Logger setting.
+
   success:
     here:
       info: |
