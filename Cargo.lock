@@ -962,6 +962,7 @@ dependencies = [
  "chrono",
  "clap",
  "colored",
+ "dirs",
  "env_logger",
  "just_enough_vcs",
  "log",

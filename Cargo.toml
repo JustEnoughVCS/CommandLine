@@ -59,5 +59,6 @@ rust-i18n = "3"
 # Regex
 regex = "1.12.1"
 
-# File
+# File & Directory
 walkdir = "2.5.0"
+dirs = "6.0.0"
