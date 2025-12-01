@@ -1354,6 +1354,7 @@ async fn jv_here(_args: HereArgs) {
                             if holder == &local_cfg.current_account() {
                                 hold = t!("jv.success.here.append_info.holder.yourself")
                                     .trim()
+                                    .green()
                                     .to_string();
                                 is_file_held = true;
                             } else {
@@ -1417,6 +1418,7 @@ async fn jv_here(_args: HereArgs) {
                             } else {
                                 editing = t!("jv.success.here.append_info.editing.can_edit")
                                     .trim()
+                                    .green()
                                     .to_string();
                             }
                         }
