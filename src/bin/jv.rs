@@ -31,17 +31,12 @@ use just_enough_vcs::{
             CLIENT_FILE_TODOLIST, CLIENT_FILE_WORKSPACE, CLIENT_FOLDER_WORKSPACE_ROOT_NAME,
             CLIENT_PATH_WORKSPACE_ROOT, PORT, REF_SHEET_NAME,
         },
-        current::{correct_current_dir, current_doc_dir, current_local_path},
+        current::{correct_current_dir, current_local_path},
         data::{
             local::{
-                LocalWorkspace,
-                align::AlignTasks,
-                cached_sheet::CachedSheet,
-                config::LocalConfig,
-                file_status::AnalyzeResult,
-                latest_file_data::LatestFileData,
-                latest_info::LatestInfo,
-                local_files::{RelativeFiles, get_relative_paths},
+                LocalWorkspace, align::AlignTasks, cached_sheet::CachedSheet, config::LocalConfig,
+                file_status::AnalyzeResult, latest_file_data::LatestFileData,
+                latest_info::LatestInfo, local_files::get_relative_paths,
                 vault_modified::check_vault_modified,
             },
             member::{Member, MemberId},
@@ -685,7 +680,7 @@ async fn main() {
             };
 
             // Check if account list is not empty
-            let Some(dir) = UserDirectory::current_doc_dir() else {
+            let Some(dir) = UserDirectory::current_cfg_dir() else {
                 return;
             };
 
@@ -816,7 +811,7 @@ async fn main() {
         }
 
         JustEnoughVcsWorkspaceCommand::Account(account_manage) => {
-            let user_dir = match UserDirectory::current_doc_dir() {
+            let user_dir = match UserDirectory::current_cfg_dir() {
                 Some(dir) => dir,
                 None => {
                     eprintln!("{}", t!("jv.fail.account.no_user_dir"));
@@ -1003,7 +998,7 @@ async fn main() {
             .await
         }
         JustEnoughVcsWorkspaceCommand::Accounts => {
-            let user_dir = match UserDirectory::current_doc_dir() {
+            let user_dir = match UserDirectory::current_cfg_dir() {
                 Some(dir) => dir,
                 None => {
                     eprintln!("{}", t!("jv.fail.account.no_user_dir"));
@@ -1023,7 +1018,7 @@ async fn main() {
             jv_sheet_align(sheet_align_args).await
         }
         JustEnoughVcsWorkspaceCommand::As(args) => {
-            let user_dir = match UserDirectory::current_doc_dir() {
+            let user_dir = match UserDirectory::current_cfg_dir() {
                 Some(dir) => dir,
                 None => {
                     eprintln!("{}", t!("jv.fail.account.no_user_dir"));
@@ -1053,7 +1048,7 @@ async fn main() {
                 confirm_hint_or(t!("common.confirm"), || exit(1)).await;
             }
 
-            let user_dir = match UserDirectory::current_doc_dir() {
+            let user_dir = match UserDirectory::current_cfg_dir() {
                 Some(dir) => dir,
                 None => {
                     eprintln!("{}", t!("jv.fail.account.no_user_dir"));
@@ -1087,7 +1082,7 @@ async fn main() {
                 let _ = fs::remove_file(local_dir.join(CLIENT_FILE_TODOLIST)).await;
             };
         }
-        JustEnoughVcsWorkspaceCommand::HistoryIpAddress => {
+        JustEnoughVcsWorkspaceCommand::GetHistoryIpAddress => {
             get_recent_ip_address()
                 .await
                 .iter()
