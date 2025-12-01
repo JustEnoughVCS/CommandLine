@@ -199,7 +199,19 @@ enum JustEnoughVcsWorkspaceCommand {
 
     // Completion Helpers
     #[command(name = "_ip_history")]
-    HistoryIpAddress,
+    GetHistoryIpAddress,
+
+    #[command(name = "_workspace_dir")]
+    GetWorkspaceDir,
+
+    #[command(name = "_account")]
+    GetCurrentAccount,
+
+    #[command(name = "_upstream")]
+    GetCurrentUpstream,
+
+    #[command(name = "_sheet")]
+    GetCurrentSheet,
 }
 
 #[derive(Parser, Debug)]
@@ -1087,6 +1099,29 @@ async fn main() {
                 .await
                 .iter()
                 .for_each(|ip| println!("{}", ip));
+        }
+        JustEnoughVcsWorkspaceCommand::GetWorkspaceDir => {
+            if let Some(local_dir) = current_local_path() {
+                println!("{}", local_dir.display())
+            };
+        }
+        JustEnoughVcsWorkspaceCommand::GetCurrentAccount => {
+            if let Ok(local_config) = LocalConfig::read().await {
+                println!("{}", local_config.current_account())
+            };
+        }
+        JustEnoughVcsWorkspaceCommand::GetCurrentUpstream => {
+            if let Ok(local_config) = LocalConfig::read().await {
+                println!("{}", local_config.upstream_addr())
+            };
+        }
+        JustEnoughVcsWorkspaceCommand::GetCurrentSheet => {
+            if let Ok(local_config) = LocalConfig::read().await {
+                println!(
+                    "{}",
+                    local_config.sheet_in_use().clone().unwrap_or_default()
+                )
+            };
         }
     }
 }
