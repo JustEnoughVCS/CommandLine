@@ -40,6 +40,7 @@ use just_enough_vcs::{
                 vault_modified::check_vault_modified,
             },
             member::{Member, MemberId},
+            sheet::SheetData,
             user::UserDirectory,
             vault::virtual_file::VirtualFileVersion,
         },
@@ -1267,6 +1268,8 @@ async fn jv_here(_args: HereArgs) {
         Err(_) => path.display().to_string(),
     };
 
+    let remote_files = mapping_names_here(&path, &local_dir, &cached_sheet);
+
     let duration_updated =
         Instant::now().duration_since(latest_info.update_instant.unwrap_or(Instant::now()));
     let minutes = duration_updated.as_secs() / 60;
@@ -1339,7 +1342,7 @@ async fn jv_here(_args: HereArgs) {
                         ],
                     );
                 } else {
-                    // File
+                    // Local File
                     // Add file count
                     file_count += 1;
 
@@ -1465,6 +1468,8 @@ async fn jv_here(_args: HereArgs) {
         )
         .trim()
     );
+
+    remote_files.iter().for_each(|f| println!("{}", f));
 }
 
 async fn jv_status(_args: StatusArgs) {
@@ -3410,8 +3415,8 @@ async fn precheck() -> Option<LocalConfig> {
     Some(local_config)
 }
 
-// Build action pool and context for upstream communication
-// Returns Some((ActionPool, ActionContext)) if successful, None otherwise
+/// Build action pool and context for upstream communication
+/// Returns Some((ActionPool, ActionContext)) if successful, None otherwise
 async fn build_pool_and_ctx(local_config: &LocalConfig) -> Option<(ActionPool, ActionContext)> {
     let pool = client_registry::client_action_pool();
     let upstream = local_config.upstream_addr();
@@ -3436,4 +3441,65 @@ fn sort_paths(paths: &mut Vec<String>) {
         }
         a.cmp(b) as i32
     });
+}
+/// Get paths that exist in the Cached Sheet under the current directory
+fn mapping_names_here(
+    current_dir: &PathBuf,
+    local_dir: &PathBuf,
+    cached_sheet: &SheetData,
+) -> Vec<String> {
+    let Ok(relative_path) = current_dir.strip_prefix(local_dir) else {
+        return Vec::new();
+    };
+
+    // Collect files directly under current directory
+    let files_here: Vec<String> = cached_sheet
+        .mapping()
+        .iter()
+        .filter_map(|(f, _)| {
+            // Check if the file is directly under the current directory
+            f.parent()
+                .filter(|&parent| parent == relative_path)
+                .and_then(|_| f.file_name())
+                .and_then(|name| name.to_str())
+                .map(|s| s.to_string())
+        })
+        .collect();
+
+    // Collect directories that appear in the mapping
+    let mut dirs_set = std::collections::HashSet::new();
+
+    for (f, _) in cached_sheet.mapping().iter() {
+        // Get all parent directories of the file relative to the current directory
+        let mut current = f.as_path();
+
+        while let Some(parent) = current.parent() {
+            if parent == relative_path {
+                // This is a parent directory, not the file itself
+                if current != f.as_path() {
+                    if let Some(dir_name) = current.file_name() {
+                        if let Some(dir_str) = dir_name.to_str() {
+                            dirs_set.insert(format!("{}/", dir_str));
+                        }
+                    }
+                }
+                break;
+            }
+            current = parent;
+        }
+    }
+
+    // Filter out directories that are actually files
+    let filtered_dirs: Vec<String> = dirs_set
+        .into_iter()
+        .filter(|dir_with_slash| {
+            let dir_name = dir_with_slash.trim_end_matches('/');
+            !files_here.iter().any(|file_name| file_name == dir_name)
+        })
+        .collect();
+
+    // Combine results
+    let mut result = files_here;
+    result.extend(filtered_dirs);
+    result
 }
