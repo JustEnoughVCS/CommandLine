@@ -1300,6 +1300,7 @@ async fn jv_here(_args: HereArgs) {
     let mut file_count = 0;
     let mut total_size = 0;
 
+    // Exists files
     if let Ok(mut entries) = fs::read_dir(&path).await {
         while let Ok(Some(entry)) = entries.next_entry().await {
             if let Ok(file_type) = entry.file_type().await {
@@ -1464,6 +1465,7 @@ async fn jv_here(_args: HereArgs) {
         }
     }
 
+    // Remote Files
     for mapping in remote_files {
         if let Some(metadata) = mapping.1 {
             let mut hold = "-".to_string();
@@ -3496,18 +3498,19 @@ fn sort_paths(paths: &mut Vec<String>) {
         a.cmp(b) as i32
     });
 }
+
 /// Get paths that exist in the Cached Sheet under the current directory
 fn mapping_names_here(
     current_dir: &PathBuf,
     local_dir: &PathBuf,
     cached_sheet: &SheetData,
-) -> HashMap<String, Option<SheetMappingMetadata>> {
+) -> std::collections::BTreeMap<String, Option<SheetMappingMetadata>> {
     let Ok(relative_path) = current_dir.strip_prefix(local_dir) else {
-        return HashMap::new();
+        return std::collections::BTreeMap::new();
     };
 
     // Collect files directly under current directory
-    let files_here: HashMap<String, Option<SheetMappingMetadata>> = cached_sheet
+    let files_here: std::collections::BTreeMap<String, Option<SheetMappingMetadata>> = cached_sheet
         .mapping()
         .iter()
         .filter_map(|(f, mapping)| {
@@ -3521,7 +3524,7 @@ fn mapping_names_here(
         .collect();
 
     // Collect directories that appear in the mapping
-    let mut dirs_set = std::collections::HashSet::new();
+    let mut dirs_set = std::collections::BTreeSet::new();
 
     for (f, _mapping) in cached_sheet.mapping().iter() {
         // Get all parent directories of the file relative to the current directory
@@ -3544,7 +3547,7 @@ fn mapping_names_here(
     }
 
     // Filter out directories that are actually files
-    let filtered_dirs: HashMap<String, Option<SheetMappingMetadata>> = dirs_set
+    let filtered_dirs: std::collections::BTreeMap<String, Option<SheetMappingMetadata>> = dirs_set
         .into_iter()
         .filter(|dir_with_slash| {
             let dir_name = dir_with_slash.trim_end_matches('/');
