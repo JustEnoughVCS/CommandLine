@@ -49,6 +49,8 @@ impl Globber {
 
         let pattern = if pattern.is_empty() {
             "*".to_string()
+        } else if pattern == "." {
+            "*".to_string()
         } else if pattern.ends_with(SPLIT_STR) {
             format!("{}*", pattern)
         } else {
@@ -160,10 +162,32 @@ impl<T: AsRef<str>> From<T> for Globber {
     }
 }
 
+#[derive(Debug, Clone, Hash)]
 pub enum GlobItem {
     File(String),
     Directory(String),
 }
+
+impl PartialEq for GlobItem {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (GlobItem::File(a), GlobItem::File(b)) => a == b,
+            (GlobItem::Directory(a), GlobItem::Directory(b)) => a == b,
+            _ => false,
+        }
+    }
+}
+
+impl std::fmt::Display for GlobItem {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            GlobItem::File(name) => write!(f, "{}", name),
+            GlobItem::Directory(name) => write!(f, "{}", name),
+        }
+    }
+}
+
+impl Eq for GlobItem {}
 
 pub mod constants {
     use std::{env::current_dir, path::PathBuf};

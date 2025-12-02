@@ -48,10 +48,11 @@ use just_enough_vcs::{
     },
 };
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{BTreeMap, HashMap, HashSet},
     env::{current_dir, set_current_dir},
+    io::Error,
     net::SocketAddr,
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::exit,
     str::FromStr,
 };
@@ -70,6 +71,7 @@ use just_enough_vcs_cli::{
         display::{SimpleTable, md, size_str},
         env::{current_locales, enable_auto_update},
         fs::move_across_partitions,
+        globber::{GlobItem, Globber},
         input::{confirm_hint, confirm_hint_or, input_with_editor, show_in_pager},
         socket_addr_helper,
     },
@@ -218,6 +220,10 @@ enum JustEnoughVcsWorkspaceCommand {
     /// Display Current Sheet
     #[command(name = "_sheet")]
     GetCurrentSheet,
+
+    // Debug Tools
+    #[command(name = "_glob")]
+    DebugGlob(DebugGlobArgs),
 }
 
 #[derive(Parser, Debug)]
@@ -642,6 +648,12 @@ struct DocsArgs {
 #[derive(Parser, Debug)]
 struct UseArgs {
     sheet_name: String,
+}
+
+#[derive(Parser, Debug)]
+struct DebugGlobArgs {
+    /// Pattern
+    pattern: String, // Using 'noglob jvv _glob' in ZSH plz
 }
 
 #[tokio::main]
@@ -1100,6 +1112,8 @@ async fn main() {
                 let _ = fs::remove_file(local_dir.join(CLIENT_FILE_TODOLIST)).await;
             };
         }
+
+        // Completion Helpers
         JustEnoughVcsWorkspaceCommand::GetHistoryIpAddress => {
             get_recent_ip_address()
                 .await
@@ -1128,6 +1142,11 @@ async fn main() {
                     local_config.sheet_in_use().clone().unwrap_or_default()
                 )
             };
+        }
+
+        // Debug Tools
+        JustEnoughVcsWorkspaceCommand::DebugGlob(glob_args) => {
+            jv_debug_glob(glob_args).await;
         }
     }
 }
@@ -3401,6 +3420,165 @@ async fn jv_docs(args: DocsArgs) {
                     docs_name = docs_name
                 ))
             );
+        }
+    }
+}
+
+async fn jv_debug_glob(glob_args: DebugGlobArgs) {
+    let Some(local_dir) = current_local_path() else {
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+        return;
+    };
+
+    let globber = match glob(&glob_args.pattern, true).await {
+        Ok(g) => g,
+        Err(_) => match glob(&glob_args.pattern, false).await {
+            Ok(g) => g,
+            Err(_) => return,
+        },
+    };
+
+    let result = globber.paths();
+    let local_dir = match current_local_path() {
+        Some(dir) => dir,
+        None => {
+            eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+            return;
+        }
+    };
+
+    let mut filtered_paths: Vec<String> = result
+        .into_iter()
+        .filter_map(|path_buf| {
+            path_buf
+                .strip_prefix(&local_dir)
+                .ok()
+                .map(|relative_path| relative_path.display().to_string())
+        })
+        .collect();
+
+    let path_map: BTreeMap<String, ()> = filtered_paths.drain(..).map(|path| (path, ())).collect();
+
+    for path in path_map.keys() {
+        println!("{}", path);
+    }
+}
+
+async fn glob(
+    pattern: impl Into<String>,
+    with_current_sheet: bool,
+) -> Result<Globber, std::io::Error> {
+    // Build globber
+    let globber = Globber::from(pattern.into());
+
+    let globber = if with_current_sheet {
+        // Get necessary informations
+        let Some(local_dir) = current_local_path() else {
+            return Err(Error::new(
+                std::io::ErrorKind::NotFound,
+                "Workspace not found",
+            ));
+        };
+
+        let Ok(local_cfg) = LocalConfig::read_from(local_dir.join(CLIENT_FILE_WORKSPACE)).await
+        else {
+            return Err(Error::new(
+                std::io::ErrorKind::NotFound,
+                "Local Config read failed",
+            ));
+        };
+        let Some(sheet_name) = local_cfg.sheet_in_use().clone() else {
+            return Err(Error::new(std::io::ErrorKind::NotFound, "No sheet in use"));
+        };
+
+        let Ok(cached_sheet) = CachedSheet::cached_sheet_data(&sheet_name).await else {
+            return Err(Error::new(
+                std::io::ErrorKind::NotFound,
+                "Cached sheet not found",
+            ));
+        };
+
+        let current_dir = current_dir()?;
+
+        if !current_dir.starts_with(&local_dir) {
+            return Err(Error::new(
+                std::io::ErrorKind::NotFound,
+                "Not a local workspace",
+            ));
+        }
+
+        // Sheet mode
+        globber.glob(|current_dir| {
+            let mut result = HashSet::new();
+
+            // First, add local files
+            get_local_files(&current_dir, &mut result);
+
+            // Start collecting sheet files
+            // Check if we're in the workspace directory (get current path relative to local workspace)
+            let Ok(relative_path_to_local) = current_dir.strip_prefix(&local_dir) else {
+                return result.into_iter().collect();
+            };
+
+            let mut dirs = HashSet::new();
+
+            cached_sheet.mapping().iter().for_each(|(path, _)| {
+                let left = relative_path_to_local;
+
+                // Skip: files that don't start with the current directory
+                let Ok(right) = path.strip_prefix(left) else {
+                    return;
+                };
+
+                // File: starts with current directory and doesn't contain "/"
+                // (since we already filtered out files that don't start with current directory,
+                // here we just check if it contains a path separator)
+                let file_name = right.display().to_string();
+                if !file_name.contains("/") {
+                    result.insert(GlobItem::File(file_name));
+                } else {
+                    // Directory: contains separator, take the first part, add to dirs set
+                    if let Some(first_part) = file_name.split('/').next() {
+                        dirs.insert(first_part.to_string());
+                    }
+                }
+            });
+
+            dirs.into_iter().for_each(|dir| {
+                result.insert(GlobItem::Directory(dir));
+            });
+
+            result.into_iter().collect()
+        })
+    } else {
+        // Local mode
+        globber.glob(|current| {
+            let mut items = HashSet::new();
+            get_local_files(&current, &mut items);
+            items.iter().cloned().collect()
+        })
+    }?;
+
+    Ok(globber)
+}
+
+fn get_local_files(current: &PathBuf, items: &mut HashSet<GlobItem>) {
+    if let Ok(entries) = std::fs::read_dir(&current) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let name = path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .map(|s| s.to_string())
+                .unwrap_or_default();
+
+            if path.is_file() {
+                items.insert(GlobItem::File(name));
+            } else if path.is_dir() {
+                if name != CLIENT_FOLDER_WORKSPACE_ROOT_NAME {
+                    items.insert(GlobItem::Directory(name));
+                }
+            }
         }
     }
 }
