@@ -3406,27 +3406,31 @@ async fn jv_docs(args: DocsArgs) {
 }
 
 async fn jv_debug_glob(glob_args: DebugGlobArgs) {
-    let Some(local_dir) = current_local_path() else {
-        eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
-        return;
+    let local_dir = match current_local_path() {
+        Some(dir) => dir,
+        None => {
+            // No, dont print anything
+            // eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+            return;
+        }
     };
 
-    let globber = match glob(&glob_args.pattern, true).await {
+    for path in process_glob(glob_args.pattern, &local_dir).await.keys() {
+        println!("{}", path);
+    }
+}
+
+async fn process_glob(pattern: impl Into<String>, local_dir: &PathBuf) -> BTreeMap<String, ()> {
+    let pattern = pattern.into();
+    let globber = match glob(&pattern, true).await {
         Ok(g) => g,
-        Err(_) => match glob(&glob_args.pattern, false).await {
+        Err(_) => match glob(&pattern, false).await {
             Ok(g) => g,
-            Err(_) => return,
+            Err(_) => return BTreeMap::new(),
         },
     };
 
     let result = globber.paths();
-    let local_dir = match current_local_path() {
-        Some(dir) => dir,
-        None => {
-            eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
-            return;
-        }
-    };
 
     let mut filtered_paths: Vec<String> = result
         .into_iter()
@@ -3439,10 +3443,7 @@ async fn jv_debug_glob(glob_args: DebugGlobArgs) {
         .collect();
 
     let path_map: BTreeMap<String, ()> = filtered_paths.drain(..).map(|path| (path, ())).collect();
-
-    for path in path_map.keys() {
-        println!("{}", path);
-    }
+    path_map
 }
 
 async fn glob(
