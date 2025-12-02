@@ -2727,25 +2727,6 @@ async fn jv_change_edit_right(
     }
 
     for file in filtered_files {
-        let full_path = local_dir.join(&file);
-
-        // File exists
-        if !full_path.exists() {
-            let reason = t!(
-                "jv.fail.change_edit_right.check_fail_item",
-                path = file.display(),
-                reason = t!("jv.fail.change_edit_right.check_fail_reason.not_found_in_local")
-            )
-            .trim()
-            .to_string();
-
-            if !handle_validation_failure(show_fail_details, &mut details, &mut failed, num, reason)
-            {
-                return;
-            }
-            continue;
-        }
-
         // Mapping exists
         if !cached_sheet.mapping().contains_key(&file) {
             let reason = t!(

@@ -570,7 +570,6 @@ jv:
         %{path} (%{reason})
 
       check_fail_reason:
-        not_found_in_local: File Not Found
         not_found_in_sheet: Mapping Not Found In Sheet
         not_a_tracked_file: File Not Tracked
         base_version_unmatch: Version Mismatch

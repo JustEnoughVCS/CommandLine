@@ -572,7 +572,6 @@ jv:
         %{path}（%{reason}）
 
       check_fail_reason:
-        not_found_in_local: 文件未找到
         not_found_in_sheet: 表中不存在
         not_a_tracked_file: 文件未被跟踪
         base_version_unmatch: 基准版本不匹配
