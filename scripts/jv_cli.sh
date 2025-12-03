@@ -18,10 +18,29 @@ export JV_AUTO_UPDATE=yes
 ### ALIASES ###
 ###############
 
+# Disable glob expansion for jv commands across shells
+if [ -n "$BASH_VERSION" ]; then # Bash
+    alias jv='set -f; command jv; set +f'
+    alias jvt='set -f; command jv track; set +f'
+    alias jmv='set -f; command jv move; set +f'
+elif [ -n "$ZSH_VERSION" ]; then # Zsh
+    alias jv='noglob jv'
+    alias jvt='noglob jv track'
+    alias jmv='noglob jv move'
+elif [ -n "$FISH_VERSION" ]; then # Fish
+    function jv {
+        command jv $@
+    }
+    function jvt {
+        command jv track $@
+    }
+    function jmv {
+        command jv move $@
+    }
+fi
+
 alias jvh='jv here'
 alias jvu='jv update'
-alias jvt='jv track'
-alias jmv='jv move'
 
 ##################
 ### COMPLETION ###

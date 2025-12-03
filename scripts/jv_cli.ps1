@@ -17,10 +17,20 @@ $env:JV_AUTO_UPDATE = "yes"
 ### ALIASES ###
 ###############
 
-Set-Alias jvh jv here
-Set-Alias jvu jv update
-Set-Alias jvt jv track
-Set-Alias jmv jv move
+function jv {
+    param([string[]]$Arguments)
+    & (Get-Command jv -CommandType Application) @Arguments
+}
+
+function jvh { jv here @args }
+function jvu { jv update @args }
+function jvt { jv track @args }
+function jmv { jv move @args }
+
+Set-Alias jvh jvh
+Set-Alias jvu jvu
+Set-Alias jvt jvt
+Set-Alias jmv jmv
 
 ##################
 ### COMPLETION ###
