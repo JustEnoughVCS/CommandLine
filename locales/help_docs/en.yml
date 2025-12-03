@@ -556,6 +556,7 @@ jv:
 
     change_edit_right:
       no_selection: No files selected!
+
       check_failed: |
         In the %{num} selected files, there are items that failed pre-check!
         Add `--details` after the command to view specific details
