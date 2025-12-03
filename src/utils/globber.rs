@@ -1,4 +1,6 @@
-use std::path::PathBuf;
+use std::{io::Error, path::PathBuf, str::FromStr};
+
+use just_enough_vcs::utils::string_proc::format_path::format_path_str;
 
 use crate::utils::globber::constants::{SPLIT_STR, get_base_dir_current};
 
@@ -22,6 +24,10 @@ impl Globber {
         self.names.iter().collect()
     }
 
+    pub fn base(&self) -> &PathBuf {
+        &self.base
+    }
+
     pub fn into_names(self) -> Vec<String> {
         self.names
     }
@@ -42,9 +48,22 @@ impl Globber {
             if !path.ends_with(SPLIT_STR) {
                 path.push_str(SPLIT_STR);
             }
-            (path, pattern_part[SPLIT_STR.len()..].to_string())
+            (
+                format_path_str(path)?,
+                pattern_part[SPLIT_STR.len()..].to_string(),
+            )
         } else {
             (String::default(), full_path)
+        };
+
+        self.base = match PathBuf::from_str(&path) {
+            Ok(r) => r,
+            Err(_) => {
+                return Err(Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    format!("Invalid path: \"{}\"", &path),
+                ));
+            }
         };
 
         let pattern = if pattern.is_empty() {
@@ -64,7 +83,7 @@ impl Globber {
 
         let mut collected = Vec::new();
 
-        collect_files(&path.into(), String::new(), &mut collected, &get_names);
+        collect_files(&path.into(), "./".to_string(), &mut collected, &get_names);
         fn collect_files<F>(
             base: &PathBuf,
             current: String,
@@ -83,18 +102,16 @@ impl Globber {
             for item in items {
                 match item {
                     GlobItem::File(file_name) => {
-                        let relative_path = if current.is_empty() {
-                            file_name
-                        } else {
-                            format!("{}{}{}", current, SPLIT_STR, file_name)
+                        let relative_path = {
+                            format_path_str(format!("{}{}{}", current, SPLIT_STR, file_name))
+                                .unwrap_or_default()
                         };
                         file_names.push(relative_path)
                     }
                     GlobItem::Directory(dir_name) => {
-                        let new_current = if current.is_empty() {
-                            dir_name
-                        } else {
-                            format!("{}{}{}", current, SPLIT_STR, dir_name)
+                        let new_current = {
+                            format_path_str(format!("{}{}{}", current, SPLIT_STR, dir_name))
+                                .unwrap_or_default()
                         };
                         collect_files(base, new_current, file_names, get_names);
                     }
