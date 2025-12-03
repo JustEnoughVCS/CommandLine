@@ -36,13 +36,12 @@ use just_enough_vcs::{
             local::{
                 LocalWorkspace, align::AlignTasks, cached_sheet::CachedSheet, config::LocalConfig,
                 file_status::AnalyzeResult, latest_file_data::LatestFileData,
-                latest_info::LatestInfo, local_files::get_relative_paths,
-                vault_modified::check_vault_modified,
+                latest_info::LatestInfo, vault_modified::check_vault_modified,
             },
             member::{Member, MemberId},
             sheet::{SheetData, SheetMappingMetadata},
             user::UserDirectory,
-            vault::virtual_file::VirtualFileVersion,
+            vault::virtual_file::{VirtualFileId, VirtualFileVersion},
         },
         docs::{ASCII_YIZI, document, documents},
     },
@@ -518,8 +517,8 @@ struct TrackFileArgs {
     #[arg(short, long)]
     help: bool,
 
-    /// Track files
-    track_files: Option<Vec<PathBuf>>,
+    /// Track file pattern
+    track_file_pattern: Option<String>,
 
     /// Commit - Description
     #[arg(short, long)]
@@ -540,8 +539,8 @@ struct HoldFileArgs {
     #[arg(short, long)]
     help: bool,
 
-    /// Hold files
-    hold_files: Option<Vec<PathBuf>>,
+    /// Hold file pattern
+    hold_file_pattern: Option<String>,
 
     /// Show fail details
     #[arg(short = 'd', long = "details")]
@@ -558,8 +557,8 @@ struct ThrowFileArgs {
     #[arg(short, long)]
     help: bool,
 
-    /// Throw files
-    throw_files: Option<Vec<PathBuf>>,
+    /// Throw file pattern
+    throw_file_pattern: Option<String>,
 
     /// Show fail details
     #[arg(short = 'd', long = "details")]
@@ -2251,16 +2250,26 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
 }
 
 async fn jv_track(args: TrackFileArgs) {
-    let track_files = if let Some(files) = args.track_files.clone() {
+    // Perform glob operation before precheck, as precheck will call set_current_dir
+    let track_files = if let Some(pattern) = args.track_file_pattern.clone() {
+        let local_dir = match current_local_path() {
+            Some(dir) => dir,
+            None => {
+                eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+                return;
+            }
+        };
+        let files = glob(pattern, &local_dir).await;
         files
             .iter()
-            .map(|f| current_dir().unwrap().join(f))
+            .filter_map(|f| PathBuf::from_str(f.0).ok())
             .collect::<Vec<_>>()
     } else {
         println!("{}", md(t!("jv.track")));
         return;
     };
 
+    // set_current_dir called here
     let local_config = match precheck().await {
         Some(config) => config,
         None => {
@@ -2273,20 +2282,7 @@ async fn jv_track(args: TrackFileArgs) {
         return;
     };
 
-    let Some(local_dir) = current_local_path() else {
-        eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
-        return;
-    };
-
-    let Some(files) = get_relative_paths(&local_dir, &track_files).await else {
-        eprintln!(
-            "{}",
-            md(t!("jv.fail.track.parse_fail", param = "track_files"))
-        );
-        return;
-    };
-
-    if files.iter().len() < 1 {
+    if track_files.iter().len() < 1 {
         eprintln!("{}", md(t!("jv.fail.track.no_selection")));
         return;
     };
@@ -2296,7 +2292,7 @@ async fn jv_track(args: TrackFileArgs) {
         None => return,
     };
 
-    let files = files.iter().cloned().collect();
+    let files = track_files.iter().cloned().collect();
     let update_info = get_update_info(local_workspace, &files, args).await;
 
     match proc_track_file_action(
@@ -2585,20 +2581,25 @@ async fn start_update_editor(
 }
 
 async fn jv_hold(args: HoldFileArgs) {
-    let hold_files = if let Some(files) = args.hold_files.clone() {
-        files
-            .iter()
-            .map(|f| current_dir().unwrap().join(f))
-            .collect::<Vec<_>>()
-    } else {
+    let Some(local_dir) = current_local_path() else {
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+        return;
+    };
+
+    let Some(hold_file_pattern) = args.hold_file_pattern else {
         println!("{}", md(t!("jv.hold")));
         return;
     };
 
+    let files = glob(hold_file_pattern, &local_dir).await;
+
     let _ = correct_current_dir();
 
     jv_change_edit_right(
-        hold_files,
+        files
+            .iter()
+            .filter_map(|f| PathBuf::from_str(f.0).ok())
+            .collect(),
         EditRightChangeBehaviour::Hold,
         args.show_fail_details,
         args.skip_failed,
@@ -2607,20 +2608,25 @@ async fn jv_hold(args: HoldFileArgs) {
 }
 
 async fn jv_throw(args: ThrowFileArgs) {
-    let throw_files = if let Some(files) = args.throw_files.clone() {
-        files
-            .iter()
-            .map(|f| current_dir().unwrap().join(f))
-            .collect::<Vec<_>>()
-    } else {
+    let Some(local_dir) = current_local_path() else {
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+        return;
+    };
+
+    let Some(throw_file_pattern) = args.throw_file_pattern else {
         println!("{}", md(t!("jv.throw")));
         return;
     };
 
+    let files = glob(throw_file_pattern, &local_dir).await;
+
     let _ = correct_current_dir();
 
     jv_change_edit_right(
-        throw_files,
+        files
+            .iter()
+            .filter_map(|f| PathBuf::from_str(f.0).ok())
+            .collect(),
         EditRightChangeBehaviour::Throw,
         args.show_fail_details,
         args.skip_failed,
@@ -2687,15 +2693,7 @@ async fn jv_change_edit_right(
         return;
     };
 
-    // Precheck and filter
-    let Some(filtered_files) = get_relative_paths(&local_dir, &files).await else {
-        eprintln!(
-            "{}",
-            md(t!("jv.fail.track.parse_fail", param = "track_files"))
-        );
-        return;
-    };
-    let num = filtered_files.iter().len();
+    let num = files.iter().len();
     if num < 1 {
         eprintln!("{}", md(t!("jv.fail.change_edit_right.no_selection")));
         return;
@@ -2726,9 +2724,11 @@ async fn jv_change_edit_right(
         }
     }
 
-    for file in filtered_files {
+    for file in files {
+        let exists = file.exists();
+
         // Mapping exists
-        if !cached_sheet.mapping().contains_key(&file) {
+        let Some(cached_mapping) = cached_sheet.mapping().get(&file) else {
             let reason = t!(
                 "jv.fail.change_edit_right.check_fail_item",
                 path = file.display(),
@@ -2742,51 +2742,67 @@ async fn jv_change_edit_right(
                 return;
             }
             continue;
-        }
-
-        // Not tracked
-        let Ok(local_mapping) = local_sheet.mapping_data(&file) else {
-            let reason = t!(
-                "jv.fail.change_edit_right.check_fail_item",
-                path = file.display(),
-                reason = t!("jv.fail.change_edit_right.check_fail_reason.not_a_tracked_file")
-            )
-            .trim()
-            .to_string();
-
-            if !handle_validation_failure(show_fail_details, &mut details, &mut failed, num, reason)
-            {
-                return;
-            }
-            continue;
         };
 
-        let vfid = local_mapping.mapping_vfid();
-        let local_version = local_mapping.version_when_updated();
+        let vfid: VirtualFileId = if exists {
+            // Not tracked
+            let Ok(local_mapping) = local_sheet.mapping_data(&file) else {
+                let reason = t!(
+                    "jv.fail.change_edit_right.check_fail_item",
+                    path = file.display(),
+                    reason = t!("jv.fail.change_edit_right.check_fail_reason.not_a_tracked_file")
+                )
+                .trim()
+                .to_string();
 
-        // Base version unmatch
-        if local_version
-            != latest_file_data
-                .file_version(vfid)
-                .unwrap_or(&String::default())
-        {
-            let reason = t!(
-                "jv.fail.change_edit_right.check_fail_item",
-                path = file.display(),
-                reason = t!("jv.fail.change_edit_right.check_fail_reason.base_version_unmatch")
-            )
-            .trim()
-            .to_string();
+                if !handle_validation_failure(
+                    show_fail_details,
+                    &mut details,
+                    &mut failed,
+                    num,
+                    reason,
+                ) {
+                    return;
+                }
+                continue;
+            };
 
-            if !handle_validation_failure(show_fail_details, &mut details, &mut failed, num, reason)
+            let vfid = local_mapping.mapping_vfid();
+            let local_version = local_mapping.version_when_updated();
+
+            // Base version unmatch
+            if local_version
+                != latest_file_data
+                    .file_version(vfid)
+                    .unwrap_or(&String::default())
             {
-                return;
+                let reason = t!(
+                    "jv.fail.change_edit_right.check_fail_item",
+                    path = file.display(),
+                    reason = t!("jv.fail.change_edit_right.check_fail_reason.base_version_unmatch")
+                )
+                .trim()
+                .to_string();
+
+                if !handle_validation_failure(
+                    show_fail_details,
+                    &mut details,
+                    &mut failed,
+                    num,
+                    reason,
+                ) {
+                    return;
+                }
+                continue;
             }
-            continue;
-        }
+
+            vfid.clone()
+        } else {
+            cached_mapping.id.clone()
+        };
 
         // Hold validation
-        let holder = latest_file_data.file_holder(vfid);
+        let holder = latest_file_data.file_holder(&vfid);
         let validation_passed = match behaviour {
             EditRightChangeBehaviour::Hold => {
                 if holder.is_some_and(|h| h != &account) {
@@ -3415,38 +3431,38 @@ async fn jv_debug_glob(glob_args: DebugGlobArgs) {
         }
     };
 
-    for path in process_glob(glob_args.pattern, &local_dir).await.keys() {
+    for path in glob(glob_args.pattern, &local_dir).await.keys() {
         println!("{}", path);
     }
 }
 
-async fn process_glob(pattern: impl Into<String>, local_dir: &PathBuf) -> BTreeMap<String, ()> {
+async fn glob(pattern: impl Into<String>, local_dir: &PathBuf) -> BTreeMap<String, ()> {
     let pattern = pattern.into();
-    let globber = match glob(&pattern, true).await {
+    let globber = match get_globber(&pattern, true).await {
         Ok(g) => g,
-        Err(_) => match glob(&pattern, false).await {
+        Err(_) => match get_globber(&pattern, false).await {
             Ok(g) => g,
             Err(_) => return BTreeMap::new(),
         },
     };
 
-    let result = globber.paths();
+    let result = globber.names();
+    let base_dir = globber.base();
+
+    let relative_path = base_dir
+        .strip_prefix(local_dir)
+        .unwrap_or(local_dir.as_path());
 
     let mut filtered_paths: Vec<String> = result
         .into_iter()
-        .filter_map(|path_buf| {
-            path_buf
-                .strip_prefix(&local_dir)
-                .ok()
-                .map(|relative_path| relative_path.display().to_string())
-        })
+        .filter_map(|name| Some(relative_path.join(name).display().to_string()))
         .collect();
 
     let path_map: BTreeMap<String, ()> = filtered_paths.drain(..).map(|path| (path, ())).collect();
     path_map
 }
 
-async fn glob(
+async fn get_globber(
     pattern: impl Into<String>,
     with_current_sheet: bool,
 ) -> Result<Globber, std::io::Error> {
