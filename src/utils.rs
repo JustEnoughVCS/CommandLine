@@ -4,4 +4,5 @@ pub mod fs;
 pub mod globber;
 pub mod input;
 pub mod logger;
+pub mod push_version;
 pub mod socket_addr_helper;
