@@ -321,7 +321,7 @@ jv:
     - Current file holder
     - Latest version commit information
 
-    This is a quick way to understand the current state of your workspace directory.
+    **Tip**: Use `jv here --desc` to view the last commit description for local files
 
   status: |
       **Display Current Sheet Status Information**
@@ -680,6 +680,7 @@ jv:
         holder: HOLDER
         size: SIZE
         editing: STATUS
+        description: DESC
 
       path_info: |
         CURRENT: %{upstream}/%{account}/%{sheet_name}/%{path} (%{minutes} min ago)
@@ -732,6 +733,9 @@ jv:
 
           not_local: |
             Remote
+
+        description: |
+          @%{creator}: %{description}
 
       count_info: |
         %{dir_count} dir(s), %{file_count} file(s). Total %{size}.

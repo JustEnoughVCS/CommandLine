@@ -126,7 +126,7 @@ impl std::fmt::Display for SimpleTable {
     }
 }
 
-fn display_width(s: &str) -> usize {
+pub fn display_width(s: &str) -> usize {
     // Filter out ANSI escape sequences before calculating width
     let filtered_bytes = strip_ansi_escapes::strip(s);
     let filtered_str = match std::str::from_utf8(&filtered_bytes) {

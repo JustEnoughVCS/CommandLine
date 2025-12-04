@@ -315,8 +315,7 @@ jv:
     - 文件当前的持有人
     - 文件最新版本的提交信息
 
-    这是了解当前工作区目录状态的快速方式
-
+    **提示**：使用 `jv here --desc` 查看本地文件最后一次的提交信息
 
   status: |
     **显示当前表的状态信息**
@@ -682,6 +681,7 @@ jv:
         holder: 持有者
         size: 大小
         editing: 状态
+        description: 描述
 
       path_info: |
         所在：%{upstream}/%{account}/%{sheet_name}/%{path}（%{minutes} 分钟前）
@@ -734,6 +734,9 @@ jv:
 
           not_local: |
             远程
+
+        description: |
+          @%{creator}: %{description}
 
       count_info: |
         %{dir_count} 目录、%{file_count} 文件，共计 %{size}

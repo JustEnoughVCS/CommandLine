@@ -51,7 +51,7 @@ use std::{
     env::{current_dir, set_current_dir},
     io::Error,
     net::SocketAddr,
-    path::{Path, PathBuf},
+    path::PathBuf,
     process::exit,
     str::FromStr,
 };
@@ -67,11 +67,12 @@ use just_enough_vcs_cli::{
         ipaddress_history::{get_recent_ip_address, insert_recent_ip_address},
     },
     utils::{
-        display::{SimpleTable, md, size_str},
+        display::{SimpleTable, display_width, md, size_str},
         env::{current_locales, enable_auto_update},
         fs::move_across_partitions,
         globber::{GlobItem, Globber},
         input::{confirm_hint, confirm_hint_or, input_with_editor, show_in_pager},
+        push_version::push_version,
         socket_addr_helper,
     },
 };
@@ -431,6 +432,10 @@ struct HereArgs {
     /// Show help information
     #[arg(short, long)]
     help: bool,
+
+    /// Show help information
+    #[arg(short = 'd', long = "desc")]
+    show_description: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -525,7 +530,7 @@ struct TrackFileArgs {
     desc: Option<String>,
 
     /// Commit - Description
-    #[arg(short, long)]
+    #[arg(short = 'v', long = "version")]
     next_version: Option<String>,
 
     /// Commit - Editor mode
@@ -1202,7 +1207,7 @@ async fn is_directory_empty(path: &PathBuf) -> bool {
     }
 }
 
-async fn jv_here(_args: HereArgs) {
+async fn jv_here(args: HereArgs) {
     let Some(local_dir) = current_local_path() else {
         eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
         return;
@@ -1306,13 +1311,17 @@ async fn jv_here(_args: HereArgs) {
     );
 
     // Print file info
-    let mut table = SimpleTable::new(vec![
+    let mut columns = vec![
         t!("jv.success.here.items.editing"),
         t!("jv.success.here.items.holder"),
         t!("jv.success.here.items.size"),
         t!("jv.success.here.items.version"),
         t!("jv.success.here.items.name"),
-    ]);
+    ];
+    if args.show_description {
+        columns.push(t!("jv.success.here.items.description"));
+    }
+    let mut table = SimpleTable::new(columns);
 
     let mut dir_count = 0;
     let mut file_count = 0;
@@ -1338,6 +1347,7 @@ async fn jv_here(_args: HereArgs) {
                 let mut version = "-".to_string();
                 let mut hold = "-".to_string();
                 let mut editing = "-".to_string();
+                let mut desc = "-".to_string();
 
                 if is_dir {
                     // Directory
@@ -1350,21 +1360,22 @@ async fn jv_here(_args: HereArgs) {
                     remote_files.remove(&dir_name);
 
                     // Add directory item
-                    table.insert_item(
-                        0,
-                        vec![
-                            editing.to_string(),
-                            hold.to_string(),
-                            "-".to_string(),
-                            version.to_string(),
-                            t!(
-                                "jv.success.here.append_info.name",
-                                name = dir_name.to_string().cyan()
-                            )
-                            .trim()
-                            .to_string(),
-                        ],
-                    );
+                    let mut line = vec![
+                        editing.to_string(),
+                        hold.to_string(),
+                        "-".to_string(),
+                        version.to_string(),
+                        t!(
+                            "jv.success.here.append_info.name",
+                            name = dir_name.to_string().cyan()
+                        )
+                        .trim()
+                        .to_string(),
+                    ];
+                    if args.show_description {
+                        line.push(desc);
+                    }
+                    table.insert_item(0, line);
                 } else {
                     // Local File
                     // Add file count
@@ -1400,11 +1411,13 @@ async fn jv_here(_args: HereArgs) {
                             }
                         }
 
-                        // Version status
+                        // Version status && description
                         if let Some(latest_version) = latest_file_data.file_version(&id) {
                             let local_version = local_sheet.mapping_data(&current_path);
                             if let Ok(local_mapping) = local_version {
                                 let local_version = local_mapping.version_when_updated();
+
+                                // Append version status
                                 if latest_version == local_version {
                                     version = t!(
                                         "jv.success.here.append_info.version.match",
@@ -1420,6 +1433,48 @@ async fn jv_here(_args: HereArgs) {
                                     )
                                     .trim()
                                     .red()
+                                    .to_string();
+                                }
+
+                                // Append description
+                                if args.show_description {
+                                    let content = local_mapping
+                                        .version_desc_when_updated()
+                                        .description
+                                        .clone();
+
+                                    // Trim the text, take the first line, and truncate if length exceeds 24 characters
+                                    let trimmed = content.trim();
+                                    let first_line = trimmed.lines().next().unwrap_or("");
+                                    let display_len = display_width(first_line);
+                                    let truncated = if display_len > 24 {
+                                        let mut truncated = String::new();
+                                        let mut current_len = 0;
+                                        for ch in first_line.chars() {
+                                            let ch_width = display_width(&ch.to_string());
+                                            if current_len + ch_width > 24 {
+                                                break;
+                                            }
+                                            truncated.push(ch);
+                                            current_len += ch_width;
+                                        }
+                                        truncated.push_str("...");
+                                        truncated
+                                    } else {
+                                        first_line.to_string()
+                                    };
+                                    let content = truncated;
+
+                                    desc = t!(
+                                        "jv.success.here.append_info.description",
+                                        creator = local_mapping
+                                            .version_desc_when_updated()
+                                            .creator
+                                            .cyan()
+                                            .to_string(),
+                                        description = content,
+                                    )
+                                    .trim()
                                     .to_string();
                                 }
                             }
@@ -1460,7 +1515,7 @@ async fn jv_here(_args: HereArgs) {
                     remote_files.remove(&file_name);
 
                     // Add Table Item
-                    table.push_item(vec![
+                    let mut line = vec![
                         editing.to_string(),
                         hold.to_string(),
                         t!(
@@ -1474,7 +1529,13 @@ async fn jv_here(_args: HereArgs) {
                         t!("jv.success.here.append_info.name", name = file_name)
                             .trim()
                             .to_string(),
-                    ]);
+                    ];
+
+                    if args.show_description {
+                        line.push(desc);
+                    }
+
+                    table.push_item(line);
                 }
 
                 // Total Size
@@ -1503,7 +1564,7 @@ async fn jv_here(_args: HereArgs) {
             }
 
             // File
-            table.push_item(vec![
+            let mut line = vec![
                 t!("jv.success.here.append_info.editing.not_local")
                     .trim()
                     .truecolor(128, 128, 128)
@@ -1515,10 +1576,16 @@ async fn jv_here(_args: HereArgs) {
                     .trim()
                     .truecolor(128, 128, 128)
                     .to_string(),
-            ]);
+            ];
+
+            if args.show_description {
+                line.push("-".to_string());
+            }
+
+            table.push_item(line);
         } else {
             // Directory
-            table.push_item(vec![
+            let mut line = vec![
                 "-".to_string(),
                 "-".to_string(),
                 "-".to_string(),
@@ -1527,7 +1594,13 @@ async fn jv_here(_args: HereArgs) {
                     .trim()
                     .truecolor(128, 128, 128)
                     .to_string(),
-            ]);
+            ];
+
+            if args.show_description {
+                line.push("-".to_string());
+            }
+
+            table.push_item(line);
         }
     }
 
@@ -2508,11 +2581,14 @@ async fn start_update_editor(
         2,
     );
     for item in files {
+        let path = item.0.display().to_string();
+        let base_ver = item.1.to_string();
+        let next_ver = push_version(&base_ver).unwrap_or(" ".to_string());
         table.push_item(vec![
-            item.0.display().to_string(),
-            item.1.to_string(),
+            path,
+            base_ver,
             t!("editor.modified_line.content.arrow").trim().to_string(),
-            " ".to_string(),
+            next_ver,
         ]);
     }
     let lines = table.to_string();

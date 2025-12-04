@@ -1,5 +1,3 @@
-use std::env::set_current_dir;
-
 use clap::{Parser, Subcommand};
 use just_enough_vcs::{
     utils::{
