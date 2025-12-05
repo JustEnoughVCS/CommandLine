@@ -18,8 +18,7 @@ $env:JV_AUTO_UPDATE = "yes"
 ###############
 
 function jv {
-    param([string[]]$Arguments)
-    & (Get-Command jv -CommandType Application) @Arguments
+    & (Get-Command jv -CommandType Application) @args
 }
 
 function jvh { jv here @args }

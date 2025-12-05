@@ -642,7 +642,7 @@ async fn jvv_service_listen(args: ListenArgs) {
             return;
         }
         let now = chrono::Local::now();
-        let log_filename = format!("log_{}.txt", now.format("%Y.%m.%d-%H:%M:%S"));
+        let log_filename = format!("log_{}.txt", now.format("%Y-%m-%d-%H-%M-%S"));
         build_env_logger(
             logs_dir.join(log_filename),
             vault_cfg.server_config().logger_level(),

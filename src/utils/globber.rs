@@ -246,27 +246,23 @@ pub mod constants {
                 }
                 #[cfg(windows)]
                 {
-                    let current_drive = current_dir()
-                        .unwrap_or_default()
+                    let current_drive = current_dir
                         .components()
                         .find_map(|comp| {
-                            if let std::path::Component::Prefix(prefix) = comp {
-                                Some(prefix)
+                            if let std::path::Component::Prefix(prefix_component) = comp {
+                                Some(prefix_component)
                             } else {
                                 None
                             }
                         })
-                        .and_then(|prefix| {
-                            if let std::path::Prefix::Disk(drive_letter)
-                            | std::path::Prefix::VerbatimDisk(drive_letter) = prefix
-                            {
+                        .and_then(|prefix_component| match prefix_component.kind() {
+                            std::path::Prefix::Disk(drive_letter)
+                            | std::path::Prefix::VerbatimDisk(drive_letter) => {
                                 Some((drive_letter as char).to_string())
-                            } else {
-                                None
                             }
+                            _ => None,
                         })
                         .unwrap_or_else(|| "C".to_string());
-
                     (
                         PathBuf::from(format!("{}:{}", current_drive, ROOT_DIR_PREFIX)),
                         remaining.to_string(),
