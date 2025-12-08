@@ -2670,7 +2670,10 @@ async fn start_update_editor(
                         // Get description (all content after the separator)
                         let description = lines[sep_idx + 1..].join("\n").trim().to_string();
 
-                        update_info.insert(path, (new_version.to_string(), description));
+                        // Only add to update_info if description is not empty after trimming
+                        if !description.is_empty() {
+                            update_info.insert(path, (new_version.to_string(), description));
+                        }
                     }
                 }
             }
