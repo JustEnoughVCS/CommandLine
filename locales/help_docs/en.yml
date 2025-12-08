@@ -943,6 +943,26 @@ jv:
 jvii:
   hints: |
     [^S WRITE] [ESC EXIT]
+  
+  errors:
+    no_file_path: "Error: No file path provided"
+    editor_error: "Editor error: %{error}"
+    file_error: "File error: %{error}"
+    file_not_found: "File does not exist: %{path}"
+    not_a_file: "Path is not a file: %{path}"
+    init_error: "Failed to initialize editor: %{error}"
+    raw_mode_error: "Failed to enable raw mode: %{error}"
+    alternate_screen_error: "Failed to enter alternate screen: %{error}"
+    save_error: "Failed to save file: %{error}"
+    render_error: "Render error: %{error}"
+  
+  messages:
+    file_saved: "File saved successfully"
+    unsaved_changes: "Unsaved changes! Press Ctrl+S to save or Esc again to exit"
+    modified: " *"
+  
+  status:
+    lines: " lines"
 
 editor:
   update_editor: |

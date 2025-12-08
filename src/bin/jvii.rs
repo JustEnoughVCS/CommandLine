@@ -287,10 +287,15 @@ impl Editor {
         stdout.queue(Clear(ClearType::CurrentLine))?;
 
         let status = format!(
-            "{} - {} lines{} {}",
+            "{} - {}{}{} {}",
             self.file_path.display(),
             self.content.len(),
-            if self.modified { " *" } else { "" },
+            t!("jvii.status.lines"),
+            if self.modified {
+                t!("jvii.messages.modified").to_string()
+            } else {
+                "".to_string()
+            },
             md(t!("jvii.hints"))
         );
 
@@ -346,13 +351,19 @@ impl Editor {
 
         // Setup terminal with error handling
         if let Err(e) = enable_raw_mode() {
-            eprintln!("Failed to enable raw mode: {}", e);
+            eprintln!(
+                "{}",
+                t!("jvii.errors.raw_mode_error", error = e.to_string())
+            );
             return Err(e);
         }
 
         if let Err(e) = execute!(stdout, EnterAlternateScreen) {
             disable_raw_mode().ok();
-            eprintln!("Failed to enter alternate screen: {}", e);
+            eprintln!(
+                "{}",
+                t!("jvii.errors.alternate_screen_error", error = e.to_string())
+            );
             return Err(e);
         }
 
@@ -402,10 +413,10 @@ impl Editor {
         match key_event.code {
             KeyCode::Char('s') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
                 if let Err(e) = self.save() {
-                    eprintln!("Failed to save file: {}", e);
+                    eprintln!("{}", t!("jvii.errors.save_error", error = e.to_string()));
                     // Continue editing even if save fails
                 } else {
-                    self.show_message("File saved successfully", stdout)?;
+                    self.show_message(&t!("jvii.messages.file_saved"), stdout)?;
                 }
             }
             KeyCode::Char(c) => {
@@ -485,10 +496,7 @@ impl Editor {
             }
             KeyCode::Esc => {
                 if self.modified {
-                    self.show_message(
-                        "Unsaved changes! Press Ctrl+S to save or Esc again to exit",
-                        stdout,
-                    )?;
+                    self.show_message(&t!("jvii.messages.unsaved_changes"), stdout)?;
                     // Don't exit immediately, wait for second Esc
                 } else {
                     self.should_exit = true;
@@ -498,7 +506,7 @@ impl Editor {
         }
 
         if let Err(e) = self.render(stdout) {
-            eprintln!("Render error: {}", e);
+            eprintln!("{}", t!("jvii.errors.render_error", error = e.to_string()));
             return Err(e);
         }
         Ok(())
@@ -516,7 +524,7 @@ async fn main() {
     let file_path = match args.file {
         Some(path) => path,
         None => {
-            eprintln!("Error: No file path provided");
+            eprintln!("{}", t!("jvii.errors.no_file_path"));
             std::process::exit(1);
         }
     };
@@ -525,12 +533,12 @@ async fn main() {
     match precheck(file_path) {
         Ok(full_path) => {
             if let Err(e) = open_editor(full_path).await {
-                eprintln!("Editor error: {}", e);
+                eprintln!("{}", t!("jvii.errors.editor_error", error = e.to_string()));
                 std::process::exit(1);
             }
         }
         Err(e) => {
-            eprintln!("File error: {}", e);
+            eprintln!("{}", t!("jvii.errors.file_error", error = e.to_string()));
             std::process::exit(1);
         }
     }
@@ -547,17 +555,15 @@ fn precheck(file_path: PathBuf) -> Result<PathBuf, std::io::Error> {
         current_dir.join(&file_path)
     };
 
-    // Create file if it doesn't exist
+    // Check if the file exists
     if !full_path.exists() {
-        // Create parent directories if needed
-        if let Some(parent) = full_path.parent() {
-            fs::create_dir_all(parent)?;
-        }
-        // Create empty file
-        fs::write(&full_path, "")?;
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("File does not exist: {}", full_path.display()),
+        ));
     }
 
-    // Check if it's a file (or we just created it as a file)
+    // Check if it's a file
     if !full_path.is_file() {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
@@ -575,14 +581,14 @@ async fn open_editor(file: PathBuf) -> io::Result<()> {
 
             // Always try to cleanup terminal even if there was an error
             if let Err(e) = result {
-                eprintln!("Editor error: {}", e);
+                eprintln!("{}", t!("jvii.errors.editor_error", error = e.to_string()));
                 return Err(e);
             }
 
             Ok(())
         }
         Err(e) => {
-            eprintln!("Failed to initialize editor: {}", e);
+            eprintln!("{}", t!("jvii.errors.init_error", error = e.to_string()));
             Err(e)
         }
     }

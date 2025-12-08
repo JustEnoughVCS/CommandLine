@@ -943,6 +943,26 @@ jvii:
   hints: |
     [^S 保存] [ESC 退出]
 
+  errors:
+    no_file_path: "错误：未提供文件路径"
+    editor_error: "编辑器错误：%{error}"
+    file_error: "文件错误：%{error}"
+    file_not_found: "文件不存在：%{path}"
+    not_a_file: "路径不是文件：%{path}"
+    init_error: "初始化编辑器失败：%{error}"
+    raw_mode_error: "启用原始模式失败：%{error}"
+    alternate_screen_error: "进入备用屏幕失败：%{error}"
+    save_error: "保存文件失败：%{error}"
+    render_error: "渲染错误：%{error}"
+
+  messages:
+    file_saved: "文件保存成功"
+    unsaved_changes: "有未保存的修改！按 Ctrl+S 保存或再次按 Esc 退出"
+    modified: " *"
+
+  status:
+    lines: " 行"
+
 editor:
   update_editor: |
     # 您正在使用编辑器模式追踪和提交文件
