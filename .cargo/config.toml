@@ -9,6 +9,9 @@ binaries = [
 
     "jvv",
     "jvv.exe",
+
+    "jvii",
+    "jvii.exe"
 ]
 
 ############

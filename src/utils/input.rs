@@ -1,5 +1,7 @@
 use tokio::{fs, process::Command};
 
+use crate::utils::env::get_default_editor;
+
 /// Confirm the current operation
 /// Waits for user input of 'y' or 'n'
 pub async fn confirm_hint(text: impl Into<String>) -> bool {
@@ -69,7 +71,7 @@ pub async fn input_with_editor(
     fs::write(cache_path, default_content).await?;
 
     // Get editor from environment variable
-    let editor = std::env::var("EDITOR").unwrap_or_else(|_| "vi".to_string());
+    let editor = get_default_editor().await;
 
     // Open editor with cache file
     let status = Command::new(editor).arg(cache_path).status().await?;

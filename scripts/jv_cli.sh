@@ -14,6 +14,10 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # Next `jv` command will auto-run `jv update`
 export JV_AUTO_UPDATE=yes
 
+# Use JV_TEXT_EDITOR to set text editor for `jv track --work` `jv align --work`
+# DEFAULT: $EDITOR environment variable, falling back to "jvii" if not set
+export JV_TEXT_EDITOR=nano
+
 ###############
 ### ALIASES ###
 ###############
