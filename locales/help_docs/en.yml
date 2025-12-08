@@ -474,11 +474,6 @@ jv:
           **DOWN**: %{old_files} to update, %{download_files} to download
           **UP**  : %{new_files} to track, %{modified_files} to commit
 
-      need_upload: |
-        Since your specified tracking operation involves uploading, you need to provide detailed description of your changes
-        Ready to commit? Use `jv track <files_to_upload> --work` to start filling in commit information
-        Don't want to use command line editor? Use `jv track <files_to_upload> --msg <commit_message>` to commit directly
-
   fail:
     std:
       current_dir: Failed to get current directory
@@ -873,6 +868,13 @@ jv:
       done: |
         Tracked %{count} files to latest!
         **Total**: %{created} Created, %{updated} Updated, %{synced} Synced
+
+      tip_has_skipped: |
+        **Note**: Skipped %{skipped_num} sync tasks
+        %{skipped}
+        Because local modifications exist, the sync task will forcibly overwrite your changes.
+        Please confirm you really want to overwrite these files.
+        Use `jv track . --overwrite` to confirm overwriting them
 
       structure_changes_not_solved: |
         There are unresolved local lost and moved items!

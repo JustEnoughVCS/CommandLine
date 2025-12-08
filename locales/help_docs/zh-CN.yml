@@ -474,11 +474,6 @@ jv:
         **下行**：%{old_files} 个待更新，%{download_files} 个待下载
         **上行**：%{new_files} 个待追踪，%{modified_files} 个待提交
 
-      need_upload: |
-        因为您指定的追踪操作涉及上传，所以需要详细说明您的更改
-        准备好提交了么？使用 `jv track <待上传文件> --work` 开始填写提交信息
-        不想使用命令行编辑器？使用 `jv track <待上传文件> --desc <本次修改信息>` 直接提交
-
   fail:
     std:
       current_dir: 无法获得当前目录
@@ -873,6 +868,12 @@ jv:
       done: |
         追踪 %{count} 个文件至最新！
         其中，创建 %{created}，更新 %{updated}，同步 %{synced}
+
+      tip_has_skipped: |
+        **注意**：忽略 %{skipped_num} 个同步任务
+        %{skipped}
+        因本地存在修改，同步任务会强制覆盖您的修改，请确认您确实要覆盖这些文件
+        使用 `jv track . --overwrite` 确认覆盖它们
 
       structure_changes_not_solved: |
         本地存在丢失项和移动项未解决！

@@ -525,6 +525,10 @@ struct TrackFileArgs {
     /// Track file pattern
     track_file_pattern: Option<String>,
 
+    /// Overwrite modified
+    #[arg(short = 'o', long = "overwrite")]
+    allow_overwrite: bool,
+
     /// Commit - Description
     #[arg(short, long)]
     desc: Option<String>,
@@ -2366,6 +2370,7 @@ async fn jv_track(args: TrackFileArgs) {
     };
 
     let files = track_files.iter().cloned().collect();
+    let overwrite = args.allow_overwrite;
     let update_info = get_update_info(local_workspace, &files, args).await;
 
     match proc_track_file_action(
@@ -2375,6 +2380,7 @@ async fn jv_track(args: TrackFileArgs) {
             relative_pathes: files,
             file_update_info: update_info,
             print_infos: true,
+            allow_overwrite_modified: overwrite,
         },
     )
     .await
@@ -2384,6 +2390,7 @@ async fn jv_track(args: TrackFileArgs) {
                 created,
                 updated,
                 synced,
+                skipped,
             } => {
                 println!(
                     "{}",
@@ -2395,6 +2402,23 @@ async fn jv_track(args: TrackFileArgs) {
                         synced = synced.len()
                     ))
                 );
+
+                if skipped.len() > 0 {
+                    println!(
+                        "\n{}",
+                        md(t!(
+                            "jv.result.track.tip_has_skipped",
+                            skipped_num = skipped.len(),
+                            skipped = skipped
+                                .iter()
+                                .map(|f| f.display().to_string())
+                                .collect::<Vec<String>>()
+                                .join("\n")
+                                .trim()
+                        ))
+                        .yellow()
+                    );
+                }
             }
             TrackFileActionResult::AuthorizeFailed(e) => {
                 eprintln!("{}", md(t!("jv.result.common.authroize_failed", err = e)))
