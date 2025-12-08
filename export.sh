@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Build
-cargo build --workspace --release
-
-# Export
-cargo run --manifest-path crates/build_helper/Cargo.toml --bin exporter
+if cargo build --workspace --release; then
+    # Export
+    cargo run --manifest-path crates/build_helper/Cargo.toml --bin exporter
+fi
