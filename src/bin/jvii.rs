@@ -16,6 +16,13 @@ use crossterm::{
     },
 };
 use just_enough_vcs_cli::utils::display::display_width;
+use just_enough_vcs_cli::utils::display::md;
+use just_enough_vcs_cli::utils::env::current_locales;
+use rust_i18n::set_locale;
+use rust_i18n::t;
+
+// Import i18n files
+rust_i18n::i18n!("locales", fallback = "en");
 
 #[derive(Parser, Debug)]
 #[command(
@@ -280,14 +287,15 @@ impl Editor {
         stdout.queue(Clear(ClearType::CurrentLine))?;
 
         let status = format!(
-            "{} - {} lines{}",
+            "{} - {} lines{} {}",
             self.file_path.display(),
             self.content.len(),
-            if self.modified { " *" } else { "" }
+            if self.modified { " *" } else { "" },
+            md(t!("jvii.hints"))
         );
 
-        stdout.queue(SetForegroundColor(Color::White))?;
-        stdout.queue(style::SetBackgroundColor(Color::DarkBlue))?;
+        stdout.queue(SetForegroundColor(Color::Black))?;
+        stdout.queue(style::SetBackgroundColor(Color::White))?;
         let display_status = if display_width(&status) > width as usize {
             // Find the maximum number of characters that fit within width
             let mut current_width = 0;
@@ -499,6 +507,9 @@ impl Editor {
 
 #[tokio::main]
 async fn main() {
+    // Init i18n
+    set_locale(&current_locales());
+
     let args = JustEnoughVcsInputer::parse();
 
     // Check if a file argument was provided

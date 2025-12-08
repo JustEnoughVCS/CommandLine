@@ -53,6 +53,9 @@ tokio = { version = "1", features = ["full"] }
 colored = "3.0"
 strip-ansi-escapes = "0.2.1"
 
+# Terminal
+crossterm = "0.27"
+
 # i18n
 rust-i18n = "3"
 

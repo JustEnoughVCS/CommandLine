@@ -940,6 +940,10 @@ jv:
           version_already_exist: |
             The version %{version} of file %{path} you are committing already exists in the upstream vault, please use a different version number!
 
+jvii:
+  hints: |
+    [^S WRITE] [ESC EXIT]
+
 editor:
   update_editor: |
     # You are using editor mode to track and update files

@@ -939,6 +939,10 @@ jv:
           version_already_exist: |
             您正在提交的文件 %{path} 的版本 %{version} 在上游库中已存在，请使用其他版本号！
 
+jvii:
+  hints: |
+    [^S 保存] [ESC 退出]
+
 editor:
   update_editor: |
     # 您正在使用编辑器模式追踪和提交文件

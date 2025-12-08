@@ -15,7 +15,7 @@ $env:JV_AUTO_UPDATE = "yes"
 
 # Use JV_TEXT_EDITOR to set text editor for `jv track --work` `jv align --work`
 # DEFAULT: $EDITOR environment variable, falling back to "jvii" if not set
-$env:JV_TEXT_EDITOR = "nano"
+# $env:JV_TEXT_EDITOR = "nano"
 
 ###############
 ### ALIASES ###
