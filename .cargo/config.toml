@@ -1,10 +1,6 @@
 [build]
 target-dir = "./.temp/target/"
 
-[alias]
-# Use `cargo export` to export the project
-export = "run --manifest-path crates/build_helper/Cargo.toml --bin exporter"
-
 [publish]
 target-dir = "./export/"
 binaries = [
