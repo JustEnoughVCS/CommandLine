@@ -79,6 +79,10 @@ jvv:
         You can use --port   to set the listening port,
                 use --no-log to disable log output
 
+  info:
+    here:
+      analyzing_size: Analyzing vault storage size...
+
   fail:
     jvcs: "JustEnoughVCS Error: %{err}"
     no_vault_here: No vault found here
@@ -99,6 +103,7 @@ jvv:
         If you wish to use this directory as a vault, please use jvv init --help to view related help
 
       vault_init_failed: Failed to initialize vault!
+      size_calc_error: Failed to calculate vault storage size!
       member_ids_failed: Failed to get member IDs!
       ref_sheet_not_found: Reference sheet `ref` not found, but it should exist!
 
@@ -943,7 +948,7 @@ jv:
 jvii:
   hints: |
     [^S WRITE] [ESC EXIT]
-  
+
   errors:
     no_file_path: "Error: No file path provided"
     editor_error: "Editor error: %{error}"
@@ -955,12 +960,12 @@ jvii:
     alternate_screen_error: "Failed to enter alternate screen: %{error}"
     save_error: "Failed to save file: %{error}"
     render_error: "Render error: %{error}"
-  
+
   messages:
     file_saved: "File saved successfully"
     unsaved_changes: "Unsaved changes! Press Ctrl+S to save or Esc again to exit"
     modified: " *"
-  
+
   status:
     lines: " lines"
 

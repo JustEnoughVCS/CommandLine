@@ -373,21 +373,63 @@ async fn jvv_here(_args: HereArgs) {
     };
 
     // Get sheet count
-    let num_sheets = vault.sheets().await.iter().len();
+    let num_sheets = vault.sheet_names().unwrap().iter().len();
 
-    // Get virtual file count
+    // Get virtual file count and total size recursively
     let virtual_file_root = vault.virtual_file_storage_dir();
     let mut num_vf = 0;
     let mut total_size = 0;
 
-    if let Ok(mut entries) = fs::read_dir(&virtual_file_root).await {
-        while let Ok(Some(entry)) = entries.next_entry().await {
-            if let Ok(metadata) = entry.metadata().await
-                && metadata.is_file()
-            {
-                num_vf += 1;
-                total_size += metadata.len();
+    // Recursive function to calculate total size and count files with specific name
+    async fn calculate_total_size_and_vf_count(
+        path: std::path::PathBuf,
+        file_count: &mut u64,
+        total_size: &mut u64,
+    ) -> std::io::Result<()> {
+        let mut entries = fs::read_dir(&path).await?;
+        while let Some(entry) = entries.next_entry().await? {
+            let metadata = entry.metadata().await?;
+            if metadata.is_file() {
+                *total_size += metadata.len();
+                // Check if file name matches SERVER_NAME_VF_META
+                if entry.file_name() == just_enough_vcs::vcs::constants::SERVER_NAME_VF_META {
+                    *file_count += 1;
+                }
+            } else if metadata.is_dir() {
+                Box::pin(calculate_total_size_and_vf_count(
+                    entry.path(),
+                    file_count,
+                    total_size,
+                ))
+                .await?;
             }
+        }
+        Ok(())
+    }
+
+    // Calculate with timeout
+    let timeout_duration = std::time::Duration::from_millis(1200);
+    let size_result = tokio::time::timeout(timeout_duration, async {
+        calculate_total_size_and_vf_count(virtual_file_root.clone(), &mut num_vf, &mut total_size)
+            .await
+    })
+    .await;
+
+    match size_result {
+        Ok(Ok(_)) => {
+            // Calculation completed within timeout
+        }
+        Ok(Err(e)) => {
+            eprintln!(
+                "{}",
+                t!("jvv.fail.here.size_calc_error", error = e.to_string()).trim()
+            );
+            return;
+        }
+        Err(_) => {
+            // Timeout occurred
+            println!("{}", t!("jvv.info.here.analyzing_size").trim());
+            // Continue with partial calculation (num_vf and total_size as calculated so far)
         }
     }
 

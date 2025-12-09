@@ -76,6 +76,10 @@ jvv:
     jvv service listen - 在当前库中启动服务器，以接受客户端连接
       您可以使用 --port 来设定监听的端口，使用 --no-log 禁用日志输出
 
+  info:
+    here:
+      analyzing_size: 正在分析库存储大小...
+
   fail:
     jvcs: JustEnoughVCS 错误：%{err}
     no_vault_here: 此处并没有找到库文件
@@ -96,6 +100,7 @@ jvv:
         若您希望将该目录作为库，请使用 jvv init --help 查看相关帮助
 
       vault_init_failed: 初始化库失败！
+      size_calc_error: 计算库存储大小失败！
       member_ids_failed: 获得成员 ID 失败！
       ref_sheet_not_found: 未找到参照表 `ref`，该参照表理应存在！
 
