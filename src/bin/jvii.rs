@@ -2,12 +2,13 @@ use std::env;
 use std::fs;
 use std::io::{self, Write};
 use std::path::PathBuf;
+use std::time::{Duration, Instant};
 
 use clap::{Parser, command};
 use crossterm::{
     QueueableCommand,
     cursor::MoveTo,
-    event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
+    event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers},
     execute,
     style::{self, Color, Print, SetForegroundColor},
     terminal::{
@@ -46,6 +47,10 @@ struct Editor {
     modified: bool,
     terminal_size: (u16, u16),
     should_exit: bool,
+    #[cfg(windows)]
+    last_key_event: Option<(KeyCode, KeyModifiers, Instant)>,
+    #[cfg(windows)]
+    ime_composing: bool,
 }
 
 impl Editor {
@@ -53,7 +58,7 @@ impl Editor {
         let content = if file_path.exists() {
             fs::read_to_string(&file_path)?
                 .lines()
-                .map(|s| s.to_string())
+                .map(|line| line.to_string())
                 .collect()
         } else {
             vec![String::new()]
@@ -71,6 +76,10 @@ impl Editor {
             modified: false,
             terminal_size: (width, height),
             should_exit: false,
+            #[cfg(windows)]
+            last_key_event: None,
+            #[cfg(windows)]
+            ime_composing: false,
         })
     }
 
@@ -367,6 +376,9 @@ impl Editor {
             return Err(e);
         }
 
+        // Clear input buffer to avoid leftover keystrokes from command execution
+        self.clear_input_buffer()?;
+
         // Initial render
         if let Err(e) = self.render(&mut stdout) {
             self.cleanup_terminal(&mut stdout)?;
@@ -377,6 +389,25 @@ impl Editor {
         let result = loop {
             match event::read() {
                 Ok(Event::Key(key_event)) => {
+                    // Windows-specific input handling for IME and duplicate events
+                    #[cfg(windows)]
+                    {
+                        // Skip key release events (we only care about presses)
+                        if matches!(key_event.kind, KeyEventKind::Release) {
+                            continue;
+                        }
+
+                        // Handle IME composition
+                        if self.should_skip_ime_event(&key_event) {
+                            continue;
+                        }
+
+                        // Skip duplicate events
+                        if self.is_duplicate_event(&key_event) {
+                            continue;
+                        }
+                    }
+
                     if let Err(e) = self.handle_key_event(key_event, &mut stdout) {
                         break Err(e);
                     }
@@ -409,6 +440,84 @@ impl Editor {
         Ok(())
     }
 
+    fn clear_input_buffer(&self) -> io::Result<()> {
+        // Try to read and discard any pending events in the buffer
+        while event::poll(Duration::from_millis(0))? {
+            let _ = event::read()?;
+        }
+        Ok(())
+    }
+
+    #[cfg(windows)]
+    fn is_duplicate_event(&mut self, key_event: &KeyEvent) -> bool {
+        let now = Instant::now();
+        let current_event = (key_event.code.clone(), key_event.modifiers, now);
+
+        // Check if this is the same event that just happened
+        if let Some((last_code, last_modifiers, last_time)) = &self.last_key_event {
+            if *last_code == key_event.code
+                && *last_modifiers == key_event.modifiers
+                && now.duration_since(*last_time) < Duration::from_millis(20)
+            // Reduced to 20ms for better responsiveness
+            {
+                // This is likely a duplicate event from IME or Windows input handling
+                return true;
+            }
+        }
+
+        // Update last event
+        self.last_key_event = Some(current_event);
+        false
+    }
+
+    #[cfg(not(windows))]
+    fn is_duplicate_event(&mut self, _key_event: &KeyEvent) -> bool {
+        false
+    }
+
+    #[cfg(windows)]
+    fn should_skip_ime_event(&mut self, key_event: &KeyEvent) -> bool {
+        // Check for IME composition markers
+        match &key_event.code {
+            KeyCode::Char(c) => {
+                // IME composition often produces control characters or special sequences
+                let c_u32 = *c as u32;
+
+                // Check for IME composition start/end markers
+                // Some IMEs use special characters or sequences
+                if c_u32 == 0x16 || c_u32 == 0x17 || c_u32 == 0x18 {
+                    // These are common IME control characters
+                    self.ime_composing = true;
+                    return true;
+                }
+
+                // Check for dead keys or composition characters
+                if c_u32 < 0x20 || (c_u32 >= 0x80 && c_u32 < 0xA0) {
+                    // Control characters or C1 control codes
+                    return true;
+                }
+
+                // If we were composing and get a normal character, check if it's part of composition
+                if self.ime_composing {
+                    // Reset composition state when we get a printable character
+                    if c.is_ascii_graphic() || c.is_alphanumeric() {
+                        self.ime_composing = false;
+                    } else {
+                        return true;
+                    }
+                }
+
+                false
+            }
+            _ => false,
+        }
+    }
+
+    #[cfg(not(windows))]
+    fn should_skip_ime_event(&mut self, _key_event: &KeyEvent) -> bool {
+        false
+    }
+
     fn handle_key_event(&mut self, key_event: KeyEvent, stdout: &mut io::Stdout) -> io::Result<()> {
         match key_event.code {
             KeyCode::Char('s') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
@@ -418,6 +527,15 @@ impl Editor {
                 } else {
                     self.show_message(&t!("jvii.messages.file_saved"), stdout)?;
                 }
+            }
+            KeyCode::Char('v') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
+                // Handle Ctrl+V paste - skip normal character insertion
+                // On Windows, Ctrl+V might also generate a 'v' character event
+                // We'll handle paste separately if needed
+                self.is_selecting = false;
+                self.selection_start = None;
+                // For now, just ignore Ctrl+V to prevent extra 'v' character
+                return Ok(());
             }
             KeyCode::Char(c) => {
                 if key_event.modifiers.contains(KeyModifiers::SHIFT) {
@@ -433,7 +551,9 @@ impl Editor {
                 // Handle special characters
                 match c {
                     '\n' | '\r' => self.new_line(),
-                    _ => self.insert_char(c),
+                    _ => {
+                        self.insert_char(c);
+                    }
                 }
             }
             KeyCode::Backspace => {
@@ -517,6 +637,10 @@ impl Editor {
 async fn main() {
     // Init i18n
     set_locale(&current_locales());
+
+    // Windows specific initialization for colored output
+    #[cfg(windows)]
+    let _ = colored::control::set_virtual_terminal(true);
 
     let args = JustEnoughVcsInputer::parse();
 

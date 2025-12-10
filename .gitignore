@@ -22,3 +22,6 @@
 
 # Compile info
 /src/data/compile_info.rs
+
+# Setup script
+/setup/windows/setup_jv_cli.iss

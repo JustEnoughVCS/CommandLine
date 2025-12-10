@@ -1,0 +1,42 @@
+#define MyAppName "JustEnoughVCS"
+#define MyAppVersion "<<<VERSION>>>"
+#define MyAppPublisher "<<<AUTHOR>>>"
+#define MyAppURL "<<<SITE>>>"
+
+[Setup]
+AppId={{8265DF21-F290-487E-9403-C2730EC31A03}
+AppName={#MyAppName}
+AppVersion={#MyAppVersion}
+AppPublisher={#MyAppPublisher}
+AppPublisherURL={#MyAppURL}
+AppSupportURL={#MyAppURL}
+AppUpdatesURL={#MyAppURL}
+DefaultDirName={autopf}\{#MyAppName}
+DefaultGroupName={#MyAppName}
+AllowNoIcons=yes
+LicenseFile=..\..\LICENSE
+PrivilegesRequired=lowest
+OutputDir=..\..\export\setup
+OutputBaseFilename=JustEnoughVCS For Windows
+SetupIconFile=..\..\docs\images\Yizi.ico
+SolidCompression=yes
+WizardStyle=modern dynamic
+
+[Languages]
+Name: "english"; MessagesFile: "compiler:Default.isl"
+
+[Files]
+Source: "..\..\export\*"; Excludes: "setup"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "inst.ps1"; DestDir: "{app}\scripts\"; Flags: ignoreversion
+Source: "uninst.ps1"; DestDir: "{app}\scripts\"; Flags: ignoreversion
+
+[Run]
+Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -File ""{app}\scripts\inst.ps1"""; Flags: runhidden; Description: "Running post-installation script..."; StatusMsg: "Running post-installation script..."; AfterInstall: RunPostInstall
+
+[UninstallRun]
+Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -File ""{app}\scripts\uninst.ps1"""; Flags: runhidden; RunOnceId: "UninstallScript"
+
+[Code]
+procedure RunPostInstall;
+begin
+end;
