@@ -2,6 +2,8 @@
 name = "just_enough_vcs_cli"
 edition = "2024"
 build = "build.rs"
+authors = ["JustEnoughVCS Team"]
+homepage = "http://jvcs.cc/"
 
 [workspace]
 members = ["crates/build_helper"]
