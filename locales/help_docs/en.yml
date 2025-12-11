@@ -751,8 +751,8 @@ jv:
         Content modifications:
         %{modified_items}
 
-        **Note**: Results are based on information from %{h} hours %{m} minutes %{s} seconds ago and may not match actual information
-        Use `jv update` to get the latest information from upstream.
+        Struct info from update %{h}h %{m}m %{s}s seconds ago
+        Use `jv update` to update from upstream
 
       created_item: |
         +   Created:      %{path}
@@ -775,10 +775,10 @@ jv:
         base_version_mismatch: Base version mismatch for editing
 
       no_structure_changes: |
-        No structural changes locally
+        No struct changes
 
       no_file_modifications: |
-        No local content modifications
+        No modifications
 
   result:
     common:
