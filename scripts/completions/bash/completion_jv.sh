@@ -99,7 +99,7 @@ _jv_completion() {
                 ;;
             "align")
                 if [[ $cword -eq 3 ]]; then
-                    local align_items="lost moved"
+                    local align_items="lost moved erased"
                     local unsolved_items
                     unsolved_items=$($cmd sheet align --unsolved --raw 2>/dev/null)
                     COMPREPLY=($(compgen -W "$align_items $unsolved_items" -- "$cur"))
@@ -115,6 +115,8 @@ _jv_completion() {
                         align_operations="confirm $created_items"
                     elif [[ "$item" == "moved" || "$item" == moved:* ]]; then
                         align_operations="local remote"
+                    elif [[ "$item" == "erased" || "$item" == erased:* ]]; then
+                        align_operations="confirm"
                     else
                         align_operations="local remote confirm $created_items"
                     fi
@@ -129,7 +131,7 @@ _jv_completion() {
     # Completion align
     if [[ "$subcmd" == "align" ]]; then
         if [[ $cword -eq 2 ]]; then
-            local align_items="lost moved"
+            local align_items="lost moved erased"
             local unsolved_items
             unsolved_items=$($cmd sheet align --unsolved --raw 2>/dev/null)
             COMPREPLY=($(compgen -W "$align_items $unsolved_items" -- "$cur"))
@@ -145,6 +147,8 @@ _jv_completion() {
                 align_operations="confirm $created_items"
             elif [[ "$item" == "moved" || "$item" == moved:* ]]; then
                 align_operations="local remote"
+            elif [[ "$item" == "erased" || "$item" == erased:* ]]; then
+                align_operations="confirm"
             else
                 align_operations="local remote confirm $created_items"
             fi

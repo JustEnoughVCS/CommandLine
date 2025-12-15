@@ -4,7 +4,7 @@ use just_enough_vcs::{
     utils::{
         cfg_file::config::ConfigFile,
         data_struct::dada_sort::quick_sort_with_cmp,
-        string_proc::{self, snake_case},
+        string_proc::{self, format_path::format_path, snake_case},
         tcp_connection::instance::ConnectionInstance,
     },
     vcs::{
@@ -14,8 +14,9 @@ use just_enough_vcs::{
                 proc_update_to_latest_info_action,
             },
             sheet_actions::{
-                DropSheetActionResult, MakeSheetActionResult, proc_drop_sheet_action,
-                proc_make_sheet_action,
+                DropSheetActionResult, EditMappingActionArguments, EditMappingActionResult,
+                EditMappingOperations, InvalidMoveReason, MakeSheetActionResult, OperationArgument,
+                proc_drop_sheet_action, proc_edit_mapping_action, proc_make_sheet_action,
             },
             track_action::{
                 CreateTaskResult, NextVersion, SyncTaskResult, TrackFileActionArguments,
@@ -34,9 +35,14 @@ use just_enough_vcs::{
         current::{correct_current_dir, current_cfg_dir, current_local_path},
         data::{
             local::{
-                LocalWorkspace, align::AlignTasks, cached_sheet::CachedSheet, config::LocalConfig,
-                file_status::AnalyzeResult, latest_file_data::LatestFileData,
-                latest_info::LatestInfo, vault_modified::check_vault_modified,
+                LocalWorkspace,
+                align::AlignTasks,
+                cached_sheet::CachedSheet,
+                config::LocalConfig,
+                file_status::{AnalyzeResult, FromRelativePathBuf},
+                latest_file_data::LatestFileData,
+                latest_info::LatestInfo,
+                vault_modified::check_vault_modified,
             },
             member::{Member, MemberId},
             sheet::{SheetData, SheetMappingMetadata},
@@ -68,7 +74,7 @@ use just_enough_vcs_cli::{
     },
     utils::{
         display::{SimpleTable, display_width, md, size_str},
-        env::{current_locales, enable_auto_update},
+        env::{auto_update_outdate, current_locales, enable_auto_update},
         fs::move_across_partitions,
         globber::{GlobItem, Globber},
         input::{confirm_hint, confirm_hint_or, input_with_editor, show_in_pager},
@@ -146,7 +152,7 @@ enum JustEnoughVcsWorkspaceCommand {
 
     /// Move or rename files safely
     #[command(alias = "mv")]
-    Move(MoveFileArgs),
+    Move(MoveMappingArgs),
 
     /// Export files to other worksheet
     #[command(alias = "out")]
@@ -558,6 +564,10 @@ struct HoldFileArgs {
     /// Skip failed items
     #[arg(short = 'S', long)]
     skip_failed: bool,
+
+    /// Skip check
+    #[arg(short = 'F', long)]
+    force: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -576,13 +586,31 @@ struct ThrowFileArgs {
     /// Skip failed items
     #[arg(short = 'S', long)]
     skip_failed: bool,
+
+    /// Skip check
+    #[arg(short = 'F', long)]
+    force: bool,
 }
 
 #[derive(Parser, Debug)]
-struct MoveFileArgs {
+struct MoveMappingArgs {
     /// Show help information
     #[arg(short, long)]
     help: bool,
+
+    /// Move mapping pattern
+    move_mapping_pattern: Option<String>,
+
+    /// To mapping pattern
+    to_mapping_pattern: Option<String>,
+
+    /// Erase
+    #[arg(short = 'e', long)]
+    erase: bool,
+
+    /// Only modify upstream mapping
+    #[arg(short = 'r', long)]
+    only_remote: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -673,8 +701,20 @@ async fn main() {
     #[cfg(windows)]
     colored::control::set_virtual_terminal(true).unwrap();
 
+    // Outdate update
+    let required_outdated_minutes = auto_update_outdate();
+    let outdate_update_enabled = required_outdated_minutes >= 0;
+
     // Auto update
-    if enable_auto_update() && check_vault_modified().await {
+    let enable_auto_update = enable_auto_update();
+
+    // The following conditions will trigger automatic update:
+    // 1. Auto-update is enabled
+    // 2. Vault has been modified OR (timeout update is enabled AND timeout is set to 0)
+    if enable_auto_update
+        && (check_vault_modified().await
+            || outdate_update_enabled && required_outdated_minutes == 0)
+    {
         // Record current directory
         let path = match current_dir() {
             Ok(path) => path,
@@ -702,6 +742,36 @@ async fn main() {
             );
             return;
         }
+    } else
+    // If automatic update and timeout update are enabled,
+    // but required time > 0 (not in disabled or always-update state)
+    if enable_auto_update && outdate_update_enabled && required_outdated_minutes > 0 {
+        // Read the last update time and calculate the duration
+        if let Some(local_cfg) = LocalConfig::read().await.ok() {
+            if let Some(local_dir) = current_local_path() {
+                if let Ok(latest_info) = LatestInfo::read_from(LatestInfo::latest_info_path(
+                    &local_dir,
+                    &local_cfg.current_account(),
+                ))
+                .await
+                {
+                    if let Some(update_instant) = latest_info.update_instant {
+                        let now = Instant::now();
+                        let duration_secs = now.duration_since(update_instant).as_secs();
+
+                        if duration_secs > required_outdated_minutes as u64 * 60 {
+                            // Update
+                            // This will change the current current_dir
+                            jv_update(UpdateArgs {
+                                help: false,
+                                silent: true,
+                            })
+                            .await
+                        }
+                    }
+                }
+            };
+        };
     }
 
     let Ok(parser) = JustEnoughVcsWorkspace::try_parse() else {
@@ -773,13 +843,14 @@ async fn main() {
             if let Some(instant) = latest_info.update_instant {
                 let now = Instant::now();
                 let duration = now.duration_since(instant);
-                if duration.as_secs() > 60 * 15 {
-                    // More than 15 minutes
+
+                if duration.as_secs() > 60 * required_outdated_minutes.clamp(5, i64::MAX) as u64 {
+                    // Automatically prompt if exceeding the set timeout (at least 5 minutes)
                     let hours = duration.as_secs() / 3600;
                     let minutes = (duration.as_secs() % 3600) / 60;
-                    println!();
+
                     println!(
-                        "{}",
+                        "\n{}",
                         t!("jv.tip.outdated", hour = hours, minutes = minutes)
                             .trim()
                             .yellow()
@@ -1053,6 +1124,10 @@ async fn main() {
             .await
         }
         JustEnoughVcsWorkspaceCommand::Align(sheet_align_args) => {
+            if sheet_align_args.help {
+                println!("{}", md(t!("jv.align")));
+                return;
+            }
             jv_sheet_align(sheet_align_args).await
         }
         JustEnoughVcsWorkspaceCommand::As(args) => {
@@ -1676,11 +1751,6 @@ async fn jv_status(_args: StatusArgs) {
         return;
     };
 
-    println!(
-        "{}",
-        t!("jv.success.status.header", sheet_name = sheet_name)
-    );
-
     // Format created items
     let mut created_items: Vec<String> = analyzed
         .created
@@ -1696,18 +1766,37 @@ async fn jv_status(_args: StatusArgs) {
         })
         .collect();
 
+    // Format erased items
+    let mut erased_items: Vec<String> = analyzed
+        .erased
+        .iter()
+        .map(|path| {
+            t!(
+                "jv.success.status.erased_item",
+                path = path.display().to_string()
+            )
+            .trim()
+            .magenta()
+            .to_string()
+        })
+        .collect();
+
     // Format lost items
     let mut lost_items: Vec<String> = analyzed
         .lost
         .iter()
-        .map(|path| {
-            t!(
-                "jv.success.status.lost_item",
-                path = path.display().to_string()
-            )
-            .trim()
-            .red()
-            .to_string()
+        .filter_map(|path| {
+            let path_str = path.display().to_string();
+            if analyzed.erased.contains(path) {
+                return None;
+            } else {
+                return Some(
+                    t!("jv.success.status.lost_item", path = path_str)
+                        .trim()
+                        .red()
+                        .to_string(),
+                );
+            }
         })
         .collect();
 
@@ -1792,13 +1881,16 @@ async fn jv_status(_args: StatusArgs) {
         })
         .collect();
 
-    let has_struct_changes =
-        !created_items.is_empty() || !lost_items.is_empty() || !moved_items.is_empty();
+    let has_struct_changes = !created_items.is_empty()
+        || !lost_items.is_empty()
+        || !erased_items.is_empty()
+        || !moved_items.is_empty();
     let has_file_modifications = !modified_items.is_empty();
 
     if has_struct_changes {
         sort_paths(&mut created_items);
         sort_paths(&mut lost_items);
+        sort_paths(&mut erased_items);
         sort_paths(&mut moved_items);
     }
     if has_file_modifications {
@@ -1812,57 +1904,58 @@ async fn jv_status(_args: StatusArgs) {
     let m = (duration.as_secs() % 3600) / 60;
     let s = duration.as_secs() % 60;
 
-    println!(
-        "{}",
-        md(t!(
-            "jv.success.status.content",
-            moved_items = if has_struct_changes {
-                if moved_items.is_empty() {
+    if has_struct_changes {
+        println!(
+            "{}",
+            md(t!(
+                "jv.success.status.struct_changes_display",
+                sheet_name = sheet_name,
+                moved_items = if moved_items.is_empty() {
                     "".to_string()
                 } else {
                     moved_items.join("\n") + "\n"
-                }
-            } else {
-                t!("jv.success.status.no_structure_changes")
-                    .trim()
-                    .to_string()
-                    + "\n"
-            },
-            lost_items = if has_struct_changes {
-                if lost_items.is_empty() {
+                },
+                lost_items = if lost_items.is_empty() {
                     "".to_string()
                 } else {
                     lost_items.join("\n") + "\n"
-                }
-            } else {
-                "".to_string()
-            },
-            created_items = if has_struct_changes {
-                if created_items.is_empty() {
+                },
+                erased_items = if erased_items.is_empty() {
+                    "".to_string()
+                } else {
+                    erased_items.join("\n") + "\n"
+                },
+                created_items = if created_items.is_empty() {
                     "".to_string()
                 } else {
                     created_items.join("\n") + "\n"
-                }
-            } else {
-                "".to_string()
-            },
-            modified_items = if has_file_modifications {
-                if modified_items.is_empty() {
+                },
+                h = h,
+                m = m,
+                s = s
+            ))
+            .trim()
+        );
+    } else if has_file_modifications {
+        println!(
+            "{}",
+            md(t!(
+                "jv.success.status.content_modifies_display",
+                sheet_name = sheet_name,
+                modified_items = if modified_items.is_empty() {
                     "".to_string()
                 } else {
                     modified_items.join("\n")
-                }
-            } else {
-                t!("jv.success.status.no_file_modifications")
-                    .trim()
-                    .to_string()
-            },
-            h = h,
-            m = m,
-            s = s
-        ))
-        .trim()
-    );
+                },
+                h = h,
+                m = m,
+                s = s
+            ))
+            .trim()
+        );
+    } else {
+        println!("{}", md(t!("jv.success.status.no_changes")));
+    }
 }
 
 async fn jv_sheet_list(args: SheetListArgs) {
@@ -2246,6 +2339,7 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
                 align_tasks.created.iter().for_each(|i| println!("{}", i.0));
                 align_tasks.moved.iter().for_each(|i| println!("{}", i.0));
                 align_tasks.lost.iter().for_each(|i| println!("{}", i.0));
+                align_tasks.erased.iter().for_each(|i| println!("{}", i.0));
                 return;
             }
             if args.list_created {
@@ -2255,6 +2349,7 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
             if args.list_unsolved {
                 align_tasks.moved.iter().for_each(|i| println!("{}", i.0));
                 align_tasks.lost.iter().for_each(|i| println!("{}", i.0));
+                align_tasks.erased.iter().for_each(|i| println!("{}", i.0));
                 return;
             }
             return;
@@ -2270,7 +2365,7 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
             },
         ]);
 
-        let mut empty_count = 0;
+        let mut need_align = 0;
 
         if !align_tasks.created.is_empty() {
             align_tasks.created.iter().for_each(|(n, p)| {
@@ -2280,8 +2375,6 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
                     "".to_string(),
                 ]);
             });
-        } else {
-            empty_count += 1;
         }
 
         if !align_tasks.lost.is_empty() {
@@ -2292,8 +2385,18 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
                     "".to_string(),
                 ]);
             });
-        } else {
-            empty_count += 1;
+            need_align += 1;
+        }
+
+        if !align_tasks.erased.is_empty() {
+            align_tasks.erased.iter().for_each(|(n, p)| {
+                table.push_item(vec![
+                    format!("& {}", n).magenta().to_string(),
+                    p.display().to_string().magenta().to_string(),
+                    "".to_string(),
+                ]);
+            });
+            need_align += 1;
         }
 
         if !align_tasks.moved.is_empty() {
@@ -2304,17 +2407,16 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
                     rp.display().to_string(),
                 ]);
             });
-        } else {
-            empty_count += 1;
+            need_align += 1;
         }
 
-        if empty_count == 3 {
-            println!("{}", md(t!("jv.success.sheet.align.no_changes").trim()));
-        } else {
+        if need_align > 0 {
             println!(
                 "{}",
                 md(t!("jv.success.sheet.align.list", tasks = table.to_string()))
             );
+        } else {
+            println!("{}", md(t!("jv.success.sheet.align.no_changes").trim()));
         }
 
         return;
@@ -2706,6 +2808,7 @@ async fn jv_hold(args: HoldFileArgs) {
         EditRightChangeBehaviour::Hold,
         args.show_fail_details,
         args.skip_failed,
+        args.force,
     )
     .await;
 }
@@ -2733,6 +2836,7 @@ async fn jv_throw(args: ThrowFileArgs) {
         EditRightChangeBehaviour::Throw,
         args.show_fail_details,
         args.skip_failed,
+        args.force,
     )
     .await;
 }
@@ -2742,6 +2846,7 @@ async fn jv_change_edit_right(
     behaviour: EditRightChangeBehaviour,
     show_fail_details: bool,
     mut skip_failed: bool,
+    force: bool,
 ) {
     // If both `--details` and `--skip-failed` are set, only enable `--details`
     if show_fail_details && skip_failed {
@@ -2829,6 +2934,12 @@ async fn jv_change_edit_right(
 
     for file in files {
         let exists = file.exists();
+
+        // If force is enabled, add to the list regardless
+        if force {
+            passed_files.push(file);
+            continue;
+        }
 
         // Mapping exists
         let Some(cached_mapping) = cached_sheet.mapping().get(&file) else {
@@ -3082,8 +3193,214 @@ async fn jv_change_edit_right(
     }
 }
 
-async fn jv_move(_args: MoveFileArgs) {
-    todo!()
+async fn jv_move(args: MoveMappingArgs) {
+    let local_dir = match current_local_path() {
+        Some(dir) => dir,
+        None => {
+            eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+            return;
+        }
+    };
+
+    let move_files = if let Some(from_pattern) = args.move_mapping_pattern.clone() {
+        let from = glob(from_pattern, &local_dir).await;
+        from.iter()
+            .filter_map(|f| PathBuf::from_str(f.0).ok())
+            .collect::<Vec<_>>()
+    } else {
+        println!("{}", md(t!("jv.move")));
+        return;
+    };
+
+    let to_pattern = if args.to_mapping_pattern.is_some() {
+        args.to_mapping_pattern.unwrap()
+    } else {
+        if args.erase {
+            "".to_string()
+        } else {
+            eprintln!("{}", md(t!("jv.fail.move.no_target_dir")));
+            return;
+        }
+    };
+
+    let is_to_pattern_a_dir = to_pattern.ends_with('/') || to_pattern.ends_with('\\');
+
+    let from_mappings = move_files
+        .iter()
+        .map(|f| f.display().to_string())
+        .collect::<Vec<_>>();
+
+    let base_path = Globber::from(&to_pattern).base().clone();
+    let base_path = format_path(base_path.strip_prefix(&local_dir).unwrap().join("./")).unwrap();
+    let to_path = base_path.join(to_pattern);
+
+    let mut edit_mapping_args: EditMappingActionArguments = EditMappingActionArguments {
+        operations: HashMap::<FromRelativePathBuf, OperationArgument>::new(),
+    };
+
+    if args.erase {
+        // Generate erase operation parameters
+        for from_mapping in from_mappings {
+            edit_mapping_args
+                .operations
+                .insert(from_mapping.into(), (EditMappingOperations::Erase, None));
+        }
+    } else {
+        // Generate move operation parameters
+        // Single file move
+        if from_mappings.len() == 1 {
+            let from = from_mappings[0].clone();
+            let to = if is_to_pattern_a_dir {
+                // Input is a directory, append the filename
+                format_path(
+                    to_path
+                        .join(from.strip_prefix(&base_path.display().to_string()).unwrap())
+                        .to_path_buf(),
+                )
+                .unwrap()
+            } else {
+                // Input is a filename, use it directly
+                format_path(to_path.to_path_buf()).unwrap()
+            };
+
+            let from: PathBuf = from.into();
+            // If the from path contains to_path, ignore it to avoid duplicate moves
+            if !from.starts_with(to_path) {
+                edit_mapping_args
+                    .operations
+                    .insert(from, (EditMappingOperations::Move, Some(to.clone())));
+            }
+        } else
+        // Multiple file move
+        if from_mappings.len() > 1 && is_to_pattern_a_dir {
+            let to_path = format_path(to_path).unwrap();
+            for p in &from_mappings {
+                let name = p.strip_prefix(&base_path.display().to_string()).unwrap();
+                let to = format_path(to_path.join(name))
+                    .unwrap()
+                    .display()
+                    .to_string();
+
+                let from: PathBuf = p.into();
+                // If the from path contains to_path, ignore it to avoid duplicate moves
+                if !from.starts_with(to_path.display().to_string()) {
+                    edit_mapping_args
+                        .operations
+                        .insert(from, (EditMappingOperations::Move, Some(to.into())));
+                }
+            }
+        }
+        if from_mappings.len() > 1 && !is_to_pattern_a_dir {
+            eprintln!("{}", md(t!("jv.fail.move.count_doesnt_match")));
+            return;
+        }
+
+        // NOTE
+        // if move_file_mappings.len() < 1 {
+        //      This case has already been handled earlier: output Help
+        // }
+    }
+
+    let local_cfg = match precheck().await {
+        Some(config) => config,
+        None => return,
+    };
+
+    let (pool, ctx) = match build_pool_and_ctx(&local_cfg).await {
+        Some(result) => result,
+        None => return,
+    };
+
+    match proc_edit_mapping_action(
+        &pool,
+        ctx,
+        EditMappingActionArguments {
+            operations: edit_mapping_args.operations.clone(),
+        },
+    )
+    .await
+    {
+        Ok(r) => match r {
+            EditMappingActionResult::Success => {
+                println!("{}", md(t!("jv.result.move.success")));
+
+                // If the operation succeeds and only_remote is not enabled,
+                // synchronize local moves
+                if !args.only_remote {
+                    let erase_dir = local_dir
+                        .join(CLIENT_FOLDER_WORKSPACE_ROOT_NAME)
+                        .join(".temp")
+                        .join("erased");
+
+                    let mut skipped = 0;
+                    for (from_relative, (operation, to_relative)) in edit_mapping_args.operations {
+                        let from = local_dir.join(&from_relative);
+                        let to = match operation {
+                            EditMappingOperations::Move => local_dir.join(to_relative.unwrap()),
+                            EditMappingOperations::Erase => erase_dir.join(&from_relative),
+                        };
+                        if let Some(to_dir) = to.parent() {
+                            let _ = fs::create_dir_all(to_dir).await;
+                        }
+                        if let Some(e) = fs::rename(&from, &to).await.err() {
+                            eprintln!(
+                                "{}",
+                                md(t!(
+                                    "jv.fail.move.rename_failed",
+                                    from = from.display(),
+                                    to = to.display(),
+                                    error = e
+                                ))
+                                .yellow()
+                            );
+                            skipped += 1;
+                        }
+                    }
+                    if skipped > 0 {
+                        eprintln!("{}", md(t!("jv.fail.move.has_rename_failed")));
+                    }
+                }
+            }
+            EditMappingActionResult::AuthorizeFailed(e) => {
+                eprintln!("{}", md(t!("jv.result.common.authroize_failed", err = e)))
+            }
+            EditMappingActionResult::MappingNotFound(path_buf) => {
+                eprintln!(
+                    "{}",
+                    md(t!(
+                        "jv.result.move.mapping_not_found",
+                        path = path_buf.display()
+                    ))
+                )
+            }
+            EditMappingActionResult::InvalidMove(invalid_move_reason) => {
+                match invalid_move_reason {
+                    InvalidMoveReason::MoveOperationButNoTarget(path_buf) => {
+                        eprintln!(
+                            "{}",
+                            md(t!(
+                                "jv.result.move.invalid_move.no_target",
+                                path = path_buf.display()
+                            ))
+                        )
+                    }
+                    InvalidMoveReason::ContainsDuplicateMapping(path_buf) => {
+                        eprintln!(
+                            "{}",
+                            md(t!(
+                                "jv.result.move.invalid_move.duplicate_mapping",
+                                path = path_buf.display()
+                            ))
+                        )
+                    }
+                }
+            }
+            EditMappingActionResult::Unknown => {
+                eprintln!("{}", md(t!("jv.result.move.unknown")))
+            }
+        },
+        Err(err) => handle_err(err),
+    }
 }
 
 async fn jv_export(_args: ExportFileArgs) {

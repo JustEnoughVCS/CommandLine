@@ -89,7 +89,7 @@ Register-ArgumentCompleter -Native -CommandName jv -ScriptBlock {
             }
             "align" {
                 if ($currentIndex -eq 3) {
-                    $alignItems = @("lost", "moved")
+                    $alignItems = @("lost", "moved", "erased")
                     $unsolvedItems = & $cmd sheet align --unsolved --raw 2>$null
                     $completions = $alignItems + $unsolvedItems
                     return $completions | Where-Object { $_ -like "$wordToComplete*" }
@@ -104,6 +104,8 @@ Register-ArgumentCompleter -Native -CommandName jv -ScriptBlock {
                         $alignOperations = @("confirm") + $createdItems
                     } elseif ($item -eq "moved" -or $item -like "moved:*") {
                         $alignOperations = @("local", "remote")
+                    } elseif ($item -eq "erased" -or $item -like "erased:*") {
+                        $alignOperations = @("confirm")
                     } else {
                         $alignOperations = @("local", "remote", "confirm") + $createdItems
                     }
@@ -118,7 +120,7 @@ Register-ArgumentCompleter -Native -CommandName jv -ScriptBlock {
     # Completion for align command
     if ($subcmd -eq "align") {
         if ($currentIndex -eq 2) {
-            $alignItems = @("lost", "moved")
+            $alignItems = @("lost", "moved", "erased")
             $unsolvedItems = & $cmd sheet align --unsolved --raw 2>$null
             $completions = $alignItems + $unsolvedItems
             return $completions | Where-Object { $_ -like "$wordToComplete*" }
@@ -133,6 +135,8 @@ Register-ArgumentCompleter -Native -CommandName jv -ScriptBlock {
                 $alignOperations = @("confirm") + $createdItems
             } elseif ($item -eq "moved" -or $item -like "moved:*") {
                 $alignOperations = @("local", "remote")
+            } elseif ($item -eq "erased" -or $item -like "erased:*") {
+                $alignOperations = @("confirm")
             } else {
                 $alignOperations = @("local", "remote", "confirm") + $createdItems
             }

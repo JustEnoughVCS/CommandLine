@@ -48,6 +48,31 @@ pub fn enable_auto_update() -> bool {
     false
 }
 
+/// Gets the auto update expiration time based on environment variables.
+///
+/// The function checks the JV_OUTDATED_MINUTES environment variable.
+/// Requires JV_AUTO_UPDATE to be enabled.
+/// Next time the `jv` command is used, if the content is outdated, `jv update` will be automatically executed.
+///
+/// # Returns
+/// - When the set number is < 0, timeout-based update is disabled
+/// - When the set number = 0, update runs every time (not recommended)
+/// - When the set number > 0, update according to the specified time
+/// - If not set or conversion error occurs, the default is -1
+pub fn auto_update_outdate() -> i64 {
+    if !enable_auto_update() {
+        return -1;
+    }
+
+    match std::env::var("JV_OUTDATED_MINUTES") {
+        Ok(value) => match value.trim().parse::<i64>() {
+            Ok(num) => num,
+            Err(_) => -1,
+        },
+        Err(_) => -1,
+    }
+}
+
 /// Gets the default text editor based on environment variables.
 ///
 /// The function checks the JV_TEXT_EDITOR and EDITOR environment variables

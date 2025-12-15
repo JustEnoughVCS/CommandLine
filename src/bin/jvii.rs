@@ -2,13 +2,13 @@ use std::env;
 use std::fs;
 use std::io::{self, Write};
 use std::path::PathBuf;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use clap::{Parser, command};
 use crossterm::{
     QueueableCommand,
     cursor::MoveTo,
-    event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers},
+    event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
     execute,
     style::{self, Color, Print, SetForegroundColor},
     terminal::{
@@ -470,11 +470,6 @@ impl Editor {
         false
     }
 
-    #[cfg(not(windows))]
-    fn is_duplicate_event(&mut self, _key_event: &KeyEvent) -> bool {
-        false
-    }
-
     #[cfg(windows)]
     fn should_skip_ime_event(&mut self, key_event: &KeyEvent) -> bool {
         // Check for IME composition markers
@@ -511,11 +506,6 @@ impl Editor {
             }
             _ => false,
         }
-    }
-
-    #[cfg(not(windows))]
-    fn should_skip_ime_event(&mut self, _key_event: &KeyEvent) -> bool {
-        false
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent, stdout: &mut io::Stdout) -> io::Result<()> {

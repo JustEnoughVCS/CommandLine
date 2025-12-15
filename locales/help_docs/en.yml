@@ -241,8 +241,7 @@ jv:
       export <FILE> <SHEET_NAME>    - Export files to other sheets             [REMOTE]
 
     **FILE OPERATIONS**:
-      move  <FILE> <TO>             - Safely rename files
-      move auto                     - Automatically handle local file moves or renames
+      move  <FILE> <TO>             - Safely rename files                      [REMOTE]
       track <FILE>                  - Track files to latest version            [REMOTE]
       hold  <FILE>                  - Hold, sync and lock file                 [REMOTE]
       throw <FILE>                  - Throw, sync and unlock file              [REMOTE]
@@ -295,6 +294,10 @@ jv:
     jv sheet align <ITEM> confirm - Confirm this file is lost
     jv sheet align lost confirm - Confirm all lost items
 
+    For erased items:
+    jv sheet align <ITEM> confirm - Confirm this file is erased
+    jv sheet align erased confirm - Confirm all erased items
+
     jv sheet align --work - Use editor mode to align files
 
     Sheets are core concepts in JustEnoughVCS, each sheet represents an independent file collection.
@@ -324,9 +327,9 @@ jv:
     Displays detailed information about current directory files, including:
     - File name, size, version number
     - Current file holder
-    - Latest version commit information
+    - Latest version update description
 
-    **Tip**: Use `jv here --desc` to view the last commit description for local files
+    **Tip**: Use `jv here --desc` to view the last update description for local files
 
   status: |
       **Display Current Sheet Status Information**
@@ -374,15 +377,19 @@ jv:
     If you have made changes to the file but haven't tracked them, throwing will lose those changes.
 
   move: |
-    **Move Local Files**
+    **Move Mapping**
     **Usage**:
-    jv move <SOURCE_FILE> <TARGET_LOCATION> - Safely rename or move files
+    jv move <mapping> <target_mapping> - Modify upstream mapping
+    jv move <mapping> --erase - Erase upstream mapping
 
-    **Example**:
-    jv move old_name.txt new_name.txt
-    jv move src/old_dir/file.rs src/new_dir/file.rs
+    **Examples**:
+    jv move draft/character.png done/character.png - Move mapping
+    jv move character.png player.png - Rename
+    jv move . ../publish/ - Batch move
+    jv move temp/ --erase - Erase mapping
 
-    Safe move operations preserve file version history, while auto-move detects and handles all renames.
+    The move mapping operation modifies the upstream mapping and synchronizes the local structure (use `--only-remote` to cancel local modification)
+    After moving, you usually need `jv align moved remote` to synchronize the local structure to the upstream
 
   export: |
     **Export Files to Import Area of Other Sheets**
@@ -476,14 +483,32 @@ jv:
         3. For files not held unless the version is frozen, download logic will always be executed to get the latest version
 
         **CURRENT**:
-          **DOWN**: %{old_files} to update, %{download_files} to download
-          **UP**  : %{new_files} to track, %{modified_files} to commit
+          **DOWN**: %{old_files} to sync, %{download_files} to download
+          **UP**  : %{new_files} to track, %{modified_files} to update
 
   fail:
     std:
       current_dir: Failed to get current directory
       current_dir_name: Failed to get current directory name
       set_current_dir: Failed to set current directory to %{dir}
+
+    move:
+      rename_failed: |
+        **Warning**: Failed to move local file `%{from}` to `%{to}`: %{error}
+
+      has_rename_failed: |
+        **Tip**: Because the file move was skipped, a deviation will occur.
+        After moving the file, be sure to use `jv align` to resolve the deviation.
+
+      no_target_dir: |
+        You did not specify a target directory to move to!
+        Please use `jv move <mapping> <target_address>` to move the mapping
+        or use `jv move <mapping> --erase` to erase the mapping
+
+      count_doesnt_match: |
+        You specified multiple mappings, but the target address is a single mapping.
+        Please use `jv move multiple_mappings directory/` to move multiple mappings
+        or use `jv move single_mapping mapping_name` to rename that mapping.
 
     format_path: |
       Failed to format directory %{path}: %{error}.
@@ -561,7 +586,9 @@ jv:
         In the %{num} selected files, there are items that failed pre-check!
         Add `--details` after the command to view specific details
 
-        **Tip**: Add `--skip-failed` after the command to skip the current failed items and proceed with the operation
+        **Tip**:
+        Add `--skip-failed` after the command to skip the current failed items and proceed with the operation
+        Add `--force` to ignore checks and proceed (UNSAFE)
 
       check_failed_details:
         In the %{num} selected files, %{failed} files failed pre-check!
@@ -660,7 +687,7 @@ jv:
         remote_path: REMOTE_FILE
 
         no_changes: |
-          Great, there are no struct changes in the local workspace!
+          Great, no structural deviations in the local workspace, no alignment needed!
 
     docs:
       list:
@@ -741,34 +768,43 @@ jv:
         %{dir_count} dir(s), %{file_count} file(s). Total %{size}.
 
     status:
-      header: |
-        Viewing sheet %{sheet_name}.
-        Before tracking file changes, please confirm:
+      struct_changes_display: |
+        Viewing sheet %{sheet_name} (%{h}h %{m}min %{s}secs ago).
 
-      content: |
-        Structure changes:
-        %{moved_items}%{lost_items}%{created_items}
-        Content modifications:
+        Now in structural change mode:
+        %{moved_items}%{lost_items}%{erased_items}%{created_items}
+        **Tip**: Use `jv align` to align moved, lost, and erased changes,
+                 Use `jv track` to track created changes
+
+      content_modifies_display: |
+        Viewing sheet %{sheet_name} (%{h}h %{m}min %{s}secs ago).
+
+        Now in content change mode:
         %{modified_items}
 
-        Struct info from update %{h}h %{m}m %{s}s seconds ago
-        Use `jv update` to update from upstream
+        **Tip**: Use `jv track` to track your changes
+
+      no_changes: |
+        Your workspace is synchronized with upstream, you can proceed with structural and content editing based on this state!
 
       created_item: |
-        +   Created:      %{path}
+        +   Created:         %{path}
 
       lost_item: |
-        -      Lost:      %{path}
+        -      Lost:         %{path}
 
       moved_item: |
-        >     Moved:      %{from}
-                 To:      %{to}
+        >     Moved: Remote  %{from}
+                      Local  %{to}
+
+      erased_item: |
+        &    Erased：        %{path}
 
       modified_item: |
-        *  Modified:      %{path}
+        *  Modified:         %{path}
 
       invalid_modified_item: |
-        x  Modified:      %{path} (%{reason})
+        x  Modified:         %{path} (%{reason})
 
       invalid_modified_reasons:
         not_holder: Modified without holding
@@ -914,36 +950,58 @@ jv:
 
           not_held: |
             You are not holding file %{path}!
-            This means you modified the file without holding it, and the upstream vault blocked your commit attempt
+            This means you modified the file without holding it, and the upstream vault blocked your update attempt
             (Sorry, JustEnoughVCS collaboration is based on serial editing - parallel editing and merging is not allowed)
 
-            **Tip**: If you really need to commit this file, you can follow these steps:
-            1. First move the file outside the workspace and commit the correct version here
+            **Tip**: If you really need to update this file, you can follow these steps:
+            1. First move the file outside the workspace and update the correct version here
             2. Use `jv info <this_file> --holder` to query the member currently editing it
             3. Try to contact them, describe your situation, and wait for them to release editing rights
             4. After editing rights are released, use `jv track <this_file>` to get the latest version from that member
             5. Manually merge your backed-up version into the latest version
-            6. Commit your modified latest version, then release editing rights
+            6. Update your modified latest version, then release editing rights
 
             Finally: You can use `jv here` to check file status in the directory before editing files to ensure you can edit
 
           version_dismatch: |
             The base version of the file you edited does not match the version in the upstream vault!
-            Your version is %{version_current} while the upstream version is %{version_latest}, the upstream vault blocked your commit
+            Your version is %{version_current} while the upstream version is %{version_latest}, the upstream vault blocked your update
 
             **Tip**:
-            You can use `jv jump <file> %{version_current}` to jump the version to your local version and commit again
-            If you don't want to force override the version, you can backup the file version, commit your local version to the latest, then manually merge the files and commit
+            You can use `jv jump <file> %{version_current}` to jump the version to your local version and update again
+            If you don't want to force override the version, you can backup the file version, update your local version to the latest, then manually merge the files and update
 
             Finally: You can use `jv here` to check file status in the directory before editing files to ensure you can edit
 
           update_but_no_description: |
-            You are committing files to the latest version, but we don't know your modification content and new version number
-            You can use `jv track <file> --desc <description> -v <version>` to commit files
-            or use `jv track . --work` to enter the editor environment for committing
+            There are update items in the files you specified, but no information provided
+            You can use `jv track <file> --desc <description> -v <version>` to update files
+            or use `jv track . --work` to enter the editor environment for updating
 
           version_already_exist: |
-            The version %{version} of file %{path} you are committing already exists in the upstream vault, please use a different version number!
+            The version %{version} of file %{path} you are updating already exists in the upstream vault, please use a different version number!
+
+    move:
+      success: |
+        Successfully modified mapping!
+        Upstream information has changed, please use `jv update` to sync to latest information
+
+      mapping_not_found: |
+        Mapping `%{path}` does not exist!
+        Please check if the path you entered is correct, or use `jv update` to update workspace status
+
+      invalid_move:
+        no_target: |
+          You did not specify a target address for the mapping `%{path}` to move to!
+          Please use `jv move <mapping> <target_mapping>` to move the mapping
+          or use `jv move <mapping> --erase` to erase the mapping
+
+        duplicate_mapping: |
+          Move operation failed because target path `%{path}` already has a mapping!
+          Please change to another path, or erase the existing mapping first
+
+      unknown: |
+        Unknown move operation result!
 
 jvii:
   hints: |
@@ -977,9 +1035,8 @@ editor:
     # - Fill in the version after the arrow
 
     %{modified_lines}
-
     ----------------------------------------------------------------
-    # Update description
+    # Fill description here, tell others about the changes you made
     %{description}
 
   modified_line:

@@ -190,7 +190,7 @@ jv:
 
   help: |
     **JustEnoughVCS 本地工作区命令**
-    该程序将连接至上游库，用以同步、提交本地工作区文件的变化，以供协同创作
+    该程序将连接至上游库，用以同步、更新本地工作区文件的变化，以供协同创作
 
     **常用别名**：
       jv u 下载最新信息，jv t 追踪文件，jv a 对齐文件结构到表，jv in/out 导入或导出文件
@@ -232,7 +232,7 @@ jv:
       export <文件> <表名称>  - 导出文件到其他表                [远程]
 
     **文件操作**：
-      move  <文件> <到>       - 安全地重命名文件
+      move  <文件> <到>       - 安全地重命名文件                [远程]
       track <文件>            - 追踪文件内容到最新版本          [远程]
       hold  <文件>            - 拿取文件，同步版本并获得编辑权  [远程]
       throw <文件>            - 丢弃文件，同步版本并放弃编辑权  [远程]
@@ -286,9 +286,13 @@ jv:
     jv sheet align <项> confirm - 确认该文件已丢失
     jv sheet align lost confirm - 确认所有丢失项
 
+    对于擦除项：
+    jv sheet align <项> confirm - 确认该文件已擦除
+    jv sheet align erased confirm - 确认所有擦除项
+
     jv sheet align --work - 使用编辑器模式对齐文件
 
-    表是 JustEnoughVCS 中的核心概念，每个表代表一块独立的文件集合
+    表是 JustEnoughVCS 中的核心概念，每张表代表一块独立的文件结构
     您可以在不同的表之间切换工作，或者将文件从一张表导出到另一张表
 
 
@@ -318,9 +322,9 @@ jv:
     显示当前目录文件的详细信息，包括：
     - 文件名称、大小、版本号
     - 文件当前的持有人
-    - 文件最新版本的提交信息
+    - 文件最新版本的更新信息
 
-    **提示**：使用 `jv here --desc` 查看本地文件最后一次的提交信息
+    **提示**：使用 `jv here --desc` 查看本地文件最后一次的更新信息
 
   status: |
     **显示当前表的状态信息**
@@ -369,16 +373,19 @@ jv:
 
 
   move: |
-    **移动本地文件**
+    **移动映射**
     **用法**：
-    jv move <源文件> <目标位置> - 安全地重命名或移动文件
+    jv move <映射> <目标映射> - 修改上游映射
+    jv move <映射> --erase - 擦除上游映射
 
     **例如**：
-    jv move old_name.txt new_name.txt
-    jv move src/old_dir/file.rs src/new_dir/file.rs
+    jv move draft/character.png done/character.png - 移动映射
+    jv move character.png player.png - 重命名
+    jv move . ../publish/ - 批量移动
+    jv move temp/ --erase - 擦除映射
 
-    安全移动操作会保持文件的版本历史，而自动移动会检测并处理所有重命名
-
+    移动映射操作会修改上游的映射，并同步修改本地结构（使用 `--only-remote` 取消同步修改）
+    在移动完成后，通常需要 `jv align moved remote` 将本地结构同步至上游
 
   export: |
     **将文件导出至其他表的待导入区**
@@ -476,14 +483,32 @@ jv:
         3. 未持有文件，除非冻结版本，否则永远执行下载和更新最新版本
 
         **当前**：
-        **下行**：%{old_files} 个待更新，%{download_files} 个待下载
-        **上行**：%{new_files} 个待追踪，%{modified_files} 个待提交
+        **下行**：%{old_files} 个待同步，%{download_files} 个待下载
+        **上行**：%{new_files} 个待追踪，%{modified_files} 个待更新
 
   fail:
     std:
       current_dir: 无法获得当前目录
       current_dir_name: 无法获得当前目录的名称
       set_current_dir: 无法设置到目录 %{dir}
+
+    move:
+      rename_failed: |
+        **警告**：移动本地文件 `%{from}` 至 `%{to}` 失败：%{error}
+
+      has_rename_failed: |
+        **提示**：因为已跳过文件的移动，所以会产生偏差，
+        在可移动文件后，请务必使用 `jv align` 解决偏差
+
+      no_target_dir: |
+        您未指定需要移动的目录！
+        请使用 `jv move <映射> <目标映射名>` 的方式移动映射
+        或使用 `jv move <映射> --erase` 将映射擦除
+
+      count_doesnt_match: |
+        您指定了多个映射，但目标地址为单个映射
+        请使用 `jv move 多个映射 目录/` 来移动多个映射
+        或使用 `jv move 单个映射 映射名称` 来重命名该映射
 
     format_path: |
       格式化目录 %{path} 失败：%{error}.
@@ -561,7 +586,9 @@ jv:
         在您选中的 %{num} 个文件中，存在预检查失败的项！
         在命令后添加 `--details` 查看具体事项
 
-        **提示**：命令后添加 `--skip-failed` 可跳过当前检查失败的项进行操作
+        **提示**：
+        添加 `--skip-failed` 可跳过当前检查失败的项进行操作
+        添加 `--force` 可无视检查进行操作 (不安全的操作)
 
       check_failed_details: |
         在您选中的 %{num} 个文件中，有 %{failed} 个文件预先检查未通过！
@@ -661,7 +688,7 @@ jv:
         remote_path: 远程文件
 
         no_changes: |
-          很好，本地工作区并没有结构变更！
+          很好，本地工作区未产生结构偏差，无需对齐！
 
     docs:
       list:
@@ -742,17 +769,24 @@ jv:
         %{dir_count} 目录、%{file_count} 文件，共计 %{size}
 
     status:
-      header: |
-        您正在查看表 %{sheet_name} 的状态，在追踪文件变更之前，请确认：
+      struct_changes_display: |
+        表 %{sheet_name} 的状态基于 %{h} 小时 %{m} 分钟 %{s} 秒前
 
-      content: |
-        结构变更：
-        %{moved_items}%{lost_items}%{created_items}
-        内容修改：
+        您的工作区处于结构变更状态：
+        %{moved_items}%{lost_items}%{erased_items}%{created_items}
+        **提示**：使用 `jv align` 对齐移动、丢失和擦除变更，
+              使用 `jv track` 追踪创建变更
+
+      content_modifies_display: |
+        表 %{sheet_name} 的状态基于 %{h} 小时 %{m} 分钟 %{s} 秒前
+
+        您的工作区处于内容变更状态：
         %{modified_items}
 
-        结构信息来自 %{h} 小时 %{m} 分钟 %{s} 秒前的更新
-        使用 `jv update` 从上游更新
+        **提示**：使用 `jv track` 追踪您的变更
+
+      no_changes: |
+        您的工作区与上游保持同步，可基于该状态进行结构、内容的编辑！
 
       created_item: |
         +   创建：      %{path}
@@ -761,8 +795,11 @@ jv:
         -   丢失：      %{path}
 
       moved_item: |
-        >   移动：      %{from}
-              至：      %{to}
+        >   移动：远程  %{from}
+                  本地  %{to}
+
+      erased_item: |
+        &   擦除：      %{path}
 
       modified_item: |
         *   修改：      %{path}
@@ -890,8 +927,8 @@ jv:
           这意味着该表在上游库中已被删除，或该表不属于您
 
         create_file_on_exist_path: |
-          提交并创建文件失败！
-          您要提交的文件路径 `%{path}` 在远程表中已存在，请更换至其他路径提交
+          创建文件失败！
+          您要创建的文件路径 `%{path}` 在远程表中已存在，请更换至其他路径创建
 
       update_failed:
         verify:
@@ -913,36 +950,58 @@ jv:
 
           not_held: |
             您并未持有文件 %{path}！
-            这说明，您在未持有文件的时修改了它，并在尝试提交时被上游库阻拦
+            这说明，您在未持有文件的时修改了它，并在尝试更新时被上游库阻拦
             （非常抱歉，JustEnoughVCS 协作基于串行编辑，并行编辑后合并是不允许的）
 
-            **提示**：如果您确实需要提交该文件，可以参考以下步骤：
-            1. 首先将文件移动到工作区以外的地方，并重新在此处提交正确的版本
+            **提示**：如果您确实需要更新该文件，可以参考以下步骤：
+            1. 首先将文件移动到工作区以外的地方，并重新在此处更新正确的版本
             2. 使用 `jv info <该文件> --holder` 查询正在编辑的成员
             3. 尝试联系他，并描述您的情况，并等待该成员释放编辑权
             4. 释放编辑权后，使用 `jv track <该文件>` 拿到该成员的最新版本
             5. 手动地将您备份的版本合并至最新版本中
-            6. 将您修改的最新版提交，然后释放编辑权
+            6. 将您修改的最新版更新，然后释放编辑权
 
             最后：您可以在编辑文件前，使用 `jv here` 查看所在目录的文件状态，以确保自己可以编辑
 
           version_dismatch: |
             您编辑的文件基准版本和上游库中的版本不匹配！
-            您的版本是 %{version_current} 而上游版本是 %{version_latest}，上游库禁止了您的提交
+            您的版本是 %{version_current} 而上游版本是 %{version_latest}，上游库禁止了您的更新
 
             **提示**：
-            您可以使用 `jv jump <文件> %{version_current}` 将版本跳转至您的本地版本，并再次提交
-            若您不期望强制覆盖版本，可以选择将文件版本备份，并提交本地版本至最新后，再手动地合并文件并提交
+            您可以使用 `jv jump <文件> %{version_current}` 将版本跳转至您的本地版本，并再次更新
+            若您不期望强制覆盖版本，可以选择将文件版本备份，并更新本地版本至最新后，再手动地合并文件并更新
 
             最后：您可以在编辑文件前，使用 `jv here` 查看所在目录的文件状态，以确保自己可以编辑
 
           update_but_no_description: |
-            您正在提交文件至最新版本，但是我们并不知道您的修改内容和新的版本号
-            使用 `jv track <文件> --desc <描述> -v <版本>` 提交文件
-            或使用 `jv track . --work` 进入编辑器环境提交
+            您指定的文件中存在更新项，但是您并未指定更新信息
+            使用 `jv track <文件> --desc <描述> -v <版本>` 更新文件
+            或使用 `jv track . --work` 进入编辑器环境更新
 
           version_already_exist: |
-            您正在提交的文件 %{path} 的版本 %{version} 在上游库中已存在，请使用其他版本号！
+            您正在更新的文件 %{path} 的版本 %{version} 在上游库中已存在，请使用其他版本号！
+
+    move:
+      success: |
+        成功修改映射！
+        上游信息已变更，请使用 `jv update` 同步至最新信息
+
+      mapping_not_found: |
+        映射 `%{path}` 不存在！
+        请检查您输入的路径是否正确，或使用 `jv update` 更新工作区状态
+
+      invalid_move:
+        no_target: |
+          您未指定需要移动的映射 `%{path}` 的目标地址！
+          请使用 `jv move <映射> <目标映射名>` 的方式移动映射
+          或使用 `jv move <映射> --erase` 将映射擦除
+
+        duplicate_mapping: |
+          移动操作失败，因为目标路径 `%{path}` 已存在映射！
+          请更换至其他路径，或先擦除已存在的映射
+
+      unknown: |
+        未知的移动操作结果！
 
 jvii:
   hints: |
@@ -970,13 +1029,12 @@ jvii:
 
 editor:
   update_editor: |
-    # 您正在使用编辑器模式追踪和提交文件
-    # 以下文件将被提交：（行首添加 `#` 视为放弃提交，尾部箭头后请填写版本）
+    # 您正在使用编辑器模式追踪和更新文件
+    # 以下文件将被更新：（行首添加 `#` 视为放弃更新，尾部箭头后请填写版本）
 
     %{modified_lines}
-
     ----------------------------------------------------------------------
-    # 请在后续填写提交描述，以告诉其他成员您做了什么
+    # 此处填写更新描述，告诉其他成员您做了什么
     %{description}
 
   modified_line:

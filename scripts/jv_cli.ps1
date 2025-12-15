@@ -13,6 +13,14 @@ $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Definition
 # Next `jv` command will auto-run `jv update`
 $env:JV_AUTO_UPDATE = "yes"
 
+# Use JV_OUTDATED_MINUTES to set the expiration time (in minutes), requires JV_AUTO_UPDATE to be enabled
+# Next time the `jv` command is used, if the content is outdated, `jv update` will be automatically executed
+# When the set number is < 0, timeout-based update is disabled
+# When the set number = 0, update runs every time (not recommended)
+# When the set number > 0, update according to the specified time
+# If not set, the default is -1
+# $env:JV_OUTDATED_MINUTES = "5"
+
 # Use JV_TEXT_EDITOR to set text editor for `jv track --work` `jv align --work`
 # DEFAULT: $EDITOR environment variable, falling back to "jvii" if not set
 # $env:JV_TEXT_EDITOR = "nano"
