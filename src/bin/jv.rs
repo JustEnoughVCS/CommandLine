@@ -1785,18 +1785,14 @@ async fn jv_status(_args: StatusArgs) {
     let mut lost_items: Vec<String> = analyzed
         .lost
         .iter()
-        .filter_map(|path| {
-            let path_str = path.display().to_string();
-            if analyzed.erased.contains(path) {
-                return None;
-            } else {
-                return Some(
-                    t!("jv.success.status.lost_item", path = path_str)
-                        .trim()
-                        .red()
-                        .to_string(),
-                );
-            }
+        .map(|path| {
+            t!(
+                "jv.success.status.lost_item",
+                path = path.display().to_string()
+            )
+            .trim()
+            .red()
+            .to_string()
         })
         .collect();
 
