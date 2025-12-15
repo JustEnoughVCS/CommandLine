@@ -1,4 +1,4 @@
-// /// Returns the current locale string based on environment variables.
+/// Returns the current locale string based on environment variables.
 ///
 /// The function checks for locale settings in the following order:
 /// 1. JV_LANG environment variable
