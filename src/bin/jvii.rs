@@ -21,6 +21,8 @@ use just_enough_vcs_cli::utils::display::md;
 use just_enough_vcs_cli::utils::env::current_locales;
 use rust_i18n::set_locale;
 use rust_i18n::t;
+#[cfg(windows)]
+use tokio::time::Instant;
 
 // Import i18n files
 rust_i18n::i18n!("locales", fallback = "en");
@@ -393,6 +395,8 @@ impl Editor {
                     #[cfg(windows)]
                     {
                         // Skip key release events (we only care about presses)
+
+                        use crossterm::event::KeyEventKind;
                         if matches!(key_event.kind, KeyEventKind::Release) {
                             continue;
                         }
