@@ -4,6 +4,7 @@ use just_enough_vcs::{
     utils::{
         cfg_file::config::ConfigFile,
         data_struct::dada_sort::quick_sort_with_cmp,
+        sha1_hash,
         string_proc::{self, format_path::format_path, snake_case},
         tcp_connection::instance::ConnectionInstance,
     },
@@ -36,11 +37,12 @@ use just_enough_vcs::{
         data::{
             local::{
                 LocalWorkspace,
-                align::AlignTasks,
+                align::{AlignTaskName, AlignTasks},
                 cached_sheet::CachedSheet,
                 config::LocalConfig,
                 latest_file_data::LatestFileData,
                 latest_info::LatestInfo,
+                local_sheet::{LocalSheet, LocalSheetData},
                 vault_modified::check_vault_modified,
                 workspace_analyzer::{AnalyzeResult, FromRelativePathBuf},
             },
@@ -83,7 +85,12 @@ use just_enough_vcs_cli::{
     },
 };
 use rust_i18n::{set_locale, t};
-use tokio::{fs, net::TcpSocket, process::Command, time::Instant};
+use tokio::{
+    fs::{self},
+    net::TcpSocket,
+    process::Command,
+    time::Instant,
+};
 
 // Import i18n files
 rust_i18n::i18n!("locales", fallback = "en");
@@ -2311,12 +2318,27 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
         return;
     };
 
-    let Ok(local_cfg) = LocalConfig::read_from(local_dir.join(CLIENT_FILE_WORKSPACE)).await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+    let local_cfg = match precheck().await {
+        Some(config) => config,
+        None => {
+            return;
+        }
+    };
+
+    let account = local_cfg.current_account();
+
+    let Some(sheet_name) = local_cfg.sheet_in_use().clone() else {
+        eprintln!("{}", md(t!("jv.fail.status.no_sheet_in_use")).trim());
         return;
     };
-    let Some(local_workspace) = LocalWorkspace::init_current_dir(local_cfg) else {
+
+    let Some(local_workspace) = LocalWorkspace::init_current_dir(local_cfg.clone()) else {
         eprintln!("{}", md(t!("jv.fail.workspace_not_found")).trim());
+        return;
+    };
+
+    let Ok(mut local_sheet) = local_workspace.local_sheet(&account, &sheet_name).await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
         return;
     };
 
@@ -2327,7 +2349,7 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
 
     let align_tasks = AlignTasks::from_analyze_result(analyzed);
 
-    // No task input, list mode
+    // No task input, list all tasks needs align
     let Some(task) = args.task else {
         // Raw output
         if args.raw {
@@ -2422,6 +2444,220 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
         eprintln!("{}", md(t!("jv.fail.sheet.align.no_direction")));
         return;
     };
+
+    // Move: alignment mode
+    if task.starts_with("moved") {
+        let align_to_remote = match to.trim().to_lowercase().as_str() {
+            "remote" => true,
+            "local" => false,
+            _ => {
+                eprintln!("{}", md(t!("jv.fail.sheet.align.unknown_method")));
+                return;
+            }
+        };
+
+        // Build remote move operations
+        let operations: HashMap<FromRelativePathBuf, OperationArgument> = if task == "moved" {
+            // Align all moved items
+            align_tasks
+                .moved
+                .iter()
+                .map(|(_, (remote_path, local_path))| {
+                    (
+                        remote_path.clone(),
+                        (EditMappingOperations::Move, Some(local_path.clone())),
+                    )
+                })
+                .collect()
+        } else {
+            // Align specific moved item
+            align_tasks
+                .moved
+                .iter()
+                .filter(|(key, _)| key == &task)
+                .map(|(_, (remote_path, local_path))| {
+                    (
+                        remote_path.clone(),
+                        (EditMappingOperations::Move, Some(local_path.clone())),
+                    )
+                })
+                .collect()
+        };
+
+        if !align_to_remote {
+            // Align to local
+            // Network move mapping
+            let (pool, ctx) = match build_pool_and_ctx(&local_cfg).await {
+                Some(result) => result,
+                None => return,
+            };
+
+            // Process mapping edit, errors are handled internally
+            let _ = proc_mapping_edit(&pool, ctx, EditMappingActionArguments { operations }).await;
+        } else {
+            // Align to remote
+            // Offline move files
+            for (remote_path, (_, local_path)) in operations {
+                let local_path = local_path.unwrap();
+                let from = local_dir.join(&local_path);
+                let to = local_dir.join(&remote_path);
+
+                if to.exists() {
+                    eprintln!(
+                        "{}",
+                        md(t!(
+                            "jv.fail.sheet.align.target_exists",
+                            local = local_path.display(),
+                            remote = remote_path.display()
+                        ))
+                    );
+                    return;
+                }
+
+                if let Err(err) = fs::rename(from, to).await {
+                    eprintln!("{}", md(t!("jv.fail.sheet.align.move_failed", err = err)));
+                }
+            }
+        }
+    }
+    // Lost: match or confirm mode
+    else if task.starts_with("lost") {
+        let selected_lost_mapping: Vec<(AlignTaskName, PathBuf)> = align_tasks
+            .lost
+            .iter()
+            .filter(|(name, _)| name.starts_with(&task))
+            .cloned()
+            .collect();
+
+        if to == "confirm" {
+            // Confirm mode
+            for (_, path) in selected_lost_mapping {
+                if let Err(err) = local_sheet.remove_mapping(&path) {
+                    eprintln!(
+                        "{}",
+                        md(t!("jv.fail.sheet.align.remove_mapping_failed", err = err))
+                    );
+                };
+            }
+            // Save sheet
+            let Ok(_) = local_sheet.write().await else {
+                eprintln!("{}", t!("jv.fail.write_cfg").trim());
+                return;
+            };
+            return;
+        }
+
+        if to.starts_with("created") {
+            // Match mode
+            let created_file: Vec<(AlignTaskName, PathBuf)> = align_tasks
+                .created
+                .iter()
+                .find(|p| p.0.starts_with(&to))
+                .map(|found| found.clone())
+                .into_iter()
+                .collect();
+
+            if selected_lost_mapping.len() < 1 {
+                eprintln!("{}", md(t!("jv.fail.sheet.align.no_lost_matched")));
+                return;
+            }
+
+            if created_file.len() < 1 {
+                eprintln!("{}", md(t!("jv.fail.sheet.align.no_created_matched")));
+                return;
+            }
+
+            if selected_lost_mapping.len() > 1 {
+                eprintln!("{}", md(t!("jv.fail.sheet.align.too_many_lost")));
+                return;
+            }
+
+            if created_file.len() > 1 {
+                eprintln!("{}", md(t!("jv.fail.sheet.align.too_many_created")));
+                return;
+            }
+
+            // Check completed, match lost and created items
+            let lost_mapping = &selected_lost_mapping.first().unwrap().1;
+            let created_file = local_dir.join(&created_file.first().unwrap().1);
+
+            let Ok(hash_calc) = sha1_hash::calc_sha1(&created_file, 4096usize).await else {
+                eprintln!("{}", md(t!("jv.fail.sheet.align.calc_hash_failed")));
+                return;
+            };
+            let Ok(mapping) = local_sheet.mapping_data_mut(lost_mapping) else {
+                eprintln!(
+                    "{}",
+                    md(t!(
+                        "jv.fail.sheet.align.mapping_not_found",
+                        mapping = lost_mapping.display()
+                    ))
+                );
+                return;
+            };
+
+            mapping.set_last_modifiy_check_hash(Some(hash_calc.hash));
+
+            // Save sheet
+            let Ok(_) = local_sheet.write().await else {
+                eprintln!("{}", t!("jv.fail.write_cfg").trim());
+                return;
+            };
+        }
+    }
+    // Erased: confirm mode
+    else if task.starts_with("erased") {
+        let selected_erased_mapping: Vec<(AlignTaskName, PathBuf)> = align_tasks
+            .erased
+            .iter()
+            .filter(|(name, _)| name.starts_with(&task))
+            .cloned()
+            .collect();
+
+        if to == "confirm" {
+            // Confirm mode
+            for (_, path) in selected_erased_mapping {
+                if let Err(err) = local_sheet.remove_mapping(&path) {
+                    eprintln!(
+                        "{}",
+                        md(t!("jv.fail.sheet.align.delete_mapping_failed", err = err))
+                    );
+                };
+
+                let from = local_dir.join(&path);
+                let to = local_dir
+                    .join(CLIENT_FOLDER_WORKSPACE_ROOT_NAME)
+                    .join(".temp")
+                    .join("erased")
+                    .join(path);
+                let to_path = to
+                    .parent()
+                    .map(|p| p.to_path_buf())
+                    .unwrap_or_else(|| to.clone());
+
+                let _ = fs::create_dir_all(&to_path).await;
+                if let Some(e) = fs::rename(&from, &to).await.err() {
+                    eprintln!(
+                        "{}",
+                        md(t!(
+                            "jv.fail.move.rename_failed",
+                            from = from.display(),
+                            to = to.display(),
+                            error = e
+                        ))
+                        .yellow()
+                    );
+                }
+            }
+
+            // Save sheet
+            let Ok(_) = local_sheet.write().await else {
+                eprintln!("{}", t!("jv.fail.write_cfg").trim());
+                return;
+            };
+            return;
+        }
+    }
 }
 
 async fn jv_track(args: TrackFileArgs) {
@@ -3307,8 +3543,61 @@ async fn jv_move(args: MoveMappingArgs) {
         None => return,
     };
 
+    if proc_mapping_edit(&pool, ctx, edit_mapping_args.clone())
+        .await
+        .is_ok()
+    {
+        // If the operation succeeds and only_remote is not enabled,
+        // synchronize local moves
+        if !args.only_remote {
+            let erase_dir = local_dir
+                .join(CLIENT_FOLDER_WORKSPACE_ROOT_NAME)
+                .join(".temp")
+                .join("erased");
+
+            let mut skipped = 0;
+            for (from_relative, (operation, to_relative)) in edit_mapping_args.operations {
+                let from = local_dir.join(&from_relative);
+
+                if !from.exists() {
+                    continue;
+                }
+
+                let to = match operation {
+                    EditMappingOperations::Move => local_dir.join(to_relative.unwrap()),
+                    EditMappingOperations::Erase => erase_dir.join(&from_relative),
+                };
+                if let Some(to_dir) = to.parent() {
+                    let _ = fs::create_dir_all(to_dir).await;
+                }
+                if let Some(e) = fs::rename(&from, &to).await.err() {
+                    eprintln!(
+                        "{}",
+                        md(t!(
+                            "jv.fail.move.rename_failed",
+                            from = from.display(),
+                            to = to.display(),
+                            error = e
+                        ))
+                        .yellow()
+                    );
+                    skipped += 1;
+                }
+            }
+            if skipped > 0 {
+                eprintln!("{}", md(t!("jv.fail.move.has_rename_failed")));
+            }
+        }
+    }
+}
+
+async fn proc_mapping_edit(
+    pool: &ActionPool,
+    ctx: ActionContext,
+    edit_mapping_args: EditMappingActionArguments,
+) -> Result<(), ()> {
     match proc_edit_mapping_action(
-        &pool,
+        pool,
         ctx,
         EditMappingActionArguments {
             operations: edit_mapping_args.operations.clone(),
@@ -3319,46 +3608,11 @@ async fn jv_move(args: MoveMappingArgs) {
         Ok(r) => match r {
             EditMappingActionResult::Success => {
                 println!("{}", md(t!("jv.result.move.success")));
-
-                // If the operation succeeds and only_remote is not enabled,
-                // synchronize local moves
-                if !args.only_remote {
-                    let erase_dir = local_dir
-                        .join(CLIENT_FOLDER_WORKSPACE_ROOT_NAME)
-                        .join(".temp")
-                        .join("erased");
-
-                    let mut skipped = 0;
-                    for (from_relative, (operation, to_relative)) in edit_mapping_args.operations {
-                        let from = local_dir.join(&from_relative);
-                        let to = match operation {
-                            EditMappingOperations::Move => local_dir.join(to_relative.unwrap()),
-                            EditMappingOperations::Erase => erase_dir.join(&from_relative),
-                        };
-                        if let Some(to_dir) = to.parent() {
-                            let _ = fs::create_dir_all(to_dir).await;
-                        }
-                        if let Some(e) = fs::rename(&from, &to).await.err() {
-                            eprintln!(
-                                "{}",
-                                md(t!(
-                                    "jv.fail.move.rename_failed",
-                                    from = from.display(),
-                                    to = to.display(),
-                                    error = e
-                                ))
-                                .yellow()
-                            );
-                            skipped += 1;
-                        }
-                    }
-                    if skipped > 0 {
-                        eprintln!("{}", md(t!("jv.fail.move.has_rename_failed")));
-                    }
-                }
+                Ok(())
             }
             EditMappingActionResult::AuthorizeFailed(e) => {
-                eprintln!("{}", md(t!("jv.result.common.authroize_failed", err = e)))
+                eprintln!("{}", md(t!("jv.result.common.authroize_failed", err = e)));
+                Err(())
             }
             EditMappingActionResult::MappingNotFound(path_buf) => {
                 eprintln!(
@@ -3367,7 +3621,8 @@ async fn jv_move(args: MoveMappingArgs) {
                         "jv.result.move.mapping_not_found",
                         path = path_buf.display()
                     ))
-                )
+                );
+                Err(())
             }
             EditMappingActionResult::InvalidMove(invalid_move_reason) => {
                 match invalid_move_reason {
@@ -3378,7 +3633,7 @@ async fn jv_move(args: MoveMappingArgs) {
                                 "jv.result.move.invalid_move.no_target",
                                 path = path_buf.display()
                             ))
-                        )
+                        );
                     }
                     InvalidMoveReason::ContainsDuplicateMapping(path_buf) => {
                         eprintln!(
@@ -3387,15 +3642,20 @@ async fn jv_move(args: MoveMappingArgs) {
                                 "jv.result.move.invalid_move.duplicate_mapping",
                                 path = path_buf.display()
                             ))
-                        )
+                        );
                     }
                 }
+                Err(())
             }
             EditMappingActionResult::Unknown => {
-                eprintln!("{}", md(t!("jv.result.move.unknown")))
+                eprintln!("{}", md(t!("jv.result.move.unknown")));
+                Err(())
             }
         },
-        Err(err) => handle_err(err),
+        Err(err) => {
+            handle_err(err);
+            Err(())
+        }
     }
 }
 

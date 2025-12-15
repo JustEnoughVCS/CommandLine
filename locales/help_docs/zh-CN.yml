@@ -538,6 +538,43 @@ jv:
           无法找到该对齐项！
           **提示**：使用 `jv align` 查看可用对齐项
 
+        unknown_method: |
+          未知的对齐方法！
+          **提示**：使用 local 或 remote 来表示您要保留本地或远程的路径
+
+        target_exists: |
+          无法对齐本地文件 `%{local}` 至远程地址 `%{remote}`
+          因为此处已存在其他文件，请移走该文件，并再次对齐！
+
+        move_failed: |
+          移动本地文件失败：%{err}
+          **提示**：请检查文件权限或路径是否正确
+
+        remove_mapping_failed: |
+          移除本地映射失败：%{err}
+
+        delete_mapping_failed: |
+          从本地表中删除映射失败：%{err}
+          **提示**：请检查本地表配置文件
+
+        no_lost_matched: |
+          未找到匹配的丢失项！
+
+        no_created_matched: |
+          未找到匹配的创建项！
+
+        too_many_lost: |
+          匹配到多个丢失项！
+
+        too_many_created: |
+          匹配到多个创建项！
+
+        calc_hash_failed: |
+          无法计算文件 `%{file}` 的哈希值
+
+        mapping_not_found: |
+          未找到本地映射 `%{mapping}`！
+
     account:
       no_user_dir: 无法找到用户目录！
       add: 添加账户 `%{account}` 失败，请检查账户是否已存在。

@@ -538,6 +538,40 @@ jv:
           Cannot find this alignment item!
           **Tip**: Use `jv align` to view available alignment items
 
+        unknown_method: |
+          Unknown alignment method!
+          **Tip**: Use local or remote to indicate whether you want to keep local or remote paths
+
+        target_exists: |
+          Cannot align local file `%{local}` to remote address `%{remote}`
+          because another file already exists here. Please move that file away and align again!
+
+        move_failed: |
+          Failed to move local file: %{err}
+          **Tip**: Please check file permissions or if the path is correct
+
+        remove_mapping_failed: |
+          Failed to remove local mapping: %{err}
+
+        delete_mapping_failed: |
+          Failed to delete mapping from local table: %{err}
+          **Tip**: Please check the local table configuration file
+
+        no_lost_matched: |
+          No matching lost item found!
+
+        no_created_matched: |
+          No matching created item found!
+
+        too_many_lost: |
+          Found multiple lost items!
+
+        too_many_created: |
+          Found multiple created items!
+
+        calc_hash_failed: |
+          Failed to calculate hash for file `%{file}`
+
     account:
       no_user_dir: Cannot find user directory!
       add: Failed to add account `%{account}`, please check if the account already exists.
