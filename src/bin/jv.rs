@@ -42,7 +42,6 @@ use just_enough_vcs::{
                 config::LocalConfig,
                 latest_file_data::LatestFileData,
                 latest_info::LatestInfo,
-                local_sheet::{LocalSheet, LocalSheetData},
                 vault_modified::check_vault_modified,
                 workspace_analyzer::{AnalyzeResult, FromRelativePathBuf},
             },
@@ -62,6 +61,7 @@ use std::{
     path::PathBuf,
     process::exit,
     str::FromStr,
+    time::SystemTime,
 };
 
 use clap::{Parser, Subcommand, arg, command};
@@ -89,7 +89,6 @@ use tokio::{
     fs::{self},
     net::TcpSocket,
     process::Command,
-    time::Instant,
 };
 
 // Import i18n files
@@ -763,8 +762,11 @@ async fn main() {
                 .await
                 {
                     if let Some(update_instant) = latest_info.update_instant {
-                        let now = Instant::now();
-                        let duration_secs = now.duration_since(update_instant).as_secs();
+                        let now = SystemTime::now();
+                        let duration_secs = now
+                            .duration_since(update_instant)
+                            .unwrap_or_default()
+                            .as_secs();
 
                         if duration_secs > required_outdated_minutes as u64 * 60 {
                             // Update
@@ -848,8 +850,8 @@ async fn main() {
                 return;
             };
             if let Some(instant) = latest_info.update_instant {
-                let now = Instant::now();
-                let duration = now.duration_since(instant);
+                let now = SystemTime::now();
+                let duration = now.duration_since(instant).unwrap_or_default();
 
                 if duration.as_secs() > 60 * required_outdated_minutes.clamp(5, i64::MAX) as u64 {
                     // Automatically prompt if exceeding the set timeout (at least 5 minutes)
@@ -1379,8 +1381,9 @@ async fn jv_here(args: HereArgs) {
 
     let mut remote_files = mapping_names_here(&path, &local_dir, &cached_sheet);
 
-    let duration_updated =
-        Instant::now().duration_since(latest_info.update_instant.unwrap_or(Instant::now()));
+    let duration_updated = SystemTime::now()
+        .duration_since(latest_info.update_instant.unwrap_or(SystemTime::now()))
+        .unwrap_or_default();
     let minutes = duration_updated.as_secs() / 60;
 
     println!(
@@ -1901,8 +1904,10 @@ async fn jv_status(_args: StatusArgs) {
     }
 
     // Calculate duration since last update
-    let update_instant = latest_info.update_instant.unwrap_or(Instant::now());
-    let duration = Instant::now().duration_since(update_instant);
+    let update_instant = latest_info.update_instant.unwrap_or(SystemTime::now());
+    let duration = SystemTime::now()
+        .duration_since(update_instant)
+        .unwrap_or_default();
     let h = duration.as_secs() / 3600;
     let m = (duration.as_secs() % 3600) / 60;
     let s = duration.as_secs() % 60;
