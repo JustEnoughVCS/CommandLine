@@ -98,8 +98,7 @@ jvv:
       set_current_dir: Failed to set current directory to %{dir}
 
     here:
-      cfg_not_found:
-        Could not find vault configuration!
+      cfg_not_found: Could not find vault configuration!
         If you wish to use this directory as a vault, please use jvv init --help to view related help
 
       vault_init_failed: Failed to initialize vault!
@@ -332,15 +331,15 @@ jv:
     **Tip**: Use `jv here --desc` to view the last update description for local files
 
   status: |
-      **Display Current Sheet Status Information**
-      **Usage**: jv status
+    **Display Current Sheet Status Information**
+    **Usage**: jv status
 
-      Displays the file modification status of the current sheet:
-      - Added, deleted files
-      - Moved files
-      - Modified files
+    Displays the file modification status of the current sheet:
+    - Added, deleted files
+    - Moved files
+    - Modified files
 
-      This is a quick way to understand the current file status of the sheet.
+    This is a quick way to understand the current file status of the sheet.
 
   track: |
     **Track or Pull Files**
