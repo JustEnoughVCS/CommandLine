@@ -5,7 +5,11 @@ use just_enough_vcs::{
         cfg_file::config::ConfigFile,
         data_struct::dada_sort::quick_sort_with_cmp,
         sha1_hash,
-        string_proc::{self, format_path::format_path, snake_case},
+        string_proc::{
+            self,
+            format_path::{format_path, format_path_str},
+            snake_case,
+        },
         tcp_connection::instance::ConnectionInstance,
     },
     vcs::{
@@ -3522,7 +3526,7 @@ async fn jv_move(args: MoveMappingArgs) {
         // Generate move operation parameters
         // Single file move
         if from_mappings.len() == 1 {
-            let from = from_mappings[0].clone();
+            let from = format_path_str(from_mappings[0].clone()).unwrap();
             let to = if is_to_pattern_a_dir {
                 // Input is a directory, append the filename
                 format_path(
