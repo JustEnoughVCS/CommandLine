@@ -518,16 +518,15 @@ jv:
     sheet:
       align:
         no_direction: |
-          无法确认对齐的方向！
-          **提示**：使用 local 或 remote 来表示您要保留本地或远程的路径
+          无法确认对齐的方式！
+          **提示**：您本地有 %{moved} 个移动项，%{lost} 个丢失项，%{erased} 个擦除项目
 
         align_item_not_found: |
           无法找到该对齐项！
-          **提示**：使用 `jv align` 查看可用对齐项
 
-        unknown_method: |
-          未知的对齐方法！
-          **提示**：使用 local 或 remote 来表示您要保留本地或远程的路径
+        unknown_moved_direction: |
+          未知的对齐方向！
+          请使用 `local` 或 `remote` 来表示路径基于本地位置或远程位置
 
         target_exists: |
           无法对齐本地文件 `%{local}` 至远程地址 `%{remote}`
@@ -713,6 +712,27 @@ jv:
 
         no_changes: |
           很好，本地工作区未产生结构偏差，无需对齐！
+
+        suggestion_1: |
+          建议 **确认擦除项**：
+          文件在远程已不存在，但是本地仍存在！
+          **例如**：使用 `jv align %{example_erased} confirm` 来确认该擦除项！
+          **注意**：确认后，本地映射将被擦除，同时，该位置的文件将被移走
+
+        suggestion_2: |
+          建议 **确认丢失项**：
+          无法确认文件丢失意图为 `删除` 或 `移动`！
+          因此，您需要通过命令以确认行为：
+          **例如**：使用 `jv align %{example_lost} <行为>` 来确认该丢失
+          **确认删除**：填写 `confirm` 来确认您的操作是一次 `删除`
+          **声明移动**：填写 创建项 与其形成移动关系
+
+        suggestion_3: |
+          只有 **移动项**，请确认他们基于本地或远程
+          **例如**：使用 `jv align moved [local|remote]`          批量对齐
+              或使用 `jv align %{example_moved} [local|remote]` 精确对齐移动
+          **对齐至本地**：需联网，会修改上游映射至您本地实际的位置
+          **对齐至远程**：可脱机，会将本地文件移动至上游地址的位置
 
     docs:
       list:

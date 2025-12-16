@@ -530,16 +530,15 @@ jv:
     sheet:
       align:
         no_direction: |
-          Cannot confirm alignment direction!
-          **Tip**: Use local or remote to indicate whether you want to keep local or remote paths
+          Unable to confirm alignment method!
 
         align_item_not_found: |
           Cannot find this alignment item!
           **Tip**: Use `jv align` to view available alignment items
 
-        unknown_method: |
-          Unknown alignment method!
-          **Tip**: Use local or remote to indicate whether you want to keep local or remote paths
+        unknown_moved_direction: |
+          Unknown alignment direction!
+          Please use `local` or `remote` to indicate whether the path is based on local location or remote location
 
         target_exists: |
           Cannot align local file `%{local}` to remote address `%{remote}`
@@ -721,6 +720,27 @@ jv:
 
         no_changes: |
           Great, no structural deviations in the local workspace, no alignment needed!
+
+        suggestion_1: |
+          Suggestion **Confirm Erased Items**:
+          The file no longer exists remotely, but it still exists locally!
+          **Example**: Use `jv align %{example_erased} confirm` to confirm this erased item!
+          **Tip**: After confirmation, the local mapping will be erased, and the file at that location will be moved away.
+
+        suggestion_2: |
+          Suggestion **Confirm Lost Items**:
+          Cannot determine if the intent for the lost file is `deletion` or `move`!
+          Therefore, you need to use a command to confirm the action:
+          **Example**: Use `jv align %{example_lost} <action>` to confirm this loss.
+          **Confirm Deletion**: Enter `confirm` to confirm your action is a `deletion`.
+          **Declare Move**: Enter the created item to form a move relationship with it.
+
+        suggestion_3: |
+          Only **Moved Items**, please confirm them based on local or remote.
+          **Example**: Use `jv align moved [local|remote]`          to batch align,
+                  or Use `jv align %{example_moved} [local|remote]` to precisely align a move.
+          **Align to Local**: Requires network, will modify the upstream mapping to your actual local location.
+          **Align to Remote**: Can be offline, will move the local file to the location of the upstream address.
 
     docs:
       list:

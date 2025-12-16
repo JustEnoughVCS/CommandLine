@@ -2438,6 +2438,37 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
                 "{}",
                 md(t!("jv.success.sheet.align.list", tasks = table.to_string()))
             );
+
+            // Suggestion1: Confirm Erased
+            if align_tasks.erased.len() > 0 {
+                println!(
+                    "\n{}",
+                    md(t!(
+                        "jv.success.sheet.align.suggestion_1",
+                        example_erased = align_tasks.erased[0].0
+                    ))
+                )
+            } else
+            // Suggestion2: Confirm Lost
+            if align_tasks.lost.len() > 0 {
+                println!(
+                    "\n{}",
+                    md(t!(
+                        "jv.success.sheet.align.suggestion_2",
+                        example_lost = align_tasks.lost[0].0
+                    ))
+                )
+            } else
+            // Suggestion3: Confirm Moved
+            if align_tasks.moved.len() > 0 {
+                println!(
+                    "\n{}",
+                    md(t!(
+                        "jv.success.sheet.align.suggestion_3",
+                        example_moved = align_tasks.moved[0].0
+                    ))
+                )
+            }
         } else {
             println!("{}", md(t!("jv.success.sheet.align.no_changes").trim()));
         }
@@ -2456,7 +2487,7 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
             "remote" => true,
             "local" => false,
             _ => {
-                eprintln!("{}", md(t!("jv.fail.sheet.align.unknown_method")));
+                eprintln!("{}", md(t!("jv.fail.sheet.align.unknown_moved_direction")));
                 return;
             }
         };
