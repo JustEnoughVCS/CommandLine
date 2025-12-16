@@ -2630,6 +2630,11 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
                 };
 
                 let from = local_dir.join(&path);
+
+                if !from.exists() {
+                    continue;
+                }
+
                 let to = local_dir
                     .join(CLIENT_FOLDER_WORKSPACE_ROOT_NAME)
                     .join(".temp")
