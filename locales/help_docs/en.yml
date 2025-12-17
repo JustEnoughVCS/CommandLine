@@ -1,3 +1,29 @@
+# l10n file - en
+
+# The following syntax can be used in text
+# 1. **Bold**
+# 2. *Italic*
+# 3. [[red]]Color[[/]]
+# 4. `text` (auto colored green)
+# 5. <文本>  (auto colored cyan)
+#
+# For color usage, please refer to:
+# RED     = Emergency, Error
+# YELLOW  = Warning
+#
+# CYAN    = Emphasis
+# GREEN   = Text Content
+#
+# GRAY    = De-emphasis, Ignore
+# GREY    = Same as above
+#
+# For Analyzer results:
+# YELLOW  = Move operation = ">" symbol
+# GREEN   = Create operation = "+" symbol
+# RED     = Lost operation = "-" symbol
+# MAGENTA = Erase operation = "&" symbol
+# CYAN    = Modify operation = "*" symbol
+
 common:
   confirm: |
     Confirm to perform the above operation? (Y/n):
@@ -166,13 +192,13 @@ jvv:
 jv:
   version:
     header: |
-      JustEnoughVCS - %{version}
+      JustEnoughVCS - [[cyan]]%{version}[[/]]
 
     compile_info: |
       Compile Info
-        Compile Date - %{build_time}
-        Target       - %{build_target}
-        Platform     - %{build_platform} - %{build_toolchain}
+        Compile Date - [[cyan]]%{build_time}[[/]]
+        Target       - [[cyan]]%{build_target}[[/]]
+        Platform     - [[cyan]]%{build_platform} - %{build_toolchain}[[/]]
 
   tip:
     not_workspace: |
@@ -200,16 +226,16 @@ jv:
     This program connects to upstream vaults to synchronize and commit changes to local workspace files for collaborative work.
 
     **ALIASES**:
-      jv u                          - Download latest information              [REMOTE]
-      jv t                          - Track files                              [REMOTE]
+      jv u                          - Download latest information              [[cyan]][REMOTE][[/]]
+      jv t                          - Track files                              [[cyan]][REMOTE][[/]]
       jv a                          - Align files to sheet
-      jv [in|out]                   - Import or export files                   [REMOTE]
+      jv [in|out]                   - Import or export files                   [[cyan]][REMOTE][[/]]
 
     **UPSTREAM VAULT**:
-      login  <ACCOUNT> <UPSTREAM>   - Login to upstream vault                  [REMOTE]
-      direct <UPSTREAM>             - Direct workspace to upstream vault       [REMOTE]
+      login  <ACCOUNT> <UPSTREAM>   - Login to upstream vault                  [[cyan]][REMOTE][[/]]
+      direct <UPSTREAM>             - Direct workspace to upstream vault       [[cyan]][REMOTE][[/]]
       unstain                       - Unstain workspace, clear association
-      update                        - Download latest information              [REMOTE]
+      update                        - Download latest information              [[cyan]][REMOTE][[/]]
 
     **ACCOUNTS**:
       account [list|as|add|remove|movekey|genpub]
@@ -225,9 +251,9 @@ jv:
         list                        - List all sheets
         use                         - Use sheet, start work
         exit                        - Exit sheet, clear current modifications
-        make                        - Create a new sheet for yourself          [REMOTE]
-        drop                        - Drop the sheet for others to use         [REMOTE]
-        align                       - Align files to sheet                     [REMOTE]
+        make                        - Create a new sheet for yourself          [[cyan]][REMOTE][[/]]
+        drop                        - Drop the sheet for others to use         [[cyan]][REMOTE][[/]]
+        align                       - Align files to sheet                     [[cyan]][REMOTE][[/]]
 
     **CONTEXT**:
       here                          - Display path information
@@ -235,16 +261,16 @@ jv:
       info                          - Display individual file status
 
     **FILE TRANSFER**:
-      import <PACKAGE_NAME>         - Import files from import area            [REMOTE]
-      import <REFERENCE_SHEET_PATH> - Import files from reference sheet        [REMOTE]
-      export <FILE> <SHEET_NAME>    - Export files to other sheets             [REMOTE]
+      import <PACKAGE_NAME>         - Import files from import area            [[cyan]][REMOTE][[/]]
+      import <REFERENCE_SHEET_PATH> - Import files from reference sheet        [[cyan]][REMOTE][[/]]
+      export <FILE> <SHEET_NAME>    - Export files to other sheets             [[cyan]][REMOTE][[/]]
 
     **FILE OPERATIONS**:
-      move  <FILE> <TO>             - Safely rename files                      [REMOTE]
-      track <FILE>                  - Track files to latest version            [REMOTE]
-      hold  <FILE>                  - Hold, sync and lock file                 [REMOTE]
-      throw <FILE>                  - Throw, sync and unlock file              [REMOTE]
-      jump  <FILE> <VERSION>        - Jump file to other version               [REMOTE]
+      move  <FILE> <TO>             - Safely rename files                      [[cyan]][REMOTE][[/]]
+      track <FILE>                  - Track files to latest version            [[cyan]][REMOTE][[/]]
+      hold  <FILE>                  - Hold, sync and lock file                 [[cyan]][REMOTE][[/]]
+      throw <FILE>                  - Throw, sync and unlock file              [[cyan]][REMOTE][[/]]
+      jump  <FILE> <VERSION>        - Jump file to other version               [[cyan]][REMOTE][[/]]
 
     **DOCUMENTATION**:
       docs list                     - List all available documentation
@@ -656,7 +682,7 @@ jv:
 
     status:
       no_sheet_in_use: |
-        You are not using any sheet! Cannot analyze workspace status in this state
+        You are not using any sheet! Cannot analyze workspace status in this situation
         **Tip**: You can use `jv use <sheet_name>` to select and use a sheet
 
       analyze: |
@@ -722,25 +748,26 @@ jv:
           Great, no structural deviations in the local workspace, no alignment needed!
 
         suggestion_1: |
-          Suggestion **Confirm Erased Items**:
-          The file no longer exists remotely, but it still exists locally!
-          **Example**: Use `jv align %{example_erased} confirm` to confirm this erased item!
-          **Tip**: After confirmation, the local mapping will be erased, and the file at that location will be moved away.
+          **Suggestion**: Confirm [[magenta]]Erased Items[[/]]
+          **Example**: Use `jv align %{example_erased} confirm` to confirm this [[magenta]]Erased Item[[/]]!
+
+          [[yellow]]**Note**: After confirmation, the local mapping will be erased, and the file at that location will be moved away.[[/]]
 
         suggestion_2: |
-          Suggestion **Confirm Lost Items**:
-          Cannot determine if the intent for the lost file is `deletion` or `move`!
-          Therefore, you need to use a command to confirm the action:
-          **Example**: Use `jv align %{example_lost} <action>` to confirm this loss.
-          **Confirm Deletion**: Enter `confirm` to confirm your action is a `deletion`.
-          **Declare Move**: Enter the created item to form a move relationship with it.
+          **Suggestion**: Confirm [[red]]Lost Items[[/]]
+          Cannot determine if the intent of the file loss is [[red]]Deletion[[/]] or [[yellow]]Move[[/]]!
+          **Example**: Use `jv align %{example_lost} <action>` to handle this [[red]]Lost Item[[/]]
+
+          **Confirm Deletion**: Enter `confirm` to confirm your operation is a [[red]]Deletion[[/]]
+          **Declare Move**: Enter a [[green]]Created Item[[/]] to form a [[yellow]]Move[[/]] relationship with it
 
         suggestion_3: |
-          Only **Moved Items**, please confirm them based on local or remote.
-          **Example**: Use `jv align moved [local|remote]`          to batch align,
-                  or Use `jv align %{example_moved} [local|remote]` to precisely align a move.
-          **Align to Local**: Requires network, will modify the upstream mapping to your actual local location.
-          **Align to Remote**: Can be offline, will move the local file to the location of the upstream address.
+          **Suggestion**: Align [[yellow]]Moved Items[[/]], confirm they are based on Local or Remote
+          **Example**: Use `jv align moved [local|remote]`          to batch align
+                  or use `jv align %{example_moved} [local|remote]` to precisely align a move
+
+          **Align to  Local**: Online , modify the upstream mapping to the local location
+          **Align to Remote**: Offline, move the local file to the upstream location
 
     docs:
       list:
