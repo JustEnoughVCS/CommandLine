@@ -827,7 +827,7 @@ jv:
         Now in structural change mode:
         %{moved_items}%{lost_items}%{erased_items}%{created_items}
         **Tip**: Use `jv align` to align moved, lost, and erased changes,
-                 Use `jv track` to track created changes
+               Use `jv track` to track created changes
 
       content_modifies_display: |
         Viewing sheet %{sheet_name} (%{h}h %{m}min %{s}secs ago).
@@ -838,6 +838,7 @@ jv:
         **Tip**: Use `jv track` to track your changes
 
       no_changes: |
+        In sheet %{sheet_name}, status based on %{h} hours %{m} minutes %{s} seconds ago
         Your workspace is synchronized with upstream, you can proceed with structural and content editing based on this state!
 
       created_item: |

@@ -1966,7 +1966,16 @@ async fn jv_status(_args: StatusArgs) {
             .trim()
         );
     } else {
-        println!("{}", md(t!("jv.success.status.no_changes")));
+        println!(
+            "{}",
+            md(t!(
+                "jv.success.status.no_changes",
+                sheet_name = sheet_name,
+                h = h,
+                m = m,
+                s = s
+            ))
+        );
     }
 }
 
