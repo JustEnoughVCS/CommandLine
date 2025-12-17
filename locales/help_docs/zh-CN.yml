@@ -547,7 +547,6 @@ jv:
       align:
         no_direction: |
           无法确认对齐的方式！
-          **提示**：您本地有 %{moved} 个移动项，%{lost} 个丢失项，%{erased} 个擦除项目
 
         align_item_not_found: |
           无法找到该对齐项！
