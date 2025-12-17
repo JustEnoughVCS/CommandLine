@@ -2563,6 +2563,21 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
                     return;
                 }
 
+                if let Some(parent) = to.parent() {
+                    if let Err(err) = fs::create_dir_all(parent).await {
+                        eprintln!("{}", md(t!("jv.fail.sheet.align.move_failed", err = err)));
+                        continue;
+                    }
+                } else {
+                    eprintln!(
+                        "{}",
+                        md(t!(
+                            "jv.fail.sheet.align.move_failed",
+                            err = "no parent directory"
+                        ))
+                    );
+                    continue;
+                }
                 if let Err(err) = fs::rename(from, to).await {
                     eprintln!("{}", md(t!("jv.fail.sheet.align.move_failed", err = err)));
                 }
