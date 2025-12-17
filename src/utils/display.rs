@@ -176,6 +176,24 @@ pub fn md(text: impl AsRef<str>) -> String {
     let chars: Vec<char> = text.chars().collect();
 
     while i < chars.len() {
+        // Check for escape character \
+        if chars[i] == '\\' && i + 1 < chars.len() {
+            let escaped_char = chars[i + 1];
+            // Only escape specific characters
+            if matches!(escaped_char, '*' | '<' | '>' | '`') {
+                let mut escaped_text = escaped_char.to_string();
+
+                // Apply current color stack
+                for color in color_stack.iter().rev() {
+                    escaped_text = apply_color(&escaped_text, color);
+                }
+
+                result.push_str(&escaped_text);
+                i += 2;
+                continue;
+            }
+        }
+
         // Check for color tag start [[color]]
         if i + 1 < chars.len() && chars[i] == '[' && chars[i + 1] == '[' {
             let mut j = i + 2;

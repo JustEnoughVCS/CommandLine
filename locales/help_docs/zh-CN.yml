@@ -867,14 +867,14 @@ jv:
         -   丢失：      %{path}
 
       moved_item: |
-        >   移动：远程  %{from}
+        \>   移动：远程  %{from}
                   本地  %{to}
 
       erased_item: |
         &   擦除：      %{path}
 
       modified_item: |
-        *   修改：      %{path}
+        \*   修改：      %{path}
 
       invalid_modified_item: |
         x   修改：      %{path}（%{reason}）

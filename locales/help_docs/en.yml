@@ -875,14 +875,14 @@ jv:
         -      Lost:         %{path}
 
       moved_item: |
-        >     Moved: Remote  %{from}
+        \>     Moved: Remote  %{from}
                       Local  %{to}
 
       erased_item: |
         &    Erased：        %{path}
 
       modified_item: |
-        *  Modified:         %{path}
+        \*  Modified:         %{path}
 
       invalid_modified_item: |
         x  Modified:         %{path} (%{reason})
