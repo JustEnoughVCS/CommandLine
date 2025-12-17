@@ -505,6 +505,8 @@ jv:
       current_dir_name: 无法获得当前目录的名称
       set_current_dir: 无法设置到目录 %{dir}
 
+    not_root_dir: 该命令需要在工作区根目录运行！
+
     move:
       rename_failed: |
         **警告**：移动本地文件 `%{from}` 至 `%{to}` 失败：%{error}

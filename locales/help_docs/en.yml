@@ -517,6 +517,8 @@ jv:
       current_dir_name: Failed to get current directory name
       set_current_dir: Failed to set current directory to %{dir}
 
+    not_root_dir: This command needs to be execute in the workspace root directory!
+
     move:
       rename_failed: |
         **Warning**: Failed to move local file `%{from}` to `%{to}`: %{error}

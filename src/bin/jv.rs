@@ -800,6 +800,8 @@ async fn main() {
                 return;
             };
 
+            let _ = correct_current_dir();
+
             // Check if account list is not empty
             let Some(dir) = UserDirectory::current_cfg_dir() else {
                 return;
@@ -1024,7 +1026,9 @@ async fn main() {
             }
             SheetManage::List(sheet_list_args) => jv_sheet_list(sheet_list_args).await,
             SheetManage::Use(sheet_use_args) => jv_sheet_use(sheet_use_args).await,
-            SheetManage::Exit(sheet_exit_args) => jv_sheet_exit(sheet_exit_args).await,
+            SheetManage::Exit(sheet_exit_args) => {
+                let _ = jv_sheet_exit(sheet_exit_args).await;
+            }
             SheetManage::Make(sheet_make_args) => jv_sheet_make(sheet_make_args).await,
             SheetManage::Drop(sheet_drop_args) => jv_sheet_drop(sheet_drop_args).await,
             SheetManage::Align(sheet_align_args) => jv_sheet_align(sheet_align_args).await,
@@ -1100,15 +1104,16 @@ async fn main() {
             jv_docs(docs_args).await;
         }
         JustEnoughVcsWorkspaceCommand::Exit => {
-            jv_sheet_exit(SheetExitArgs { help: false }).await;
+            let _ = jv_sheet_exit(SheetExitArgs { help: false }).await;
         }
         JustEnoughVcsWorkspaceCommand::Use(use_args) => {
-            jv_sheet_exit(SheetExitArgs { help: false }).await;
-            jv_sheet_use(SheetUseArgs {
-                help: false,
-                sheet_name: use_args.sheet_name,
-            })
-            .await;
+            if let Ok(_) = jv_sheet_exit(SheetExitArgs { help: false }).await {
+                jv_sheet_use(SheetUseArgs {
+                    help: false,
+                    sheet_name: use_args.sheet_name,
+                })
+                .await;
+            }
         }
         JustEnoughVcsWorkspaceCommand::Sheets => {
             jv_sheet_list(SheetListArgs {
@@ -1222,16 +1227,19 @@ async fn main() {
             };
         }
         JustEnoughVcsWorkspaceCommand::GetCurrentAccount => {
+            let _ = correct_current_dir();
             if let Ok(local_config) = LocalConfig::read().await {
                 println!("{}", local_config.current_account())
             };
         }
         JustEnoughVcsWorkspaceCommand::GetCurrentUpstream => {
+            let _ = correct_current_dir();
             if let Ok(local_config) = LocalConfig::read().await {
                 println!("{}", local_config.upstream_addr())
             };
         }
         JustEnoughVcsWorkspaceCommand::GetCurrentSheet => {
+            let _ = correct_current_dir();
             if let Ok(local_config) = LocalConfig::read().await {
                 println!(
                     "{}",
@@ -1980,6 +1988,8 @@ async fn jv_status(_args: StatusArgs) {
 }
 
 async fn jv_sheet_list(args: SheetListArgs) {
+    let _ = correct_current_dir();
+
     let Some(local_dir) = current_local_path() else {
         if !args.raw {
             eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
@@ -2096,10 +2106,17 @@ async fn jv_sheet_list(args: SheetListArgs) {
 }
 
 async fn jv_sheet_use(args: SheetUseArgs) {
-    let Some(_local_dir) = current_local_path() else {
+    let Some(local_dir) = current_local_path() else {
         eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
         return;
     };
+
+    let current_dir = current_dir().unwrap();
+
+    if local_dir != current_dir {
+        eprintln!("{}", t!("jv.fail.not_root_dir").trim());
+        return;
+    }
 
     let Ok(mut local_cfg) = LocalConfig::read().await else {
         eprintln!("{}", md(t!("jv.fail.read_cfg")));
@@ -2139,26 +2156,35 @@ async fn jv_sheet_use(args: SheetUseArgs) {
     }
 }
 
-async fn jv_sheet_exit(_args: SheetExitArgs) {
-    let Some(_local_dir) = current_local_path() else {
+async fn jv_sheet_exit(_args: SheetExitArgs) -> Result<(), ()> {
+    let Some(local_dir) = current_local_path() else {
         eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
-        return;
+        return Err(());
     };
+
+    let current_dir = current_dir().unwrap();
+
+    if local_dir != current_dir {
+        eprintln!("{}", t!("jv.fail.not_root_dir").trim());
+        return Err(());
+    }
 
     let Ok(mut local_cfg) = LocalConfig::read().await else {
         eprintln!("{}", md(t!("jv.fail.read_cfg")));
-        return;
+        return Err(());
     };
 
     match local_cfg.exit_sheet().await {
         Ok(_) => {
             let Ok(_) = LocalConfig::write(&local_cfg).await else {
                 eprintln!("{}", t!("jv.fail.write_cfg").trim());
-                return;
+                return Err(());
             };
+            return Ok(());
         }
         Err(e) => {
             handle_err(e.into());
+            return Err(());
         }
     }
 }
@@ -3804,6 +3830,8 @@ async fn jv_account_remove(user_dir: UserDirectory, args: AccountRemoveArgs) {
 }
 
 async fn jv_account_list(user_dir: UserDirectory, args: AccountListArgs) {
+    let _ = correct_current_dir();
+
     if args.raw {
         let Ok(account_ids) = user_dir.account_ids() else {
             return;
