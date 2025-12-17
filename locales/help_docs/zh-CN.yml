@@ -754,7 +754,7 @@ jv:
           **声明移动**：填写 [[green]]创建项[[/]] 与其形成 [[yellow]]移动[[/]] 关系
 
         suggestion_3: |
-          **建议**：对齐 [[yellow]]移动项[[/]]，确认他们基于 本地 或 远程
+          **建议**：对齐 [[yellow]]移动项[[/]]，确认移动基于 本地 或 远程
           **例如**：使用 `jv align moved [local|remote]`          批量对齐
               或使用 `jv align %{example_moved} [local|remote]` 精确对齐移动
 

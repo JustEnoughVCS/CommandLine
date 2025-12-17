@@ -762,7 +762,7 @@ jv:
           **Declare Move**: Enter a [[green]]Created Item[[/]] to form a [[yellow]]Move[[/]] relationship with it
 
         suggestion_3: |
-          **Suggestion**: Align [[yellow]]Moved Items[[/]], confirm they are based on Local or Remote
+          **Suggestion**: Align [[yellow]]Moved Items[[/]], confirm the move is based on Local or Remote
           **Example**: Use `jv align moved [local|remote]`          to batch align
                   or use `jv align %{example_moved} [local|remote]` to precisely align a move
 
