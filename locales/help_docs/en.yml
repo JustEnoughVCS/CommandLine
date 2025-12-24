@@ -30,11 +30,13 @@ common:
 
   word:
     version: Version
+    cli_version: CLI Version
+    vcs_version: VCS Version
 
 jvv:
   version:
     header: |
-      JVCS Upstream Manager - %{version}
+      JVCS Upstream Manager - %{version} (Core: [[cyan]]%{vcs_version}[[/]])
 
     compile_info: |
       Compile Info
@@ -192,7 +194,7 @@ jvv:
 jv:
   version:
     header: |
-      JustEnoughVCS - [[cyan]]%{version}[[/]]
+      JVCS CommandLine - [[cyan]]%{version}[[/]] (Core: [[cyan]]%{vcs_version}[[/]])
 
     compile_info: |
       Compile Info

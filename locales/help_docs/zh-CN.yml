@@ -30,11 +30,13 @@ common:
 
   word:
     version: 版本
+    cli_version: 命令行版本
+    vcs_version: 核心库版本
 
 jvv:
   version:
     header: |
-      JVCS 上游管理工具 - %{version}
+      JVCS 上游管理工具 - %{version}（核心：[[cyan]]%{vcs_version}[[/]]）
 
     compile_info: |
       编译信息：
@@ -187,7 +189,7 @@ jvv:
 jv:
   version:
     header: |
-      JustEnoughVCS - [[cyan]]%{version}[[/]]
+      JVCS 命令行工具 - [[cyan]]%{version}[[/]]（核心：[[cyan]]%{vcs_version}[[/]]）
 
     compile_info: |
       编译信息：

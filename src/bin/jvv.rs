@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
 use just_enough_vcs::{
+    data::compile_info::CoreCompileInfo,
     utils::{
         cfg_file::config::ConfigFile,
         string_proc::{self, pascal_case},
@@ -202,9 +203,14 @@ async fn main() {
     match parser.command {
         JustEnoughVcsVaultCommand::Version(version_args) => {
             let compile_info = CompileInfo::default();
+            let core_compile_info = CoreCompileInfo::default();
             println!(
                 "{}",
-                md(t!("jvv.version.header", version = compile_info.cli_version))
+                md(t!(
+                    "jvv.version.header",
+                    version = compile_info.cli_version,
+                    vcs_version = core_compile_info.vcs_version
+                ))
             );
 
             if version_args.compile_info {

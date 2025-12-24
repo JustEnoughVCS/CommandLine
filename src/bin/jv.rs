@@ -1,5 +1,6 @@
 use colored::Colorize;
 use just_enough_vcs::{
+    data::compile_info::CoreCompileInfo,
     system::action_system::{action::ActionContext, action_pool::ActionPool},
     utils::{
         cfg_file::config::ConfigFile,
@@ -880,10 +881,15 @@ async fn main() {
     match parser.command {
         JustEnoughVcsWorkspaceCommand::Version(version_args) => {
             let compile_info = CompileInfo::default();
+            let core_compile_info = CoreCompileInfo::default();
             if version_args.without_banner {
                 println!(
                     "{}",
-                    md(t!("jv.version.header", version = compile_info.cli_version))
+                    md(t!(
+                        "jv.version.header",
+                        version = compile_info.cli_version,
+                        vcs_version = core_compile_info.vcs_version
+                    ))
                 );
             } else {
                 println!();
@@ -903,12 +909,19 @@ async fn main() {
                             "{banner_line_2}",
                             &format!(
                                 "{}: {} ({})",
-                                t!("common.word.version"),
+                                t!("common.word.cli_version"),
                                 &compile_info.cli_version,
                                 &compile_info.date
                             )
                         )
-                        .replace("{banner_line_3}", "")
+                        .replace(
+                            "{banner_line_3}",
+                            &format!(
+                                "{}: {}",
+                                t!("common.word.vcs_version"),
+                                &core_compile_info.vcs_version
+                            )
+                        )
                 );
 
                 if !version_args.compile_info {
