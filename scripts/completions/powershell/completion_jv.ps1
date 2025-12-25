@@ -14,8 +14,7 @@ Register-ArgumentCompleter -Native -CommandName jv -ScriptBlock {
     # Base commands
     $baseCommands = @(
         "create", "init", "direct", "unstain", "account", "update",
-        "sheet", "status", "here", "import", "export", "in", "out",
-        "move", "mv", "docs", "exit", "use", "sheets", "accounts",
+        "sheet", "status", "here", "move", "mv", "docs", "exit", "use", "sheets", "accounts",
         "as", "make", "drop", "track", "hold", "throw", "login",
         "jump", "align"
     )
@@ -199,7 +198,7 @@ Register-ArgumentCompleter -Native -CommandName jv -ScriptBlock {
                 return $docs | Where-Object { $_ -like "$wordToComplete*" }
             }
         }
-        { @("move", "mv", "import", "export", "in", "out", "track", "hold", "throw") -contains $_ } {
+        { @("move", "mv", "track", "hold", "throw") -contains $_ } {
             # File completion for file operations
             return Get-ChildItem -Name -File -Path "." | Where-Object { $_ -like "$wordToComplete*" }
         }

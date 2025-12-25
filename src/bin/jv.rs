@@ -66,6 +66,7 @@ use std::{
     path::PathBuf,
     process::exit,
     str::FromStr,
+    sync::Arc,
     time::SystemTime,
 };
 
@@ -94,6 +95,7 @@ use tokio::{
     fs::{self},
     net::TcpSocket,
     process::Command,
+    sync::mpsc::{self, Receiver},
 };
 
 // Import i18n files
@@ -165,13 +167,8 @@ enum JustEnoughVcsWorkspaceCommand {
     #[command(alias = "mv")]
     Move(MoveMappingArgs),
 
-    /// Export files to other worksheet
-    #[command(alias = "out")]
-    Export(ExportFileArgs),
-
-    /// Import files from reference sheet or import area
-    #[command(alias = "in")]
-    Import(ImportFileArgs),
+    /// Share file visibility to other sheets
+    Share(ShareFileArgs),
 
     /// Sync information from upstream vault
     #[command(alias = "u")]
@@ -625,14 +622,7 @@ struct MoveMappingArgs {
 }
 
 #[derive(Parser, Debug)]
-struct ExportFileArgs {
-    /// Show help information
-    #[arg(short, long)]
-    help: bool,
-}
-
-#[derive(Parser, Debug)]
-struct ImportFileArgs {
+struct ShareFileArgs {
     /// Show help information
     #[arg(short, long)]
     help: bool,
@@ -1074,19 +1064,12 @@ async fn main() {
             }
             jv_move(move_file_args).await;
         }
-        JustEnoughVcsWorkspaceCommand::Export(export_file_args) => {
-            if export_file_args.help {
-                println!("{}", md(t!("jv.export")));
+        JustEnoughVcsWorkspaceCommand::Share(share_file_args) => {
+            if share_file_args.help {
+                println!("{}", md(t!("jv.share")));
                 return;
             }
-            jv_export(export_file_args).await;
-        }
-        JustEnoughVcsWorkspaceCommand::Import(import_file_args) => {
-            if import_file_args.help {
-                println!("{}", md(t!("jv.import")));
-                return;
-            }
-            jv_import(import_file_args).await;
+            jv_share(share_file_args).await;
         }
         JustEnoughVcsWorkspaceCommand::Update(update_file_args) => {
             if update_file_args.help {
@@ -2218,7 +2201,7 @@ async fn jv_sheet_make(args: SheetMakeArgs) {
         None => return,
     };
 
-    let (pool, ctx) = match build_pool_and_ctx(&local_config).await {
+    let (pool, ctx, _output) = match build_pool_and_ctx(&local_config).await {
         Some(result) => result,
         None => return,
     };
@@ -2314,7 +2297,7 @@ async fn jv_sheet_drop(args: SheetDropArgs) {
         None => return,
     };
 
-    let (pool, ctx) = match build_pool_and_ctx(&local_config).await {
+    let (pool, ctx, _output) = match build_pool_and_ctx(&local_config).await {
         Some(result) => result,
         None => return,
     };
@@ -2575,7 +2558,7 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
         if !align_to_remote {
             // Align to local
             // Network move mapping
-            let (pool, ctx) = match build_pool_and_ctx(&local_cfg).await {
+            let (pool, ctx, _output) = match build_pool_and_ctx(&local_cfg).await {
                 Some(result) => result,
                 None => return,
             };
@@ -2806,7 +2789,7 @@ async fn jv_track(args: TrackFileArgs) {
         return;
     };
 
-    let (pool, ctx) = match build_pool_and_ctx(&local_config).await {
+    let (pool, ctx, mut output) = match build_pool_and_ctx(&local_config).await {
         Some(result) => result,
         None => return,
     };
@@ -2815,7 +2798,7 @@ async fn jv_track(args: TrackFileArgs) {
     let overwrite = args.allow_overwrite;
     let update_info = get_update_info(local_workspace, &files, args).await;
 
-    match proc_track_file_action(
+    let track_action = proc_track_file_action(
         &pool,
         ctx,
         TrackFileActionArguments {
@@ -2824,156 +2807,165 @@ async fn jv_track(args: TrackFileArgs) {
             print_infos: true,
             allow_overwrite_modified: overwrite,
         },
-    )
-    .await
-    {
-        Ok(result) => match result {
-            TrackFileActionResult::Done {
-                created,
-                updated,
-                synced,
-                skipped,
-            } => {
-                println!(
-                    "{}",
-                    md(t!(
-                        "jv.result.track.done",
-                        count = created.len() + updated.len() + synced.len(),
-                        created = created.len(),
-                        updated = updated.len(),
-                        synced = synced.len()
-                    ))
-                );
+    );
 
-                if skipped.len() > 0 {
-                    println!(
-                        "\n{}",
-                        md(t!(
-                            "jv.result.track.tip_has_skipped",
-                            skipped_num = skipped.len(),
-                            skipped = skipped
-                                .iter()
-                                .map(|f| f.display().to_string())
-                                .collect::<Vec<String>>()
-                                .join("\n")
-                                .trim()
-                        ))
-                        .yellow()
-                    );
-                }
-            }
-            TrackFileActionResult::AuthorizeFailed(e) => {
-                eprintln!("{}", md(t!("jv.result.common.authroize_failed", err = e)))
-            }
-            TrackFileActionResult::StructureChangesNotSolved => {
-                eprintln!("{}", md(t!("jv.result.track.structure_changes_not_solved")))
-            }
-            TrackFileActionResult::CreateTaskFailed(create_task_result) => match create_task_result
-            {
-                CreateTaskResult::Success(_) => {} // Success is not handled here
-                CreateTaskResult::CreateFileOnExistPath(path) => {
-                    eprintln!(
-                        "{}",
-                        md(t!(
-                            "jv.result.track.create_failed.create_file_on_exist_path",
-                            path = path.display()
-                        ))
-                    )
-                }
-                CreateTaskResult::SheetNotFound(sheet) => {
-                    eprintln!(
-                        "{}",
-                        md(t!(
-                            "jv.result.track.create_failed.sheet_not_found",
-                            name = sheet
-                        ))
-                    )
-                }
-            },
-            TrackFileActionResult::UpdateTaskFailed(update_task_result) => match update_task_result
-            {
-                UpdateTaskResult::Success(_) => {} // Success is not handled here
-                UpdateTaskResult::VerifyFailed { path, reason } => match reason {
-                    VerifyFailReason::SheetNotFound(sheet_name) => {
-                        eprintln!(
+    tokio::select! {
+        result = track_action => {
+            match result {
+                Ok(result) => match result {
+                    TrackFileActionResult::Done {
+                        created,
+                        updated,
+                        synced,
+                        skipped,
+                    } => {
+                        println!(
                             "{}",
                             md(t!(
-                                "jv.result.track.update_failed.verify.sheet_not_found",
-                                sheet_name = sheet_name
+                                "jv.result.track.done",
+                                count = created.len() + updated.len() + synced.len(),
+                                created = created.len(),
+                                updated = updated.len(),
+                                synced = synced.len()
                             ))
-                        )
+                        );
+
+                        if skipped.len() > 0 {
+                            println!(
+                                "\n{}",
+                                md(t!(
+                                    "jv.result.track.tip_has_skipped",
+                                    skipped_num = skipped.len(),
+                                    skipped = skipped
+                                        .iter()
+                                        .map(|f| f.display().to_string())
+                                        .collect::<Vec<String>>()
+                                        .join("\n")
+                                        .trim()
+                                ))
+                                .yellow()
+                            );
+                        }
                     }
-                    VerifyFailReason::MappingNotFound => {
-                        eprintln!(
-                            "{}",
-                            md(t!(
-                                "jv.result.track.update_failed.verify.mapping_not_found",
-                                path = path.display()
-                            ))
-                        )
+                    TrackFileActionResult::AuthorizeFailed(e) => {
+                        eprintln!("{}", md(t!("jv.result.common.authroize_failed", err = e)))
                     }
-                    VerifyFailReason::VirtualFileNotFound(vfid) => {
-                        eprintln!(
-                            "{}",
-                            md(t!(
-                                "jv.result.track.update_failed.verify.virtual_file_not_found",
-                                vfid = vfid
-                            ))
-                        )
+                    TrackFileActionResult::StructureChangesNotSolved => {
+                        eprintln!("{}", md(t!("jv.result.track.structure_changes_not_solved")))
                     }
-                    VerifyFailReason::VirtualFileReadFailed(vfid) => {
-                        eprintln!(
-                            "{}",
-                            md(t!(
-                                "jv.result.track.update_failed.verify.virtual_file_read_failed",
-                                vfid = vfid
-                            ))
-                        )
-                    }
-                    VerifyFailReason::NotHeld => {
-                        eprintln!(
-                            "{}",
-                            md(t!(
-                                "jv.result.track.update_failed.verify.not_held",
-                                path = path.display()
-                            ))
-                        )
-                    }
-                    VerifyFailReason::VersionDismatch(current_version, latest_version) => {
-                        eprintln!(
-                            "{}",
-                            md(t!(
-                                "jv.result.track.update_failed.verify.version_dismatch",
-                                version_current = current_version,
-                                version_latest = latest_version
-                            ))
-                        )
-                    }
-                    VerifyFailReason::UpdateButNoDescription => {
-                        eprintln!(
-                            "{}",
-                            md(t!(
-                                "jv.result.track.update_failed.verify.update_but_no_description"
-                            ))
-                        )
-                    }
-                    VerifyFailReason::VersionAlreadyExist(latest_version) => {
-                        eprintln!(
-                            "{}",
-                            md(t!(
-                                "jv.result.track.update_failed.verify.version_already_exist",
-                                path = path.display(),
-                                version = latest_version
-                            ))
-                        )
-                    }
+                    TrackFileActionResult::CreateTaskFailed(create_task_result) => match create_task_result
+                    {
+                        CreateTaskResult::Success(_) => {} // Success is not handled here
+                        CreateTaskResult::CreateFileOnExistPath(path) => {
+                            eprintln!(
+                                "{}",
+                                md(t!(
+                                    "jv.result.track.create_failed.create_file_on_exist_path",
+                                    path = path.display()
+                                ))
+                            )
+                        }
+                        CreateTaskResult::SheetNotFound(sheet) => {
+                            eprintln!(
+                                "{}",
+                                md(t!(
+                                    "jv.result.track.create_failed.sheet_not_found",
+                                    name = sheet
+                                ))
+                            )
+                        }
+                    },
+                    TrackFileActionResult::UpdateTaskFailed(update_task_result) => match update_task_result
+                    {
+                        UpdateTaskResult::Success(_) => {} // Success is not handled here
+                        UpdateTaskResult::VerifyFailed { path, reason } => match reason {
+                            VerifyFailReason::SheetNotFound(sheet_name) => {
+                                eprintln!(
+                                    "{}",
+                                    md(t!(
+                                        "jv.result.track.update_failed.verify.sheet_not_found",
+                                        sheet_name = sheet_name
+                                    ))
+                                )
+                            }
+                            VerifyFailReason::MappingNotFound => {
+                                eprintln!(
+                                    "{}",
+                                    md(t!(
+                                        "jv.result.track.update_failed.verify.mapping_not_found",
+                                        path = path.display()
+                                    ))
+                                )
+                            }
+                            VerifyFailReason::VirtualFileNotFound(vfid) => {
+                                eprintln!(
+                                    "{}",
+                                    md(t!(
+                                        "jv.result.track.update_failed.verify.virtual_file_not_found",
+                                        vfid = vfid
+                                    ))
+                                )
+                            }
+                            VerifyFailReason::VirtualFileReadFailed(vfid) => {
+                                eprintln!(
+                                    "{}",
+                                    md(t!(
+                                        "jv.result.track.update_failed.verify.virtual_file_read_failed",
+                                        vfid = vfid
+                                    ))
+                                )
+                            }
+                            VerifyFailReason::NotHeld => {
+                                eprintln!(
+                                    "{}",
+                                    md(t!(
+                                        "jv.result.track.update_failed.verify.not_held",
+                                        path = path.display()
+                                    ))
+                                )
+                            }
+                            VerifyFailReason::VersionDismatch(current_version, latest_version) => {
+                                eprintln!(
+                                    "{}",
+                                    md(t!(
+                                        "jv.result.track.update_failed.verify.version_dismatch",
+                                        version_current = current_version,
+                                        version_latest = latest_version
+                                    ))
+                                )
+                            }
+                            VerifyFailReason::UpdateButNoDescription => {
+                                eprintln!(
+                                    "{}",
+                                    md(t!(
+                                        "jv.result.track.update_failed.verify.update_but_no_description"
+                                    ))
+                                )
+                            }
+                            VerifyFailReason::VersionAlreadyExist(latest_version) => {
+                                eprintln!(
+                                    "{}",
+                                    md(t!(
+                                        "jv.result.track.update_failed.verify.version_already_exist",
+                                        path = path.display(),
+                                        version = latest_version
+                                    ))
+                                )
+                            }
+                        },
+                    },
+                    TrackFileActionResult::SyncTaskFailed(sync_task_result) => match sync_task_result {
+                        SyncTaskResult::Success(_) => {} // Success is not handled here
+                    },
                 },
-            },
-            TrackFileActionResult::SyncTaskFailed(sync_task_result) => match sync_task_result {
-                SyncTaskResult::Success(_) => {} // Success is not handled here
-            },
-        },
-        Err(e) => handle_err(e),
+                Err(e) => handle_err(e),
+            }
+        }
+        _ = async {
+            while let Some(msg) = output.recv().await {
+                println!("{}", msg);
+            }
+        } => {}
     }
 }
 
@@ -3476,7 +3468,7 @@ async fn jv_change_edit_right(
         return;
     }
 
-    let (pool, ctx) = match build_pool_and_ctx(&local_cfg).await {
+    let (pool, ctx, _output) = match build_pool_and_ctx(&local_cfg).await {
         Some(result) => result,
         None => return,
     };
@@ -3646,7 +3638,7 @@ async fn jv_move(args: MoveMappingArgs) {
         None => return,
     };
 
-    let (pool, ctx) = match build_pool_and_ctx(&local_cfg).await {
+    let (pool, ctx, _output) = match build_pool_and_ctx(&local_cfg).await {
         Some(result) => result,
         None => return,
     };
@@ -3767,11 +3759,7 @@ async fn proc_mapping_edit(
     }
 }
 
-async fn jv_export(_args: ExportFileArgs) {
-    todo!()
-}
-
-async fn jv_import(_args: ImportFileArgs) {
+async fn jv_share(_args: ShareFileArgs) {
     todo!()
 }
 
@@ -3991,7 +3979,7 @@ async fn jv_update(update_file_args: UpdateArgs) {
         None => return,
     };
 
-    let (pool, ctx) = match build_pool_and_ctx(&local_config).await {
+    let (pool, ctx, _output) = match build_pool_and_ctx(&local_config).await {
         Some(result) => result,
         None => return,
     };
@@ -4435,14 +4423,22 @@ async fn precheck() -> Option<LocalConfig> {
 
 /// Build action pool and context for upstream communication
 /// Returns Some((ActionPool, ActionContext)) if successful, None otherwise
-async fn build_pool_and_ctx(local_config: &LocalConfig) -> Option<(ActionPool, ActionContext)> {
+async fn build_pool_and_ctx(
+    local_config: &LocalConfig,
+) -> Option<(ActionPool, ActionContext, Receiver<String>)> {
     let pool = client_registry::client_action_pool();
     let upstream = local_config.upstream_addr();
 
     let instance = connect(upstream).await?;
 
-    let ctx = ActionContext::local().insert_instance(instance);
-    Some((pool, ctx))
+    // Build context and insert instance
+    let mut ctx = ActionContext::local().insert_instance(instance);
+
+    // Build channel for communication
+    let (tx, rx) = mpsc::channel::<String>(100);
+    ctx.insert_arc_data(Arc::new(tx));
+
+    Some((pool, ctx, rx))
 }
 
 /// Sort paths in a vector of strings.

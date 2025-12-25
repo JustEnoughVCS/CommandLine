@@ -16,8 +16,7 @@ _jv_completion() {
 
     # Subcommands
     local base_commands="create init direct unstain account update \
-                         sheet status here import export in out \
-                         move mv docs exit use sheets accounts \
+                         sheet status here move mv docs exit use sheets accounts \
                          as make drop track hold throw login \
                          jump align"
 
@@ -222,7 +221,7 @@ _jv_completion() {
         "move"|"mv")
             COMPREPLY=($(compgen -f -- "$cur"))
             ;;
-        "import"|"export"|"in"|"out"|"track"|"hold"|"throw")
+        "track"|"hold"|"throw")
             COMPREPLY=($(compgen -f -- "$cur"))
             ;;
     esac

@@ -263,9 +263,9 @@ jv:
       info                          - Display individual file status
 
     **FILE TRANSFER**:
-      import <PACKAGE_NAME>         - Import files from import area            [[cyan]][REMOTE][[/]]
-      import <REFERENCE_SHEET_PATH> - Import files from reference sheet        [[cyan]][REMOTE][[/]]
-      export <FILE> <SHEET_NAME>    - Export files to other sheets             [[cyan]][REMOTE][[/]]
+      share <FILE> <SHEET> <DESC>   - Share files to other sheet               [[cyan]][REMOTE][[/]]
+      share import <SHARE_ID>       - Import share to current sheet            [[cyan]][REMOTE][[/]]
+      share status                  - Display current sheet's share status
 
     **FILE OPERATIONS**:
       move  <FILE> <TO>             - Safely rename files                      [[cyan]][REMOTE][[/]]
@@ -418,26 +418,24 @@ jv:
     The move mapping operation modifies the upstream mapping and synchronizes the local structure (use `--only-remote` to cancel local modification)
     After moving, you usually need `jv align moved remote` to synchronize the local structure to the upstream
 
-  export: |
-    **Export Files to Import Area of Other Sheets**
-    **Usage**: jv export <FILE> <TARGET_SHEET> -m <DESCRIPTION> -n <PACKAGE_NAME>
-
-    **Example**: jv export data.csv analytics -m "Export analysis data" -n "analysis_data"
-    This operation packages the specified files and sends them to the import area of the target sheet.
-
-    Other collaborators can use the jv import command in the target sheet to import these files.
-
-  import: |
-    **Import Files to Current Sheet**
+  share: |
+    **Share File Visibility**
     **Usage**:
-    jv import <PACKAGE_NAME> - Import files from import area
-    jv import <REFERENCE_SHEET_PATH> - Import files from reference sheet
+    jv share <file> <sheet> <description> - Share mapping to other sheets
+    jv share --work - Share files in editor mode
 
-    **Example**:
-    jv import Player_Import - From import area defined name
-    jv import ref@Data/Player.csv - From reference sheet path
+    jv share status - View incoming shares
 
-    Import operation copies files from other sheets or import areas to the current workspace.
+    jv share import <share_id> - Import share to current sheet
+    jv share import <ref_mapping> - Import mapping from `ref` sheet
+
+    **Tip**: The import command can use the following parameters
+      --only-remote - Only import mapping into the sheet, do not modify local structure
+      --strict - Strict import mode, reject all conflicts, this is the default scheme
+      --skip - Skip conflicting items
+      --overwrite - Force overwrite conflicting mappings, dangerous operation
+
+    **Sharing** is the simplest way to give file visibility to others
 
   direct: |
     **Direct to Specified Upstream Vault and Stain This Workspace**
