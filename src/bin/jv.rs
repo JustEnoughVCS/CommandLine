@@ -2996,6 +2996,19 @@ async fn start_update_editor(
     files: &HashSet<PathBuf>,
     args: &TrackFileArgs,
 ) -> HashMap<PathBuf, (NextVersion, UpdateDescription)> {
+    let account = workspace.config().lock().await.current_account();
+
+    let Ok(latest_file_data_path) = LatestFileData::data_path(&account) else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return HashMap::new();
+    };
+
+    // Get latest file data
+    let Ok(latest_file_data) = LatestFileData::read_from(&latest_file_data_path).await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return HashMap::new();
+    };
+
     // Get files
     let Ok(analyzed) = AnalyzeResult::analyze_local_status(&workspace).await else {
         return HashMap::new();
@@ -3021,10 +3034,14 @@ async fn start_update_editor(
         .filter_map(|file| {
             if analyzed.modified.contains(file) {
                 if let Some(mapping_item) = cached_sheet.mapping().get(file) {
-                    return Some((file.clone(), mapping_item.version.clone()));
+                    if let Some(latest_version) = latest_file_data.file_version(&mapping_item.id) {
+                        return Some((file.clone(), latest_version.clone()));
+                    }
                 }
+                None
+            } else {
+                None
             }
-            None
         })
         .collect();
 
