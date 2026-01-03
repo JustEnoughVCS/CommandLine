@@ -733,11 +733,13 @@ jv:
     sheet:
       list:
         your_sheet: |
-          **YOURS**:
+          **VISIBLE TO YOU**:
         your_sheet_item: |
           %{number}. %{name}
         your_sheet_item_use: |
-          %{number}. %{name} (CURRENT)
+          %{number}. %{name} [Current]
+        reference_sheet_suffix: |
+          [REF]
         other_sheet: |
           **OTHERS**:
         other_sheet_item: |

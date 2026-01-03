@@ -130,7 +130,7 @@ jvv:
       vault_init_failed: 初始化库失败！
       size_calc_error: 计算库存储大小失败！
       member_ids_failed: 获得成员 ID 失败！
-      ref_sheet_not_found: 未找到参照表 `ref`，该参照表理应存在！
+      ref_sheet_not_found: 未找到参考表 `ref`，该参考表理应存在！
 
     create:
       not_empty: 禁止的操作！指定的目录已经存在
@@ -255,9 +255,9 @@ jv:
       info <文件>              - 显示单个文件的状态
 
     **文件传递**：
-      share <文件> <表> <描述> - 分享当前上下文的文件至其他表    [[cyan]][远程][[/]]
-      share import <分享ID>    - 将分享导入到当前表              [[cyan]][远程][[/]]
-      share status             - 显示当前表的分享状态
+      share <文件> <表> <描述> - 分享映射到其他表                [[cyan]][远程][[/]]
+      share <分享ID>           - 将分享导入到当前表              [[cyan]][远程][[/]]
+      share <REF表> <文件>     - 从其他参考表中导入映射          [[cyan]][远程][[/]]
 
     **文件操作**：
       move  <文件> <到>        - 安全地重命名文件                [[cyan]][远程][[/]]
@@ -723,11 +723,13 @@ jv:
     sheet:
       list:
         your_sheet: |
-          **您的表**：
+          **您可见的表**：
         your_sheet_item: |
           %{number}. %{name}
         your_sheet_item_use: |
-          %{number}. %{name}（当前）
+          %{number}. %{name} [[green]][当前][[/]]
+        reference_sheet_suffix: |
+          [参考]
         other_sheet: |
           **其他表**：
         other_sheet_item: |

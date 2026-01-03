@@ -2075,12 +2075,15 @@ async fn jv_sheet_list(args: SheetListArgs) {
     if args.raw {
         // Print your sheets
         if !args.others && !args.all || !args.others {
-            latest_info.my_sheets.iter().for_each(|s| println!("{}", s));
+            latest_info
+                .visible_sheets
+                .iter()
+                .for_each(|s| println!("{}", s));
         }
         // Print other sheets
         if args.others || args.all {
             latest_info
-                .other_sheets
+                .invisible_sheets
                 .iter()
                 .for_each(|s| println!("{}", s.sheet_name));
         }
@@ -2089,7 +2092,19 @@ async fn jv_sheet_list(args: SheetListArgs) {
         if !args.others && !args.all || !args.others {
             println!("{}", md(t!("jv.success.sheet.list.your_sheet")));
             let in_use = local_cfg.sheet_in_use();
-            for sheet in latest_info.my_sheets {
+            for sheet in latest_info.visible_sheets {
+                let is_ref_sheet = latest_info.reference_sheets.contains(&sheet);
+                let display_name = if is_ref_sheet {
+                    format!(
+                        "{} {}",
+                        sheet,
+                        md(t!("jv.success.sheet.list.reference_sheet_suffix"))
+                            .truecolor(128, 128, 128)
+                    )
+                } else {
+                    sheet.clone()
+                };
+
                 if let Some(in_use) = in_use
                     && in_use == &sheet
                 {
@@ -2098,7 +2113,7 @@ async fn jv_sheet_list(args: SheetListArgs) {
                         md(t!(
                             "jv.success.sheet.list.your_sheet_item_use",
                             number = your_sheet_counts + 1,
-                            name = sheet
+                            name = display_name.cyan()
                         ))
                     );
                 } else {
@@ -2107,7 +2122,7 @@ async fn jv_sheet_list(args: SheetListArgs) {
                         md(t!(
                             "jv.success.sheet.list.your_sheet_item",
                             number = your_sheet_counts + 1,
-                            name = sheet
+                            name = display_name
                         ))
                     );
                 }
@@ -2121,7 +2136,7 @@ async fn jv_sheet_list(args: SheetListArgs) {
                 println!();
             }
             println!("{}", md(t!("jv.success.sheet.list.other_sheet")));
-            for sheet in latest_info.other_sheets {
+            for sheet in latest_info.invisible_sheets {
                 if let Some(holder) = sheet.holder_name {
                     println!(
                         "{}",
@@ -2182,6 +2197,9 @@ async fn jv_sheet_use(args: SheetUseArgs) {
                 eprintln!("{}", t!("jv.fail.write_cfg").trim());
                 return;
             };
+
+            // After successfully switching sheets, status should be automatically prompted
+            jv_status(StatusArgs { help: false }).await;
         }
         Err(e) => match e.kind() {
             std::io::ErrorKind::AlreadyExists => {} // Already In Use
@@ -2274,7 +2292,7 @@ async fn jv_sheet_make(args: SheetMakeArgs) {
     };
 
     if latest_info
-        .other_sheets
+        .invisible_sheets
         .iter()
         .any(|sheet| sheet.sheet_name == sheet_name && sheet.holder_name.is_none())
     {
