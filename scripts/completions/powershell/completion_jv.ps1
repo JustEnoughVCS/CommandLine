@@ -102,11 +102,11 @@ Register-ArgumentCompleter -Native -CommandName jv -ScriptBlock {
                     } elseif ($item -like "lost:*") {
                         $alignOperations = @("confirm") + $createdItems
                     } elseif ($item -eq "moved" -or $item -like "moved:*") {
-                        $alignOperations = @("local", "remote")
+                        $alignOperations = @("local", "remote", "break")
                     } elseif ($item -eq "erased" -or $item -like "erased:*") {
                         $alignOperations = @("confirm")
                     } else {
-                        $alignOperations = @("local", "remote", "confirm") + $createdItems
+                        $alignOperations = @("local", "remote", "confirm", "break") + $createdItems
                     }
 
                     return $alignOperations | Where-Object { $_ -like "$wordToComplete*" }
@@ -133,11 +133,11 @@ Register-ArgumentCompleter -Native -CommandName jv -ScriptBlock {
             } elseif ($item -like "lost:*") {
                 $alignOperations = @("confirm") + $createdItems
             } elseif ($item -eq "moved" -or $item -like "moved:*") {
-                $alignOperations = @("local", "remote")
+                $alignOperations = @("local", "remote", "break")
             } elseif ($item -eq "erased" -or $item -like "erased:*") {
                 $alignOperations = @("confirm")
             } else {
-                $alignOperations = @("local", "remote", "confirm") + $createdItems
+                $alignOperations = @("local", "remote", "confirm", "break") + $createdItems
             }
 
             return $alignOperations | Where-Object { $_ -like "$wordToComplete*" }

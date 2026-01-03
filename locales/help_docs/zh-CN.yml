@@ -770,6 +770,8 @@ jv:
           **建议**：对齐 [[yellow]]移动项[[/]]，确认移动基于 本地 或 远程
           **例如**：使用 `jv align moved [local|remote]`          批量对齐
               或使用 `jv align %{example_moved} [local|remote]` 精确对齐移动
+          若该移动并非您期望的，
+                使用 `jv align %{example_moved} break` 断开它们
 
           **对齐至本地**：联网，修改上游映射至本地位置
           **对齐至远程**：脱机，将本地文件移至上游位置

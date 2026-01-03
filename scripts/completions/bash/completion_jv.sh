@@ -113,11 +113,11 @@ _jv_completion() {
                     elif [[ "$item" == lost:* ]]; then
                         align_operations="confirm $created_items"
                     elif [[ "$item" == "moved" || "$item" == moved:* ]]; then
-                        align_operations="local remote"
+                        align_operations="local remote break"
                     elif [[ "$item" == "erased" || "$item" == erased:* ]]; then
                         align_operations="confirm"
                     else
-                        align_operations="local remote confirm $created_items"
+                        align_operations="local remote confirm break $created_items"
                     fi
 
                     COMPREPLY=($(compgen -W "$align_operations" -- "$cur"))
@@ -145,11 +145,11 @@ _jv_completion() {
             elif [[ "$item" == lost:* ]]; then
                 align_operations="confirm $created_items"
             elif [[ "$item" == "moved" || "$item" == moved:* ]]; then
-                align_operations="local remote"
+                align_operations="local remote break"
             elif [[ "$item" == "erased" || "$item" == erased:* ]]; then
                 align_operations="confirm"
             else
-                align_operations="local remote confirm $created_items"
+                align_operations="local remote confirm break $created_items"
             fi
 
             COMPREPLY=($(compgen -W "$align_operations" -- "$cur"))

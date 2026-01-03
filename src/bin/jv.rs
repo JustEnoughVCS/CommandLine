@@ -2575,9 +2575,10 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
 
     // Move: alignment mode
     if task.starts_with("moved") {
-        let align_to_remote = match to.trim().to_lowercase().as_str() {
-            "remote" => true,
-            "local" => false,
+        let align_to = match to.trim().to_lowercase().as_str() {
+            "remote" => "remote",
+            "local" => "local",
+            "break" => "break",
             _ => {
                 eprintln!("{}", md(t!("jv.fail.sheet.align.unknown_moved_direction")));
                 return;
@@ -2612,7 +2613,7 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
                 .collect()
         };
 
-        if !align_to_remote {
+        if align_to == "local" {
             // Align to local
             // Network move mapping
             let (pool, ctx, _output) = match build_pool_and_ctx(&local_cfg).await {
@@ -2622,7 +2623,7 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
 
             // Process mapping edit, errors are handled internally
             let _ = proc_mapping_edit(&pool, ctx, EditMappingActionArguments { operations }).await;
-        } else {
+        } else if align_to == "remote" {
             // Align to remote
             // Offline move files
             for (remote_path, (_, local_path)) in operations {
@@ -2661,6 +2662,33 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
                     eprintln!("{}", md(t!("jv.fail.sheet.align.move_failed", err = err)));
                 }
             }
+        } else if align_to == "break" {
+            for (remote_path, (_, _)) in operations {
+                let Ok(mapping) = local_sheet.mapping_data_mut(&remote_path) else {
+                    eprintln!(
+                        "{}",
+                        md(t!(
+                            "jv.fail.sheet.align.mapping_not_found",
+                            mapping = remote_path.display()
+                        ))
+                    );
+                    return;
+                };
+
+                // Restore the latest detected hash to the original hash,
+                // making the analyzer unable to correctly match
+                //
+                // That is to say,
+                // if the file's hash has remained completely unchanged from the beginning to the end,
+                // then break is also ineffective.
+                mapping.set_last_modifiy_check_hash(Some(mapping.hash_when_updated().clone()));
+            }
+
+            // Save sheet
+            let Ok(_) = local_sheet.write().await else {
+                eprintln!("{}", t!("jv.fail.write_cfg").trim());
+                return;
+            };
         }
     }
     // Lost: match or confirm mode

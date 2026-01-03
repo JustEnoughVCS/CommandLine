@@ -316,6 +316,7 @@ jv:
     For moved items:
     jv sheet align <ITEM> [local/remote] - Align specified moved item
     jv sheet align moved [local/remote] - Align all moved items
+    jv sheet align moved break - Break all move items
 
     For lost items:
     jv sheet align <ITEM> <CREATED_ITEM> - Point to created item to confirm move
@@ -778,6 +779,8 @@ jv:
           **Suggestion**: Align [[yellow]]Moved Items[[/]], confirm the move is based on Local or Remote
           **Example**: Use `jv align moved [local|remote]`          to batch align
                   or use `jv align %{example_moved} [local|remote]` to precisely align a move
+          If this move is not what you expected,
+                     use `jv align %{example_moved} break` to break them
 
           **Align to  Local**: Online , modify the upstream mapping to the local location
           **Align to Remote**: Offline, move the local file to the upstream location
