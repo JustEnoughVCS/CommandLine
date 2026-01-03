@@ -381,18 +381,27 @@ jv:
     - File's version in `ref`
 
   track: |
-    **Track or Pull Files**
+    **Track Files to Latest Fact**
     **Usage**: jv track <FILE_PATH>
 
-    **Example**: jv track src/main.rs
-    For new files:
-      Create and upload the "First Version", then automatically hold them
-    For *held* files:
-      Upload new versions to the upstream vault to update to the latest version
-    For *unheld* or *non-exist* files:
-      Download or update local file versions to the latest
+    It is not uploading, nor downloading,
+    but a declaration of the result regarding [[cyan]]"which version should be considered fact"[[/]].
 
-    Tracking files is the basic operation of version control, ensuring your upstream and local files are always up to date.
+    **Creation**
+    When there is an untracked file in the workspace, that file does not yet exist in the recognized fact.
+    Executing track will create the factual version of this file, write it to your sheet, and grant you editing rights.
+    At this point, you are **the author of this fact**.
+
+    **Update**
+    When you hold a file and edit based on the current latest fact,
+    the version in your workspace will be considered the new latest fact.
+    Executing track will **update this fact to the upstream**.
+
+    **Synchronization**
+    When you do not hold the file, edit based on outdated facts, or the file does not exist locally,
+    your modifications do not have factual validity; everything follows the upstream latest version.
+    Executing track will **synchronize the upstream fact to local**.
+    To overwrite local modifications, you must explicitly specify `--overwrite`.
 
   hold: |
     **Hold Files: Obtain File Edit Rights from Upstream Vault**
@@ -417,8 +426,8 @@ jv:
   move: |
     **Move Mapping**
     **Usage**:
-    jv move <mapping> <target_mapping> - Modify upstream mapping
-    jv move <mapping> --erase - Erase upstream mapping
+    jv move <MAPPING> <TARGET_MAPPING> - Modify upstream mapping
+    jv move <MAPPING> --erase - Erase upstream mapping
 
     **Examples**:
     jv move draft/character.png done/character.png - Move mapping
