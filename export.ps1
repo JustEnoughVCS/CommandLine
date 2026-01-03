@@ -1,6 +1,7 @@
 # Require : Cargo (Rust), ISCC (Inno Setup)
 
 # Build
+$env:CARGO_BUILD_RERUN_IF_ENV_CHANGED="FORCE_BUILD=$(Get-Date -Format 'yyyyMMdd')"
 cargo build --workspace --release
 if ($LASTEXITCODE -ne 0) {
     # Build failed

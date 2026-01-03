@@ -217,11 +217,17 @@ async fn main() {
                 println!(
                     "\n{}",
                     md(t!(
-                        "jvv.version.compile_info",
+                        "jv.version.compile_info",
                         build_time = compile_info.date,
                         build_target = compile_info.target,
                         build_platform = compile_info.platform,
-                        build_toolchain = compile_info.toolchain
+                        build_toolchain = compile_info.toolchain,
+                        cli_build_branch = compile_info.build_branch,
+                        cli_build_commit =
+                            &compile_info.build_commit[..7.min(compile_info.build_commit.len())],
+                        core_build_branch = core_compile_info.build_branch,
+                        core_build_commit = &core_compile_info.build_commit
+                            [..7.min(core_compile_info.build_commit.len())]
                     ))
                 );
             }

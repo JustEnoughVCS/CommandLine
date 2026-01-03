@@ -638,6 +638,20 @@ struct ShareFileArgs {
     /// Show help information
     #[arg(short, long)]
     help: bool,
+
+    /// Arguments 1
+    args1: Option<String>,
+
+    /// Arguments 2
+    args2: Option<String>,
+
+    /// Arguments 3
+    args3: Option<String>,
+    // 规则
+    // 当无参数时，视作 Help
+    // 当只有 1 时，         视作 导入，1 = 导入的分享 ID
+    // 当有 1 和 2 时，      视作 拉取，1 = 来自的 Sheet 2 = 导入的 pattern（基于 1 的 Sheet）
+    // 当有 1 和 2 和 3 时， 视作 分享，1 = 文件 2 = 发送到的 Sheet 3 = 描述
 }
 
 #[derive(Parser, Debug)]
@@ -939,7 +953,13 @@ async fn main() {
                         build_time = compile_info.date,
                         build_target = compile_info.target,
                         build_platform = compile_info.platform,
-                        build_toolchain = compile_info.toolchain
+                        build_toolchain = compile_info.toolchain,
+                        cli_build_branch = compile_info.build_branch,
+                        cli_build_commit =
+                            &compile_info.build_commit[..7.min(compile_info.build_commit.len())],
+                        core_build_branch = core_compile_info.build_branch,
+                        core_build_commit = &core_compile_info.build_commit
+                            [..7.min(core_compile_info.build_commit.len())]
                     ))
                 );
             }
@@ -2038,7 +2058,107 @@ async fn jv_status(_args: StatusArgs) {
     }
 }
 
-async fn jv_info(args: InfoArgs) {}
+async fn jv_info(args: InfoArgs) {
+    let local_dir = match current_local_path() {
+        Some(dir) => dir,
+        None => {
+            eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+            return;
+        }
+    };
+
+    let query_file_paths = if let Some(pattern) = args.file_pattern.clone() {
+        let files = glob(pattern, &local_dir).await;
+        files
+            .iter()
+            .filter_map(|f| PathBuf::from_str(f.0).ok())
+            .collect::<Vec<_>>()
+    } else {
+        println!("{}", md(t!("jv.info")));
+        return;
+    };
+
+    let _ = correct_current_dir();
+
+    let Ok(local_cfg) = LocalConfig::read().await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return;
+    };
+
+    let Ok(latest_info) = LatestInfo::read_from(LatestInfo::latest_info_path(
+        &local_dir,
+        &local_cfg.current_account(),
+    ))
+    .await
+    else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return;
+    };
+
+    let account = local_cfg.current_account();
+
+    let Some(sheet_name) = local_cfg.sheet_in_use().clone() else {
+        eprintln!("{}", md(t!("jv.fail.status.no_sheet_in_use")).trim());
+        return;
+    };
+
+    let Some(local_workspace) = LocalWorkspace::init_current_dir(local_cfg.clone()) else {
+        eprintln!("{}", md(t!("jv.fail.workspace_not_found")).trim());
+        return;
+    };
+
+    let Ok(local_sheet) = local_workspace.local_sheet(&account, &sheet_name).await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return;
+    };
+
+    if query_file_paths.len() < 1 {
+        return;
+    }
+
+    // 需要查询的文件
+    let query_file_path = query_file_paths[0].to_path_buf();
+    let Ok(mapping) = local_sheet.mapping_data(&query_file_path) else {
+        return;
+    };
+    let vfid = mapping.mapping_vfid();
+
+    // 渲染初始位置
+    {
+        println!("{}", query_file_path.display().to_string());
+    }
+
+    // 渲染参考表位置，没有则以 ID 代替
+    {
+        let path_in_ref = if let Some(path) = latest_info.ref_sheet_vfs_mapping.get(vfid) {
+            path.display().to_string()
+        } else {
+            vfid.clone()
+        };
+
+        // 偏移字符串
+        let query_file_path_string = query_file_path.display().to_string();
+        let offset_string = " ".repeat(display_width(
+            if let Some(last_slash) = query_file_path_string.rfind('/') {
+                &query_file_path_string[..last_slash]
+            } else {
+                ""
+            },
+        ));
+
+        println!(
+            "{}{}{}",
+            offset_string,
+            "\\_ ".truecolor(128, 128, 128),
+            path_in_ref.cyan()
+        );
+    }
+
+    // 空行，渲染完整的文件历史
+    println!();
+
+    // TODO ::
+}
 
 async fn jv_sheet_list(args: SheetListArgs) {
     let _ = correct_current_dir();
@@ -3878,8 +3998,44 @@ async fn proc_mapping_edit(
     }
 }
 
-async fn jv_share(_args: ShareFileArgs) {
-    todo!()
+async fn jv_share(args: ShareFileArgs) {
+    // 导入分享模式
+    if let (Some(import_id), None, None) = (&args.args1, &args.args2, &args.args3) {
+        share_accept(import_id).await;
+        return;
+    }
+
+    // 拉取模式
+    if let (Some(from_sheet), Some(import_pattern), None) = (&args.args1, &args.args2, &args.args3)
+    {
+        share_in(from_sheet, import_pattern).await;
+        return;
+    }
+
+    // 分享模式
+    if let (Some(share_pattern), Some(to_sheet), Some(description)) =
+        (&args.args1, &args.args2, &args.args3)
+    {
+        share_out(share_pattern, to_sheet, description).await;
+        return;
+    }
+
+    println!("{}", md(t!("jv.share")));
+}
+
+async fn share_accept(_import_id: &str) {
+    // TODO: 实现导入分享逻辑
+    eprintln!("share_accept not implemented yet");
+}
+
+async fn share_in(_from_sheet: &str, _import_pattern: &str) {
+    // TODO: 实现拉取模式逻辑
+    eprintln!("share_in not implemented yet");
+}
+
+async fn share_out(_share_pattern: &str, _to_sheet: &str, _description: &str) {
+    // TODO: 实现分享模式逻辑
+    eprintln!("share_out not implemented yet");
 }
 
 async fn jv_account_add(user_dir: UserDirectory, args: AccountAddArgs) {

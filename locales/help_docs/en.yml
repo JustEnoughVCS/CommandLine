@@ -40,9 +40,12 @@ jvv:
 
     compile_info: |
       Compile Info
-        Compile Date - %{build_time}
-        Target       - %{build_target}
-        Platform     - %{build_platform} - %{build_toolchain}
+        Compile Date - [[cyan]]%{build_time}[[/]]
+        Target       - [[cyan]]%{build_target}[[/]]
+        Platform     - [[cyan]]%{build_platform} - %{build_toolchain}[[/]]
+
+        Core         - [[cyan]]%{core_build_branch}[[/]] (Commit: %{core_build_commit})
+        CLI          - [[cyan]]%{cli_build_branch}[[/]] (Commit: %{cli_build_commit})
 
   help: |
     **JustEnoughVCS Upstream Vault Commands**
@@ -201,6 +204,9 @@ jv:
         Compile Date - [[cyan]]%{build_time}[[/]]
         Target       - [[cyan]]%{build_target}[[/]]
         Platform     - [[cyan]]%{build_platform} - %{build_toolchain}[[/]]
+
+        Core         - [[cyan]]%{core_build_branch}[[/]] (Commit: %{core_build_commit})
+        CLI          - [[cyan]]%{cli_build_branch}[[/]] (Commit: %{cli_build_commit})
 
   tip:
     not_workspace: |

@@ -40,9 +40,12 @@ jvv:
 
     compile_info: |
       编译信息：
-        时间：%{build_time}
-        目标：%{build_target}
-        平台：%{build_platform} - %{build_toolchain}
+        时间：[[cyan]]%{build_time}[[/]]
+        目标：[[cyan]]%{build_target}[[/]]
+        平台：[[cyan]]%{build_platform} - %{build_toolchain}[[/]]
+
+        核心库：[[cyan]]%{core_build_branch}[[/]] (Commit: %{core_build_commit})
+        命令行：[[cyan]]%{cli_build_branch}[[/]] (Commit: %{cli_build_commit})
 
   help: |
     **JustEnoughVCS 上游库命令**
@@ -196,6 +199,9 @@ jv:
         时间：[[cyan]]%{build_time}[[/]]
         目标：[[cyan]]%{build_target}[[/]]
         平台：[[cyan]]%{build_platform} - %{build_toolchain}[[/]]
+
+        核心库：[[cyan]]%{core_build_branch}[[/]] (Commit: %{core_build_commit})
+        命令行：[[cyan]]%{cli_build_branch}[[/]] (Commit: %{cli_build_commit})
 
   tip:
     not_workspace: |
