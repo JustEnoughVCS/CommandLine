@@ -287,6 +287,7 @@ jv:
     **Usage**:
     jv account list - List all accounts on this computer and whether private keys are registered
     jv account as <ACCOUNT_NAME> - Switch current account
+    jv account as host/<ACCOUNT_NAME> - Switch to account in Host mode
     jv account add <ACCOUNT_NAME> - Add an account to this computer
     jv account remove <ACCOUNT_NAME> - Delete this account
     jv account movekey <ACCOUNT_NAME> <PRIVATE_KEY_FILE> - Move private key to specified account
@@ -502,9 +503,6 @@ jv:
           Sheet `%{sheet_name}` is no holder. Take ownership?
           If not, use a different name to create a sheet.
 
-        restore_ref: |
-          You can't just grab the reference sheet, it's the team's shared structure! :)
-
       drop: |
         Are you sure you want to drop sheet `%{sheet_name}`?
         After this, you will not be able to work in the sheet!
@@ -711,6 +709,10 @@ jv:
   success:
     account:
       as: Successfully switched this workspace's account to `%{account}`
+      as_host: |
+        Switched to account: `host/%{account}`
+        If the Host identity is recognized by the upstream vault, you can control all sheets and mappings.
+        Please remember: "*With great power comes great responsibility*"
       add: Successfully added account `%{account}`!
       remove: Successfully removed account `%{account}`!
       list:
@@ -879,6 +881,9 @@ jv:
         In sheet %{sheet_name}, status based on %{h} hours %{m} minutes %{s} seconds ago
         Your workspace is synchronized with upstream, you can proceed with structural and content editing based on this state!
 
+      no_changes_in_reference_sheet: |
+        In sheet %{sheet_name}, status based on %{h} hours %{m} minutes %{s} seconds ago
+
       created_item: |
         +   Created:         %{path}
 
@@ -908,8 +913,41 @@ jv:
       no_file_modifications: |
         No modifications
 
+      hint_in_reference_sheet: |
+        You are accessing the **reference sheet** in **read-only** mode
+        You can view file content, share visibility, and modify holding rights
+        But you cannot modify the structure or submit content
+
+      hint_as_host: |
+        You are in Host mode.
+        In this mode, you are the final interpreter of vault structure and version progression.
+        Your operations will directly affect others' work status, and may not be reversible.
+
+        **Structure Maintenance**
+        1. You can use `jv align` or `jv move` to edit the reference sheet structure
+        2. You can use `jv make` to create new reference sheets,
+           or convert an unheld sheet into a reference sheet
+
+        **Status Arbitration**
+        3. You can use `jv throw` to forcibly discard everyone's edit rights
+        4. You can use `jv drop` to forcibly discard others' sheets
+
+        **Fact Advancement**
+        5. You can directly use `jv track` in any sheet to advance file versions
+
+        [[red]]**Please remember**: Host is not administrator mode,
+        but the ultimate bearer of others' structure, history, and interpretive rights.
+        Every operation you perform will become a fact that others must accept.[[/]]
+
   result:
     common:
+      not_allowed_in_reference_sheet: |
+        This operation is not allowed in the reference sheet!
+        You cannot make any structural changes to the reference sheet
+        because you are not the maintainer of the reference sheet.
+
+        **Tip**: If you have local moves that need to be aligned,
+        use `jv align moved remote` to revert the moves.
       authroize_failed: |
         Authentication failed: %{err}!
       unknown: |

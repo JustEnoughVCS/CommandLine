@@ -36,7 +36,7 @@ use just_enough_vcs::{
         },
         constants::{
             CLIENT_FILE_TODOLIST, CLIENT_FILE_WORKSPACE, CLIENT_FOLDER_WORKSPACE_ROOT_NAME,
-            CLIENT_PATH_WORKSPACE_ROOT, PORT, REF_SHEET_NAME,
+            CLIENT_PATH_WORKSPACE_ROOT, PORT,
         },
         current::{correct_current_dir, current_cfg_dir, current_local_path},
         data::{
@@ -1244,7 +1244,11 @@ async fn main() {
         JustEnoughVcsWorkspaceCommand::GetCurrentAccount => {
             let _ = correct_current_dir();
             if let Ok(local_config) = LocalConfig::read().await {
-                println!("{}", local_config.current_account())
+                if local_config.is_host_mode() {
+                    println!("host/{}", local_config.current_account())
+                } else {
+                    println!("{}", local_config.current_account())
+                }
             };
         }
         JustEnoughVcsWorkspaceCommand::GetCurrentUpstream => {
@@ -1413,12 +1417,18 @@ async fn jv_here(args: HereArgs) {
         .unwrap_or_default();
     let minutes = duration_updated.as_secs() / 60;
 
+    let account_str = if local_cfg.is_host_mode() {
+        format!("{}/{}", "host".red(), local_cfg.current_account())
+    } else {
+        local_cfg.current_account()
+    };
+
     println!(
         "{}",
         t!(
             "jv.success.here.path_info",
             upstream = local_cfg.upstream_addr().to_string(),
-            account = local_cfg.current_account(),
+            account = account_str,
             sheet_name = sheet_name.yellow(),
             path = relative_path,
             minutes = minutes
@@ -1773,7 +1783,7 @@ async fn jv_status(_args: StatusArgs) {
         return;
     };
 
-    let Some(local_workspace) = LocalWorkspace::init_current_dir(local_cfg) else {
+    let Some(local_workspace) = LocalWorkspace::init_current_dir(local_cfg.clone()) else {
         eprintln!("{}", md(t!("jv.fail.workspace_not_found")).trim());
         return;
     };
@@ -1782,6 +1792,9 @@ async fn jv_status(_args: StatusArgs) {
         eprintln!("{}", md(t!("jv.fail.read_cfg")));
         return;
     };
+
+    let in_ref_sheet = latest_info.reference_sheets.contains(&sheet_name);
+    let is_host_mode = local_cfg.is_host_mode();
 
     let Ok(analyzed) = AnalyzeResult::analyze_local_status(&local_workspace).await else {
         eprintln!("{}", md(t!("jv.fail.status.analyze")).trim());
@@ -1989,16 +2002,39 @@ async fn jv_status(_args: StatusArgs) {
             .trim()
         );
     } else {
+        if in_ref_sheet {
+            println!(
+                "{}",
+                md(t!(
+                    "jv.success.status.no_changes_in_reference_sheet",
+                    sheet_name = sheet_name,
+                    h = h,
+                    m = m,
+                    s = s
+                ))
+            );
+        } else {
+            println!(
+                "{}",
+                md(t!(
+                    "jv.success.status.no_changes",
+                    sheet_name = sheet_name,
+                    h = h,
+                    m = m,
+                    s = s
+                ))
+            );
+        }
+    }
+
+    if in_ref_sheet && !is_host_mode {
         println!(
-            "{}",
-            md(t!(
-                "jv.success.status.no_changes",
-                sheet_name = sheet_name,
-                h = h,
-                m = m,
-                s = s
-            ))
+            "\n{}",
+            md(t!("jv.success.status.hint_in_reference_sheet")).yellow()
         );
+    }
+    if is_host_mode {
+        println!("\n{}", md(t!("jv.success.status.hint_as_host")));
     }
 }
 
@@ -3875,6 +3911,7 @@ async fn jv_account_list(user_dir: UserDirectory, args: AccountListArgs) {
         let Ok(account_ids) = user_dir.account_ids() else {
             return;
         };
+        account_ids.iter().for_each(|a| println!("host/{}", a));
         account_ids.iter().for_each(|a| println!("{}", a));
         return;
     }
@@ -3908,12 +3945,11 @@ async fn jv_account_list(user_dir: UserDirectory, args: AccountListArgs) {
 }
 
 async fn jv_account_as(user_dir: UserDirectory, args: SetLocalWorkspaceAccountArgs) {
+    let (account, is_host_mode) = process_account_parameter(args.account_name);
+
     // Account exist
-    let Ok(member) = user_dir.account(&args.account_name).await else {
-        eprintln!(
-            "{}",
-            t!("jv.fail.account.not_found", account = args.account_name)
-        );
+    let Ok(member) = user_dir.account(&account).await else {
+        eprintln!("{}", t!("jv.fail.account.not_found", account = &account));
         return;
     };
 
@@ -3932,15 +3968,37 @@ async fn jv_account_as(user_dir: UserDirectory, args: SetLocalWorkspaceAccountAr
         return;
     };
 
+    local_cfg.set_host_mode(is_host_mode);
+
     let Ok(_) = LocalConfig::write(&local_cfg).await else {
         eprintln!("{}", t!("jv.fail.write_cfg").trim());
         return;
     };
 
-    println!(
-        "{}",
-        t!("jv.success.account.as", account = member.id()).trim()
-    );
+    if is_host_mode {
+        println!(
+            "{}",
+            md(t!("jv.success.account.as_host", account = member.id()))
+        );
+    } else {
+        println!(
+            "{}",
+            t!("jv.success.account.as", account = member.id()).trim()
+        );
+    }
+}
+
+/// Input account, get MemberId and whether it's a host
+/// If input is host/xxx, output is xxx, true
+/// If input is xxx, output is xxx, false
+fn process_account_parameter(account_input: String) -> (MemberId, bool) {
+    let is_host = account_input.starts_with("host/");
+    let account_id = if is_host {
+        account_input.strip_prefix("host/").unwrap().to_string()
+    } else {
+        account_input
+    };
+    (snake_case!(account_id), is_host)
 }
 
 async fn jv_account_move_key(user_dir: UserDirectory, args: MoveKeyToAccountArgs) {

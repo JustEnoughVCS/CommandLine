@@ -279,6 +279,7 @@ jv:
     **用法**：
     jv account list - 列出该计算机所有的账户，以及是否注册私钥
     jv account as <账户名称> - 切换当前账户
+    jv account as host/<账户名称> - 以 Host 模式切换账户
     jv account add <账户名称> - 为当前计算机添加账户
     jv account remove <账户名称> - 删除该账户
     jv account movekey <账户名称> <私钥文件> - 移动私钥到指定账户
@@ -307,6 +308,7 @@ jv:
     对于移动项：
     jv sheet align <项> [local/remote] - 对齐指定移动项
     jv sheet align moved [local/remote] - 对齐所有移动项
+    jv sheet align moved break - 断开所有移动项
 
     对于丢失项：
     jv sheet align <项> <创建项> - 指向创建项，以确认移动
@@ -490,9 +492,6 @@ jv:
         restore: |
           似乎 `%{sheet_name}` 是一张无人认领的表，是否拿到它的所有权？
           如果您不想拿到该表，请使用别的名称建立表
-
-        restore_ref: |
-          您不能直接拿到参照表，它是团队的公共结构 :)
 
       drop: |
         是否要放弃表 `%{sheet_name}` 的所有权，此后，您将无法在表中工作！
@@ -701,6 +700,10 @@ jv:
   success:
     account:
       as: 成功将此工作区的账户切换至 `%{account}`
+      as_host: |
+        切换到账户：`host/%{account}`
+        若 Host 身份受上游库认可，便可控制所有的表、映射
+        请牢记："*能力越大，责任越大*"
       add: 成功添加账户 `%{account}`！
       remove: 成功删除账户 `%{account}`！
       list:
@@ -870,6 +873,9 @@ jv:
         所在表 %{sheet_name}，状态基于 %{h} 小时 %{m} 分钟 %{s} 秒前
         您的工作区与上游保持同步，可基于该状态进行结构、内容的编辑！
 
+      no_changes_in_reference_sheet: |
+        所在表 %{sheet_name}，状态基于 %{h} 小时 %{m} 分钟 %{s} 秒前
+
       created_item: |
         +   创建：      %{path}
 
@@ -899,8 +905,40 @@ jv:
       no_file_modifications: |
         本地无内容修改
 
+      hint_in_reference_sheet: |
+        您正在以**只读模式**访问**参考表**
+        您可以查看文件内容、分享可见性、修改持有权
+        但无法修改结构或提交内容
+
+      hint_as_host: |
+        [[yellow]]您正处于 Host 模式。[[/]]
+        在此模式下，您将作为仓库结构与版本推进的最终解释者，
+        您的操作将直接影响他人的工作状态，且不一定可逆。
+
+        **结构维护**
+        1. 您可以使用 `jv align` 或 `jv move` 编辑参考表结构
+        2. 您可以使用 `jv make` 创建新的参考表，
+           或将某张无人持有的表转换为参考表
+
+        **状态裁决**
+        3. 您可以使用 `jv throw` 强制收回所有人的编辑权
+        4. 您可以使用 `jv drop` 强制丢弃其他人的表
+
+        **事实推进**
+        5. 您可以在任何表中使用 `jv track` 推进文件版本
+
+        [[red]]**请牢记**：Host 并非 管理员模式，
+        而是对他人结构、历史与解释权的最终承担者。
+        您的每一次操作，都会成为他人必须接受的事实。[[/]]
+
   result:
     common:
+      not_allowed_in_reference_sheet: |
+        不允许在参考表中执行此操作！
+        您不能对参考表进行任何结构更改，因为您并非参考表的维护者
+
+        **提示**：若您在本地产生了移动需要对齐，
+        使用 `jv align moved remote` 还原移动
       authroize_failed: 身份认证失败：%{err}！
       unknown: |
         未知结果！
