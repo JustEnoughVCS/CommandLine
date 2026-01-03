@@ -2245,14 +2245,6 @@ async fn jv_sheet_exit(_args: SheetExitArgs) -> Result<(), ()> {
 async fn jv_sheet_make(args: SheetMakeArgs) {
     let sheet_name = snake_case!(args.sheet_name);
 
-    if sheet_name == REF_SHEET_NAME {
-        eprintln!(
-            "{}",
-            t!("jv.confirm.sheet.make.restore_ref").trim().yellow()
-        );
-        return;
-    }
-
     let local_config = match precheck().await {
         Some(config) => config,
         None => return,
@@ -3853,9 +3845,16 @@ async fn proc_mapping_edit(
                 eprintln!("{}", md(t!("jv.result.move.unknown")));
                 Err(())
             }
+            EditMappingActionResult::EditNotAllowed => {
+                eprintln!(
+                    "{}",
+                    md(t!("jv.result.common.not_allowed_in_reference_sheet"))
+                );
+                Err(())
+            }
         },
-        Err(err) => {
-            handle_err(err);
+        Err(e) => {
+            handle_err(e);
             Err(())
         }
     }
