@@ -27,6 +27,10 @@ to = "completions/bash/completion_jv.sh"
 from = "scripts/completions/bash/completion_jvv.sh"
 to = "completions/bash/completion_jvv.sh"
 
+[copies.zsh_plugin]
+from = "scripts/zsh_support/jvcs.plugin.zsh"
+to = "scripts/zsh_support/jvcs.plugin.zsh"
+
 # Entries
 [copies.entry_bash]
 from = "scripts/jv_cli.sh"

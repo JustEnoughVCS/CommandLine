@@ -1258,33 +1258,42 @@ async fn main() {
         }
         JustEnoughVcsWorkspaceCommand::GetWorkspaceDir => {
             if let Some(local_dir) = current_local_path() {
-                println!("{}", local_dir.display())
+                println!("{}", local_dir.display());
+                return;
             };
+            exit(1)
         }
         JustEnoughVcsWorkspaceCommand::GetCurrentAccount => {
             let _ = correct_current_dir();
             if let Ok(local_config) = LocalConfig::read().await {
                 if local_config.is_host_mode() {
-                    println!("host/{}", local_config.current_account())
+                    println!("host/{}", local_config.current_account());
+                    return;
                 } else {
-                    println!("{}", local_config.current_account())
+                    println!("{}", local_config.current_account());
+                    return;
                 }
             };
+            exit(1)
         }
         JustEnoughVcsWorkspaceCommand::GetCurrentUpstream => {
             let _ = correct_current_dir();
             if let Ok(local_config) = LocalConfig::read().await {
-                println!("{}", local_config.upstream_addr())
+                println!("{}", local_config.upstream_addr());
+                return;
             };
+            exit(1)
         }
         JustEnoughVcsWorkspaceCommand::GetCurrentSheet => {
             let _ = correct_current_dir();
             if let Ok(local_config) = LocalConfig::read().await {
-                println!(
-                    "{}",
-                    local_config.sheet_in_use().clone().unwrap_or_default()
-                )
+                let sheet_name = local_config.sheet_in_use().clone().unwrap_or_default();
+                if sheet_name.len() > 0 {
+                    println!("{}", sheet_name);
+                    return;
+                }
             };
+            exit(1)
         }
 
         // Debug Tools
