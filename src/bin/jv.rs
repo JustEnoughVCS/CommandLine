@@ -143,6 +143,9 @@ enum JustEnoughVcsWorkspaceCommand {
     #[command(alias = "s")]
     Status(StatusArgs),
 
+    /// Display detailed information about the specified file
+    Info(InfoArgs),
+
     // Sheet management
     /// Manage sheets in the workspace
     #[command(subcommand, alias = "sh")]
@@ -457,6 +460,15 @@ struct StatusArgs {
     /// Show help information
     #[arg(short, long)]
     help: bool,
+}
+
+#[derive(Parser, Debug)]
+struct InfoArgs {
+    /// Show help information
+    #[arg(short, long)]
+    help: bool,
+
+    file_pattern: Option<String>,
 }
 
 #[derive(Parser, Debug)]
@@ -1021,6 +1033,13 @@ async fn main() {
                 return;
             }
             jv_status(status_args).await;
+        }
+        JustEnoughVcsWorkspaceCommand::Info(info_args) => {
+            if info_args.help {
+                println!("{}", md(t!("jv.info")));
+                return;
+            }
+            jv_info(info_args).await;
         }
         JustEnoughVcsWorkspaceCommand::Sheet(sheet_manage) => match sheet_manage {
             SheetManage::Help => {
@@ -1982,6 +2001,8 @@ async fn jv_status(_args: StatusArgs) {
         );
     }
 }
+
+async fn jv_info(args: InfoArgs) {}
 
 async fn jv_sheet_list(args: SheetListArgs) {
     let _ = correct_current_dir();

@@ -260,7 +260,7 @@ jv:
     **CONTEXT**:
       here                          - Display path information
       status                        - Display current sheet status information
-      info                          - Display individual file status
+      info <FILE_PATH>              - Display individual file status
 
     **FILE TRANSFER**:
       share <FILE> <SHEET> <DESC>   - Share files to other sheet               [[cyan]][REMOTE][[/]]
@@ -368,6 +368,15 @@ jv:
     - Modified files
 
     This is a quick way to understand the current file status of the sheet.
+
+  info: |
+    **Display File Details**
+    **Usage**: jv info <FILE_PATH>
+
+    Display detailed information about the specified file, including:
+    - File's change history
+    - File's mapping in `ref`
+    - File's version in `ref`
 
   track: |
     **Track or Pull Files**

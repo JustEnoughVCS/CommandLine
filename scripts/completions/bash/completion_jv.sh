@@ -18,7 +18,7 @@ _jv_completion() {
     local base_commands="create init direct unstain account update \
                          sheet status here move mv docs exit use sheets accounts \
                          as make drop track hold throw login \
-                         jump align"
+                         jump align info"
 
     # Subcommands - Account
     local account_commands="list as add remove movekey mvkey mvk genpub help"
@@ -177,6 +177,14 @@ _jv_completion() {
             local ip_history
             ip_history=$($cmd _ip_history 2>/dev/null)
             COMPREPLY=($(compgen -W "$ip_history" -- "$cur"))
+        fi
+        return 0
+    fi
+
+    # Completion info
+    if [[ "$subcmd" == "info" ]]; then
+        if [[ $cword -eq 2 ]]; then
+            COMPREPLY=($(compgen -f -- "$cur"))
         fi
         return 0
     fi

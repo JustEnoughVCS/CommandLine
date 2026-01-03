@@ -16,7 +16,7 @@ Register-ArgumentCompleter -Native -CommandName jv -ScriptBlock {
         "create", "init", "direct", "unstain", "account", "update",
         "sheet", "status", "here", "move", "mv", "docs", "exit", "use", "sheets", "accounts",
         "as", "make", "drop", "track", "hold", "throw", "login",
-        "jump", "align"
+        "jump", "align", "info"
     )
 
     # Account subcommands
@@ -162,6 +162,15 @@ Register-ArgumentCompleter -Native -CommandName jv -ScriptBlock {
         if ($currentIndex -eq 2) {
             $ipHistory = & $cmd _ip_history 2>$null
             return $ipHistory | Where-Object { $_ -like "$wordToComplete*" }
+        }
+        return @()
+    }
+
+    # Completion for info command
+    if ($subcmd -eq "info") {
+        if ($currentIndex -eq 2) {
+            # File completion for the file argument
+            return Get-ChildItem -Name -File -Path "." | Where-Object { $_ -like "$wordToComplete*" }
         }
         return @()
     }
