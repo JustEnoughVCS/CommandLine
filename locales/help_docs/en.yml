@@ -263,9 +263,9 @@ jv:
       info <FILE_PATH>              - Display individual file status
 
     **FILE TRANSFER**:
-      share <FILE> <SHEET> <DESC>   - Share files to other sheet               [[cyan]][REMOTE][[/]]
-      share import <SHARE_ID>       - Import share to current sheet            [[cyan]][REMOTE][[/]]
-      share status                  - Display current sheet's share status
+      share <FILE> <SHEET> <DESC>   - Share mapping to other sheets            [[cyan]][REMOTE][[/]]
+      share <SHARE_ID>              - Import share to current sheet            [[cyan]][REMOTE][[/]]
+      share <REF_SHEET> <FILE>      - Import mapping from other ref sheet      [[cyan]][REMOTE][[/]]
 
     **FILE OPERATIONS**:
       move  <FILE> <TO>             - Safely rename files                      [[cyan]][REMOTE][[/]]
@@ -432,13 +432,11 @@ jv:
   share: |
     **Share File Visibility**
     **Usage**:
-    jv share <file> <sheet> <description> - Share mapping to other sheets
-    jv share --work - Share files in editor mode
+    jv share <FILE> <SHEET> <DESCRIPTION> - Share mapping to other sheets
+    jv share <SHARE_ID> - Import share to current sheet
+    jv share <REF_SHEET> <FILE> - Import mapping from other reference sheet
 
-    jv share status - View incoming shares
-
-    jv share import <share_id> - Import share to current sheet
-    jv share import <ref_mapping> - Import mapping from `ref` sheet
+    jv shares - View incoming shares
 
     **Tip**: The import command can use the following parameters
       --only-remote - Only import mapping into the sheet, do not modify local structure

@@ -422,12 +422,10 @@ jv:
     **分享文件的可见性**
     **用法**：
     jv share <文件> <表> <描述> - 分享映射到其他表
-    jv share --work - 编辑器模式下分享文件
+    jv share <分享ID> - 将分享导入到当前表
+    jv share <REF表> <文件> - 从其他参考表中导入映射
 
-    jv share status - 查看传入的分享
-
-    jv share import <分享ID> - 将分享导入到当前表
-    jv share import <REF映射> - 从 `ref` 表中导入映射
+    jv shares - 查看传入的分享
 
     **提示**：import 命令可使用如下参数
       --only-remote - 只在表中导入映射，不修改本地结构
