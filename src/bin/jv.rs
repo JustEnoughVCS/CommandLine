@@ -834,7 +834,7 @@ async fn main() {
 
             // Check if the workspace has a registered account (account = unknown)
             let Some(local_cfg) = LocalConfig::read().await.ok() else {
-                eprintln!("{}", md(t!("jv.fail.read_cfg")));
+                eprintln!("{}", md(t!("jv.fail.cfg_not_found.local_config")));
                 return;
             };
 
@@ -1362,7 +1362,7 @@ async fn jv_here(args: HereArgs) {
     };
 
     let Ok(local_cfg) = LocalConfig::read_from(local_dir.join(CLIENT_FILE_WORKSPACE)).await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!("{}", md(t!("jv.fail.cfg_not_found.local_config")));
         return;
     };
 
@@ -1372,17 +1372,35 @@ async fn jv_here(args: HereArgs) {
     ))
     .await
     else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.latest_info",
+                account = &local_cfg.current_account()
+            ))
+        );
         return;
     };
 
     let Ok(latest_file_data_path) = LatestFileData::data_path(&local_cfg.current_account()) else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.latest_file_data",
+                account = &local_cfg.current_account()
+            ))
+        );
         return;
     };
 
     let Ok(latest_file_data) = LatestFileData::read_from(&latest_file_data_path).await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.latest_file_data",
+                account = &local_cfg.current_account()
+            ))
+        );
         return;
     };
 
@@ -1395,7 +1413,13 @@ async fn jv_here(args: HereArgs) {
 
     // Read cached sheet
     let Ok(cached_sheet) = CachedSheet::cached_sheet_data(&sheet_name).await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.cached_sheet",
+                sheet = &sheet_name
+            ))
+        );
         return;
     };
 
@@ -1414,7 +1438,14 @@ async fn jv_here(args: HereArgs) {
         .local_sheet(&local_cfg.current_account(), &sheet_name)
         .await
     else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.local_sheet",
+                account = &local_cfg.current_account(),
+                sheet = &sheet_name
+            ))
+        );
         return;
     };
 
@@ -1761,7 +1792,7 @@ async fn jv_status(_args: StatusArgs) {
     };
 
     let Ok(local_cfg) = LocalConfig::read_from(local_dir.join(CLIENT_FILE_WORKSPACE)).await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!("{}", md(t!("jv.fail.cfg_not_found.local_config")));
         return;
     };
 
@@ -1771,19 +1802,37 @@ async fn jv_status(_args: StatusArgs) {
     ))
     .await
     else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.latest_info",
+                account = &local_cfg.current_account()
+            ))
+        );
         return;
     };
 
     let account = local_cfg.current_account();
 
     let Ok(latest_file_data_path) = LatestFileData::data_path(&account) else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.latest_file_data",
+                account = &account
+            ))
+        );
         return;
     };
 
     let Ok(latest_file_data) = LatestFileData::read_from(&latest_file_data_path).await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.latest_file_data",
+                account = &account
+            ))
+        );
         return;
     };
 
@@ -1798,7 +1847,14 @@ async fn jv_status(_args: StatusArgs) {
     };
 
     let Ok(local_sheet) = local_workspace.local_sheet(&account, &sheet_name).await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.local_sheet",
+                account = &account,
+                sheet = &sheet_name
+            ))
+        );
         return;
     };
 
@@ -2070,7 +2126,7 @@ async fn jv_info(args: InfoArgs) {
     let _ = correct_current_dir();
 
     let Ok(local_cfg) = LocalConfig::read().await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!("{}", md(t!("jv.fail.cfg_not_found.local_config")));
         return;
     };
 
@@ -2080,20 +2136,38 @@ async fn jv_info(args: InfoArgs) {
     ))
     .await
     else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.latest_info",
+                account = &local_cfg.current_account()
+            ))
+        );
         return;
     };
 
     let account = local_cfg.current_account();
 
     let Ok(latest_file_data_path) = LatestFileData::data_path(&account) else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.latest_file_data",
+                account = &account
+            ))
+        );
         return;
     };
 
     // Get latest file data
     let Ok(latest_file_data) = LatestFileData::read_from(&latest_file_data_path).await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.latest_file_data",
+                account = &account
+            ))
+        );
         return;
     };
 
@@ -2108,7 +2182,14 @@ async fn jv_info(args: InfoArgs) {
     };
 
     let Ok(local_sheet) = local_workspace.local_sheet(&account, &sheet_name).await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.local_sheet",
+                account = &account,
+                sheet = &sheet_name
+            ))
+        );
         return;
     };
 
@@ -2286,7 +2367,7 @@ async fn jv_sheet_list(args: SheetListArgs) {
 
     let Ok(local_cfg) = LocalConfig::read().await else {
         if !args.raw {
-            eprintln!("{}", md(t!("jv.fail.read_cfg")));
+            eprintln!("{}", md(t!("jv.fail.cfg_not_found.local_config")));
         }
         return;
     };
@@ -2298,7 +2379,13 @@ async fn jv_sheet_list(args: SheetListArgs) {
     .await
     else {
         if !args.raw {
-            eprintln!("{}", md(t!("jv.fail.read_cfg")));
+            eprintln!(
+                "{}",
+                md(t!(
+                    "jv.fail.cfg_not_found.latest_info",
+                    account = &local_cfg.current_account()
+                ))
+            );
         }
         return;
     };
@@ -2421,15 +2508,18 @@ async fn jv_sheet_use(args: SheetUseArgs) {
     }
 
     let Ok(mut local_cfg) = LocalConfig::read().await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!("{}", md(t!("jv.fail.cfg_not_found.local_config")));
         return;
     };
 
     match local_cfg.use_sheet(args.sheet_name.clone()).await {
         Ok(_) => {
-            let Ok(_) = LocalConfig::write(&local_cfg).await else {
-                eprintln!("{}", t!("jv.fail.write_cfg").trim());
-                return;
+            match LocalConfig::write(&local_cfg).await {
+                Ok(_) => (),
+                Err(e) => {
+                    eprintln!("{}", md(t!("jv.fail.write_cfg", error = e.to_string())));
+                    return;
+                }
             };
 
             // After successfully switching sheets, status should be automatically prompted
@@ -2475,15 +2565,18 @@ async fn jv_sheet_exit(_args: SheetExitArgs) -> Result<(), ()> {
     }
 
     let Ok(mut local_cfg) = LocalConfig::read().await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!("{}", md(t!("jv.fail.cfg_not_found.local_config")));
         return Err(());
     };
 
     match local_cfg.exit_sheet().await {
         Ok(_) => {
-            let Ok(_) = LocalConfig::write(&local_cfg).await else {
-                eprintln!("{}", t!("jv.fail.write_cfg").trim());
-                return Err(());
+            match LocalConfig::write(&local_cfg).await {
+                Ok(_) => (),
+                Err(e) => {
+                    eprintln!("{}", md(t!("jv.fail.write_cfg", error = e.to_string())));
+                    return Err(());
+                }
             };
             return Ok(());
         }
@@ -2520,7 +2613,13 @@ async fn jv_sheet_make(args: SheetMakeArgs) {
     {
         Ok(info) => info,
         Err(_) => {
-            eprintln!("{}", t!("jv.fail.read_cfg"));
+            eprintln!(
+                "{}",
+                md(t!(
+                    "jv.fail.cfg_not_found.latest_info",
+                    account = &local_config.current_account()
+                ))
+            );
             return;
         }
     };
@@ -2679,7 +2778,14 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
     };
 
     let Ok(mut local_sheet) = local_workspace.local_sheet(&account, &sheet_name).await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.local_sheet",
+                account = &account,
+                sheet = &sheet_name
+            ))
+        );
         return;
     };
 
@@ -2929,9 +3035,12 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
             }
 
             // Save sheet
-            let Ok(_) = local_sheet.write().await else {
-                eprintln!("{}", t!("jv.fail.write_cfg").trim());
-                return;
+            match local_sheet.write().await {
+                Ok(_) => {}
+                Err(e) => {
+                    eprintln!("{}", md(t!("jv.fail.write_cfg", error = e.to_string())));
+                    return;
+                }
             };
         }
     }
@@ -2955,9 +3064,12 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
                 };
             }
             // Save sheet
-            let Ok(_) = local_sheet.write().await else {
-                eprintln!("{}", t!("jv.fail.write_cfg").trim());
-                return;
+            match local_sheet.write().await {
+                Ok(_) => {}
+                Err(e) => {
+                    eprintln!("{}", md(t!("jv.fail.write_cfg", error = e.to_string())));
+                    return;
+                }
             };
             return;
         }
@@ -3014,9 +3126,12 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
             mapping.set_last_modifiy_check_hash(Some(hash_calc.hash));
 
             // Save sheet
-            let Ok(_) = local_sheet.write().await else {
-                eprintln!("{}", t!("jv.fail.write_cfg").trim());
-                return;
+            match local_sheet.write().await {
+                Ok(_) => {}
+                Err(e) => {
+                    eprintln!("{}", md(t!("jv.fail.write_cfg", error = e.to_string())));
+                    return;
+                }
             };
         }
     }
@@ -3071,9 +3186,12 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
             }
 
             // Save sheet
-            let Ok(_) = local_sheet.write().await else {
-                eprintln!("{}", t!("jv.fail.write_cfg").trim());
-                return;
+            match local_sheet.write().await {
+                Ok(_) => {}
+                Err(e) => {
+                    eprintln!("{}", md(t!("jv.fail.write_cfg", error = e.to_string())));
+                    return;
+                }
             };
             return;
         }
@@ -3328,13 +3446,25 @@ async fn start_update_editor(
     let account = workspace.config().lock().await.current_account();
 
     let Ok(latest_file_data_path) = LatestFileData::data_path(&account) else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.latest_file_data",
+                account = &account
+            ))
+        );
         return HashMap::new();
     };
 
     // Get latest file data
     let Ok(latest_file_data) = LatestFileData::read_from(&latest_file_data_path).await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.latest_file_data",
+                account = &account
+            ))
+        );
         return HashMap::new();
     };
 
@@ -3537,7 +3667,7 @@ async fn jv_change_edit_right(
     };
 
     let Ok(local_cfg) = LocalConfig::read_from(local_dir.join(CLIENT_FILE_WORKSPACE)).await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!("{}", md(t!("jv.fail.cfg_not_found.local_config")));
         return;
     };
 
@@ -3555,12 +3685,24 @@ async fn jv_change_edit_right(
     let account = local_cfg.current_account();
 
     let Ok(latest_file_data_path) = LatestFileData::data_path(&account) else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.latest_file_data",
+                account = &account
+            ))
+        );
         return;
     };
 
     let Ok(latest_file_data) = LatestFileData::read_from(&latest_file_data_path).await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.latest_file_data",
+                account = &account
+            ))
+        );
         return;
     };
 
@@ -3570,12 +3712,25 @@ async fn jv_change_edit_right(
     };
 
     let Ok(local_sheet) = local_workspace.local_sheet(&account, &sheet_name).await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.local_sheet",
+                account = &account,
+                sheet = &sheet_name
+            ))
+        );
         return;
     };
 
     let Ok(cached_sheet) = CachedSheet::cached_sheet_data(&sheet_name).await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.cached_sheet",
+                sheet = &sheet_name
+            ))
+        );
         return;
     };
 
@@ -4274,7 +4429,7 @@ async fn jv_account_as(user_dir: UserDirectory, args: SetLocalWorkspaceAccountAr
     };
 
     let Ok(mut local_cfg) = LocalConfig::read().await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!("{}", md(t!("jv.fail.cfg_not_found.local_config")));
         return;
     };
 
@@ -4285,9 +4440,12 @@ async fn jv_account_as(user_dir: UserDirectory, args: SetLocalWorkspaceAccountAr
 
     local_cfg.set_host_mode(is_host_mode);
 
-    let Ok(_) = LocalConfig::write(&local_cfg).await else {
-        eprintln!("{}", t!("jv.fail.write_cfg").trim());
-        return;
+    match LocalConfig::write(&local_cfg).await {
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("{}", md(t!("jv.fail.write_cfg", error = e)));
+            return;
+        }
     };
 
     if is_host_mode {
@@ -4506,7 +4664,7 @@ async fn jv_unstain(args: UnstainArgs) {
     };
 
     let Ok(mut local_cfg) = LocalConfig::read().await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!("{}", md(t!("jv.fail.cfg_not_found.local_config")));
         return;
     };
 
@@ -4524,10 +4682,12 @@ async fn jv_unstain(args: UnstainArgs) {
     }
 
     local_cfg.unstain();
-
-    let Ok(_) = LocalConfig::write(&local_cfg).await else {
-        eprintln!("{}", t!("jv.fail.write_cfg").trim());
-        return;
+    match LocalConfig::write(&local_cfg).await {
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("{}", md(t!("jv.fail.write_cfg", error = e.to_string())));
+            return;
+        }
     };
 
     println!("{}", md(t!("jv.success.unstain")));
@@ -4820,7 +4980,7 @@ async fn precheck() -> Option<LocalConfig> {
     }
 
     let Ok(local_config) = LocalConfig::read().await else {
-        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        eprintln!("{}", md(t!("jv.fail.cfg_not_found.local_config")));
         return None;
     };
 

@@ -642,7 +642,30 @@ jv:
       若您希望将该目录作为本地工作区，请使用 jv init
 
     read_cfg: 无法读取本地工作区的配置文件！
-    write_cfg: 无法将修改写入本地工作区的配置文件！
+    write_cfg: |
+      无法将修改写入本地工作区的配置文件！
+      这一般是磁盘问题，以下是错误信息：
+      %{error}
+
+    cfg_not_found:
+      local_config: |
+        无法找到或读取本地工作区信息！
+        请确认您是否在工作区目录下
+
+      latest_info: |
+        无法找到或读取 账户 `%{account}` 视角下的最新上游信息！
+        请使用 `jv update` 更新工作区！
+
+      latest_file_data: |
+        无法找到或读取 账户 `%{account}` 视角下的最新文件信息！
+        请使用 `jv update` 更新工作区！
+
+      local_sheet: |
+        无法读取或找到本地映射 `%{account}/%{sheet}`！
+
+      cached_sheet: |
+        无法读取或找到表 `%{sheet}` 的缓存信息
+        请使用 `jv update` 更新工作区！
 
     create_socket: 无法创建 TCP 套接字！
     connection_failed: 无法连接至目标服务器！

@@ -649,7 +649,30 @@ jv:
       If you wish to use this directory as a local workspace, please use jv init
 
     read_cfg: Failed to read local workspace configuration file!
-    write_cfg: Failed to write changes to local workspace configuration file!
+    write_cfg: |
+      Failed to write modifications to the local workspace configuration file!
+      This is usually a disk issue. Here is the error message:
+      %{error}
+
+    cfg_not_found:
+      local_config: |
+        Unable to find or read local workspace information!
+        Please confirm you are in the workspace directory.
+
+      latest_info: |
+        Unable to find or read the latest upstream information from the perspective of account `%{account}`!
+        Please use `jv update` to update the workspace!
+
+      latest_file_data: |
+        Unable to find or read the latest file information from the perspective of account `%{account}`!
+        Please use `jv update` to update the workspace!
+
+      local_sheet: |
+        Unable to read or find the local mapping `%{account}/%{sheet}`!
+
+      cached_sheet: |
+        Unable to read or find the cached information for sheet `%{sheet}`
+        Please use `jv update` to update the workspace!
 
     create_socket: Failed to create TCP socket!
     connection_failed: Failed to connect to target server!
