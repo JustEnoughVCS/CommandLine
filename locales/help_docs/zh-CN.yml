@@ -372,6 +372,7 @@ jv:
   info: |
     **显示文件详细信息**
     **用法**：jv info <文件路径>
+    使用 `--full` 查看完整的更新记录
 
     显示指定文件的详细信息，包括：
     - 文件的历史变更
@@ -870,6 +871,15 @@ jv:
 
       count_info: |
         %{dir_count} 目录、%{file_count} 文件，共计 %{size}
+
+    info:
+      oneline:
+        table_headers:
+          prefix: _
+          version: 版本
+          creator: 作者
+          description: 描述
+        description_current: 正在编辑中 ...
 
     status:
       struct_changes_display: |

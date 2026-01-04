@@ -380,6 +380,7 @@ jv:
   info: |
     **Display File Details**
     **Usage**: jv info <FILE_PATH>
+    Use `--full` to view the full update history
 
     Display detailed information about the specified file, including:
     - File's change history
@@ -877,6 +878,15 @@ jv:
 
       count_info: |
         %{dir_count} dir(s), %{file_count} file(s). Total %{size}.
+
+    info:
+      oneline:
+        table_headers:
+          prefix: _
+          version: VERSION
+          creator: CREATOR
+          description: DESCRIPTION
+        description_current: Editing ...
 
     status:
       struct_changes_display: |

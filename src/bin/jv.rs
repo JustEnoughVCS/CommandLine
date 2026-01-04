@@ -468,7 +468,12 @@ struct InfoArgs {
     #[arg(short, long)]
     help: bool,
 
+    /// File pattern
     file_pattern: Option<String>,
+
+    /// Full histories output
+    #[arg(short, long = "full")]
+    full: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -647,11 +652,6 @@ struct ShareFileArgs {
 
     /// Arguments 3
     args3: Option<String>,
-    // 规则
-    // 当无参数时，视作 Help
-    // 当只有 1 时，         视作 导入，1 = 导入的分享 ID
-    // 当有 1 和 2 时，      视作 拉取，1 = 来自的 Sheet 2 = 导入的 pattern（基于 1 的 Sheet）
-    // 当有 1 和 2 和 3 时， 视作 分享，1 = 文件 2 = 发送到的 Sheet 3 = 描述
 }
 
 #[derive(Parser, Debug)]
@@ -1598,27 +1598,7 @@ async fn jv_here(args: HereArgs) {
                                         .description
                                         .clone();
 
-                                    // Trim the text, take the first line, and truncate if length exceeds 24 characters
-                                    let trimmed = content.trim();
-                                    let first_line = trimmed.lines().next().unwrap_or("");
-                                    let display_len = display_width(first_line);
-                                    let truncated = if display_len > 24 {
-                                        let mut truncated = String::new();
-                                        let mut current_len = 0;
-                                        for ch in first_line.chars() {
-                                            let ch_width = display_width(&ch.to_string());
-                                            if current_len + ch_width > 24 {
-                                                break;
-                                            }
-                                            truncated.push(ch);
-                                            current_len += ch_width;
-                                        }
-                                        truncated.push_str("...");
-                                        truncated
-                                    } else {
-                                        first_line.to_string()
-                                    };
-                                    let content = truncated;
+                                    let content = truncate_first_line(content);
 
                                     desc = t!(
                                         "jv.success.here.append_info.description",
@@ -2106,6 +2086,17 @@ async fn jv_info(args: InfoArgs) {
 
     let account = local_cfg.current_account();
 
+    let Ok(latest_file_data_path) = LatestFileData::data_path(&account) else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return;
+    };
+
+    // Get latest file data
+    let Ok(latest_file_data) = LatestFileData::read_from(&latest_file_data_path).await else {
+        eprintln!("{}", md(t!("jv.fail.read_cfg")));
+        return;
+    };
+
     let Some(sheet_name) = local_cfg.sheet_in_use().clone() else {
         eprintln!("{}", md(t!("jv.fail.status.no_sheet_in_use")).trim());
         return;
@@ -2124,20 +2115,19 @@ async fn jv_info(args: InfoArgs) {
     if query_file_paths.len() < 1 {
         return;
     }
-
-    // 需要查询的文件
+    // File to query
     let query_file_path = query_file_paths[0].to_path_buf();
     let Ok(mapping) = local_sheet.mapping_data(&query_file_path) else {
         return;
     };
     let vfid = mapping.mapping_vfid();
 
-    // 渲染初始位置
+    // Render initial location
     {
         println!("{}", query_file_path.display().to_string());
     }
 
-    // 渲染参考表位置，没有则以 ID 代替
+    // Render reference sheet location, use ID if not found
     {
         let path_in_ref = if let Some(path) = latest_info.ref_sheet_vfs_mapping.get(vfid) {
             path.display().to_string()
@@ -2145,7 +2135,7 @@ async fn jv_info(args: InfoArgs) {
             vfid.clone()
         };
 
-        // 偏移字符串
+        // Offset string
         let query_file_path_string = query_file_path.display().to_string();
         let offset_string = " ".repeat(display_width(
             if let Some(last_slash) = query_file_path_string.rfind('/') {
@@ -2163,10 +2153,125 @@ async fn jv_info(args: InfoArgs) {
         );
     }
 
-    // 空行，渲染完整的文件历史
-    println!();
+    // Render complete file history
+    {
+        if let Some(histories) = latest_file_data.file_histories(vfid) {
+            // Get file version in reference sheet
+            let version_in_ref = if let Some(mapping) = latest_info
+                .ref_sheet_content
+                .mapping()
+                .get(&query_file_path)
+            {
+                mapping.version.clone()
+            } else {
+                "".to_string()
+            };
 
-    // TODO ::
+            // Get current file version
+            let version_current = latest_file_data
+                .file_version(vfid)
+                .cloned()
+                .unwrap_or_else(|| "".to_string());
+
+            // Check if file is being edited based on latest version (regardless of hold status)
+            let modified_correctly = if let Ok(mapping) = local_sheet.mapping_data(&query_file_path)
+            {
+                // If base editing version is correct
+                if mapping.version_when_updated() == &version_current {
+                    mapping.last_modifiy_check_result() // Return detection result
+                } else {
+                    false
+                }
+            } else {
+                false
+            };
+
+            // Text
+            let (prefix_str, version_str, creator_str, description_str) = (
+                t!("jv.success.info.oneline.table_headers.prefix"),
+                t!("jv.success.info.oneline.table_headers.version"),
+                t!("jv.success.info.oneline.table_headers.creator"),
+                t!("jv.success.info.oneline.table_headers.description"),
+            );
+
+            // Single-line output
+            if !args.full {
+                // Create table
+                let mut table =
+                    SimpleTable::new(vec![prefix_str, version_str, creator_str, description_str]);
+
+                // Append data
+                for (version, description) in histories {
+                    // If it's reference version, render "@"
+                    // Current version, render "\_"
+                    // Other versions, render "|"
+                    let prefix = if version == &version_in_ref {
+                        "@".cyan().to_string()
+                    } else if version == &version_current {
+                        "|->".yellow().to_string()
+                    } else {
+                        "|".truecolor(128, 128, 128).to_string()
+                    };
+
+                    table.insert_item(
+                        0,
+                        vec![
+                            prefix,
+                            version.to_string(),
+                            format!("@{}: ", &description.creator.cyan()),
+                            truncate_first_line(description.description.to_string()),
+                        ],
+                    );
+                }
+
+                // If file has new version, append
+                if modified_correctly {
+                    table.insert_item(
+                        0,
+                        vec![
+                            "+".green().to_string(),
+                            "CURRENT".green().to_string(),
+                            format!(
+                                "@{}: ",
+                                local_workspace
+                                    .config()
+                                    .lock()
+                                    .await
+                                    .current_account()
+                                    .cyan()
+                            ),
+                            format!(
+                                "{}",
+                                t!("jv.success.info.oneline.description_current").green()
+                            ),
+                        ],
+                    );
+                }
+
+                // Render table
+                let table_str = table.to_string();
+                if table_str.lines().count() > 1 {
+                    println!();
+                }
+                for line in table_str.lines().skip(1) {
+                    println!("{}", line);
+                }
+            } else {
+                // Multi-line output
+                if histories.len() > 0 {
+                    println!();
+                }
+                for (version, description) in histories {
+                    println!("{}: {}", version_str, version);
+                    println!("{}: {}", creator_str, description.creator.cyan());
+                    println!("{}", description.description);
+                    if version != &histories.last().unwrap().0 {
+                        println!("{}", "-".repeat(45));
+                    }
+                }
+            }
+        }
+    }
 }
 
 async fn jv_sheet_list(args: SheetListArgs) {
@@ -4008,20 +4113,20 @@ async fn proc_mapping_edit(
 }
 
 async fn jv_share(args: ShareFileArgs) {
-    // 导入分享模式
+    // Import share mode
     if let (Some(import_id), None, None) = (&args.args1, &args.args2, &args.args3) {
         share_accept(import_id).await;
         return;
     }
 
-    // 拉取模式
+    // Pull mode
     if let (Some(from_sheet), Some(import_pattern), None) = (&args.args1, &args.args2, &args.args3)
     {
         share_in(from_sheet, import_pattern).await;
         return;
     }
 
-    // 分享模式
+    // Share mode
     if let (Some(share_pattern), Some(to_sheet), Some(description)) =
         (&args.args1, &args.args2, &args.args3)
     {
@@ -4033,17 +4138,17 @@ async fn jv_share(args: ShareFileArgs) {
 }
 
 async fn share_accept(_import_id: &str) {
-    // TODO: 实现导入分享逻辑
+    // TODO: Implement import share logic
     eprintln!("share_accept not implemented yet");
 }
 
 async fn share_in(_from_sheet: &str, _import_pattern: &str) {
-    // TODO: 实现拉取模式逻辑
+    // TODO: Implement pull mode logic
     eprintln!("share_in not implemented yet");
 }
 
 async fn share_out(_share_pattern: &str, _to_sheet: &str, _description: &str) {
-    // TODO: 实现分享模式逻辑
+    // TODO: Implement share mode logic
     eprintln!("share_out not implemented yet");
 }
 
@@ -4824,4 +4929,28 @@ fn mapping_names_here(
     let mut result = files_here;
     result.extend(filtered_dirs);
     result
+}
+
+/// Trims the content, takes the first line, and truncates it to a display width of 24 characters.
+/// If the display width exceeds 24, it truncates and adds "...".
+fn truncate_first_line(content: String) -> String {
+    let trimmed = content.trim();
+    let first_line = trimmed.lines().next().unwrap_or("");
+    let display_len = display_width(first_line);
+    if display_len > 24 {
+        let mut truncated = String::new();
+        let mut current_len = 0;
+        for ch in first_line.chars() {
+            let ch_width = display_width(&ch.to_string());
+            if current_len + ch_width > 24 {
+                break;
+            }
+            truncated.push(ch);
+            current_len += ch_width;
+        }
+        truncated.push_str("...");
+        truncated
+    } else {
+        first_line.to_string()
+    }
 }
