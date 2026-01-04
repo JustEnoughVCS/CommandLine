@@ -17,20 +17,14 @@
 
 autoload -Uz add-zsh-hook
 
-#####################
-### CONFIGURATION ###
-#####################
+##################
+### APPEARANCE ###
+##################
 
-# DISPLAY_LEVEL
-# FULL   = 127.0.0.1:25331/account/sheet
-# NORMAL =                 account/sheet
-# SHORT  =                         sheet
 JVCS_VIEW='NORMAL'
-
-# Customizable prompt segment elements
-JVCS_PROMPT_SEGMENT_SPLIT='/'
-JVCS_PROMPT_SEGMENT_PREFIX=''
-JVCS_PROMPT_SEGMENT_SUFFIX='>'
+JVCS_PREFIX='['
+JVCS_SPLIT='/'
+JVCS_SUFFIX=']'
 
 ###################
 ### THEME READS ###
@@ -81,13 +75,13 @@ jvcs_render_prompt() {
   if [[ -n "$JVCS_DISPLAY" ]]; then
     case "$JVCS_VIEW" in
       FULL)
-        JVCS_PROMPT_SEGMENT="%{$fg[white]%}${JVCS_PROMPT_SEGMENT_PREFIX}${JVCS_UPSTREAM}${JVCS_PROMPT_SEGMENT_SPLIT}${JVCS_ACCOUNT}${JVCS_PROMPT_SEGMENT_SPLIT}${JVCS_SHEET}${JVCS_PROMPT_SEGMENT_SUFFIX} %{$reset_color%}"
+        JVCS_PROMPT_SEGMENT="%{$fg[white]%}${JVCS_PREFIX}${JVCS_UPSTREAM}${JVCS_SPLIT}${JVCS_ACCOUNT}${JVCS_SPLIT}${JVCS_SHEET}${JVCS_SUFFIX} %{$reset_color%}"
         ;;
       NORMAL)
-        JVCS_PROMPT_SEGMENT="%{$fg[white]%}${JVCS_PROMPT_SEGMENT_PREFIX}${JVCS_ACCOUNT}${JVCS_PROMPT_SEGMENT_SPLIT}${JVCS_SHEET}${JVCS_PROMPT_SEGMENT_SUFFIX} %{$reset_color%}"
+        JVCS_PROMPT_SEGMENT="%{$fg[white]%}${JVCS_PREFIX}${JVCS_ACCOUNT}${JVCS_SPLIT}${JVCS_SHEET}${JVCS_SUFFIX} %{$reset_color%}"
         ;;
       SHORT)
-        JVCS_PROMPT_SEGMENT="%{$fg[white]%}${JVCS_PROMPT_SEGMENT_PREFIX}${JVCS_SHEET}${JVCS_PROMPT_SEGMENT_SUFFIX} %{$reset_color%}"
+        JVCS_PROMPT_SEGMENT="%{$fg[white]%}${JVCS_PREFIX}${JVCS_SHEET}${JVCS_SUFFIX} %{$reset_color%}"
         ;;
       *)
         JVCS_PROMPT_SEGMENT=''

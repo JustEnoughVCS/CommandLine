@@ -27,10 +27,6 @@ to = "completions/bash/completion_jv.sh"
 from = "scripts/completions/bash/completion_jvv.sh"
 to = "completions/bash/completion_jvv.sh"
 
-[copies.zsh_plugin]
-from = "scripts/zsh_support/jvcs.plugin.zsh"
-to = "scripts/zsh_support/jvcs.plugin.zsh"
-
 # Entries
 [copies.entry_bash]
 from = "scripts/jv_cli.sh"
@@ -53,3 +49,15 @@ to = "completions/powershell/completion_jvv.ps1"
 [copies.entry_powershell]
 from = "scripts/jv_cli.ps1"
 to = "jv_cli.ps1"
+
+##################
+### Zsh Plugin ###
+##################
+
+[copies.zsh_plugin]
+from = "scripts/zsh_support/jvcs.plugin.zsh"
+to = "scripts/zsh_support/jvcs.plugin.zsh"
+
+[copies.zsh_plugin_installation]
+from = "scripts/zsh_support/how_to_install.md"
+to = "scripts/zsh_support/how_to_install.md"
