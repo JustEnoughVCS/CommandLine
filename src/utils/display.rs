@@ -1,5 +1,9 @@
 use colored::*;
-use std::collections::VecDeque;
+use just_enough_vcs::vcs::data::sheet::SheetMappingMetadata;
+use std::{
+    collections::{BTreeMap, HashMap, VecDeque},
+    path::PathBuf,
+};
 
 pub struct SimpleTable {
     items: Vec<String>,
@@ -363,5 +367,120 @@ fn apply_color(text: &str, color_name: &str) -> String {
 
         // Default to white if color not recognized
         _ => text.to_string(),
+    }
+}
+
+/// Render a HashMap of PathBuf to SheetMappingMetadata as a tree string.
+pub fn render_share_path_tree(paths: &HashMap<PathBuf, SheetMappingMetadata>) -> String {
+    if paths.is_empty() {
+        return String::new();
+    }
+
+    // Collect all path components into a tree structure
+    let mut root = TreeNode::new("".to_string());
+
+    for (path, metadata) in paths {
+        let mut current = &mut root;
+        let components: Vec<String> = path
+            .components()
+            .filter_map(|comp| match comp {
+                std::path::Component::Normal(s) => s.to_str().map(|s| s.to_string()),
+                _ => None,
+            })
+            .collect();
+
+        for (i, comp) in components.iter().enumerate() {
+            let is_leaf = i == components.len() - 1;
+            let child = current
+                .children
+                .entry(comp.clone())
+                .or_insert_with(|| TreeNode::new(comp.clone()));
+
+            // If this is the leaf node, store the metadata
+            if is_leaf {
+                child.metadata = Some((metadata.id.clone(), metadata.version.clone()));
+            }
+
+            current = child;
+        }
+    }
+
+    // Convert tree to string representation
+    let mut result = String::new();
+    let is_root = true;
+    let prefix = String::new();
+    let last_stack = vec![true]; // Root is always "last"
+
+    add_tree_node_to_string(&root, &mut result, is_root, &prefix, &last_stack);
+
+    result
+}
+
+/// Internal tree node structure for building the path tree
+#[derive(Debug)]
+struct TreeNode {
+    name: String,
+    children: BTreeMap<String, TreeNode>, // Use BTreeMap for sorted output
+    metadata: Option<(String, String)>,   // Store (id, version) for leaf nodes
+}
+
+impl TreeNode {
+    fn new(name: String) -> Self {
+        Self {
+            name,
+            children: BTreeMap::new(),
+            metadata: None,
+        }
+    }
+}
+
+/// Recursively add tree node to string representation
+fn add_tree_node_to_string(
+    node: &TreeNode,
+    result: &mut String,
+    is_root: bool,
+    prefix: &str,
+    last_stack: &[bool],
+) {
+    if !is_root {
+        // Add the tree prefix for this node
+        for &is_last in &last_stack[1..] {
+            if is_last {
+                result.push_str("    ");
+            } else {
+                result.push_str("│   ");
+            }
+        }
+
+        // Add the connector for this node
+        if let Some(&is_last) = last_stack.last() {
+            if is_last {
+                result.push_str("└── ");
+            } else {
+                result.push_str("├── ");
+            }
+        }
+
+        // Add node name
+        result.push_str(&node.name);
+
+        // Add metadata for leaf nodes
+        if let Some((id, version)) = &node.metadata {
+            // Truncate id to first 11 characters
+            let truncated_id = if id.len() > 11 { &id[..11] } else { id };
+            result.push_str(&format!(" [{}|{}]", truncated_id, version));
+        }
+
+        result.push('\n');
+    }
+
+    // Process children
+    let child_count = node.children.len();
+    for (i, (_, child)) in node.children.iter().enumerate() {
+        let is_last_child = i == child_count - 1;
+        let mut new_last_stack = last_stack.to_vec();
+        new_last_stack.push(is_last_child);
+
+        add_tree_node_to_string(child, result, false, prefix, &new_last_stack);
     }
 }

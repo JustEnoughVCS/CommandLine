@@ -450,15 +450,15 @@ jv:
     **Usage**:
     jv share <FILE> <SHEET> <DESCRIPTION> - Share mapping to other sheets
     jv share <SHARE_ID> - Import share to current sheet
-    jv share <REF_SHEET> <FILE> - Import mapping from other reference sheet
 
-    jv shares - View incoming shares
+    jv share list - View incoming shares
+    jv share see - View share details
 
     **Tip**: The import command can use the following parameters
-      --only-remote - Only import mapping into the sheet, do not modify local structure
-      --strict - Strict import mode, reject all conflicts, this is the default scheme
-      --skip - Skip conflicting items
+      --safe - Safe import, reject all conflicts, this is the default scheme
+      --skip - Skip all conflicting items
       --overwrite - Force overwrite conflicting mappings, dangerous operation
+      --reject - Reject this share
 
     **Sharing** is the simplest way to give file visibility to others
 
@@ -576,6 +576,14 @@ jv:
 
     from_core: |
       **Error**: `%{err}` (This error is from core call)
+
+    share:
+      share_id_not_exist: |
+        The share `%{id}` does not exist.
+
+      invalid_target_sheet: |
+        The sheet `%{sheet}` you specified does not exist in your context.
+        If you are sure it exists, please use `jv update` to update the workspace.
 
     sheet:
       align:
@@ -911,6 +919,22 @@ jv:
           description: DESCRIPTION
         description_current: Editing ...
 
+    share:
+      list:
+        headers:
+          id: ID
+          sharer: SHARER
+          description: DESCRIPTION
+          file_count: COUNT
+        footer: Use `jv share see <ID>` to view the specific content of the share
+
+      content: |
+        %{share_id}
+        FROM: %{sharer}
+        %{description}
+        MAPPINGS:
+        %{mappings}
+
     status:
       struct_changes_display: |
         Viewing sheet %{sheet_name} (%{h}h %{m}min %{s}secs ago).
@@ -1031,6 +1055,54 @@ jv:
           path_already_exist: |
             Error syncing upstream information to local: Local path %{path} already exists, but a move operation needs to move an item here.
             Please try moving the item to a different path, then run `jv update` again
+
+    share:
+      share_mapping:
+        success: |
+          Successfully shared visibility of %{file_nums} files to `%{to_sheet}`
+          The holder of that sheet, `%{to_sheet_holder}`, will see your share after performing an update
+
+        target_sheet_not_found: |
+          The sheet `%{to_sheet}` you specified does not exist.
+          You can use `jv sheet list --all` to list all sheets
+
+        target_is_self: |
+          You cannot share your own mapping to yourself
+
+        mapping_not_found: |
+          In your share, a mapping was found that is not recognized by the upstream!
+          Mapping: %{mapping}
+
+          Please confirm your local mapping is aligned with the upstream. You can use `jv align` to check the status
+
+        unknown: |
+          Unknown result!
+
+      merge_shares:
+        success: |
+          Successfully merged share `%{share_id}` into your sheet `%{sheet}`
+          Upstream information has changed, please use `jv update` to sync to the latest information
+
+        success_reject:
+          Rejected share `%{share_id}`
+
+        has_conflicts: |
+          Conflicts occurred when merging structure from share `%{share_id}` into your sheet!
+          Because the share contains mappings that overlap with your sheet!
+          You can use `jv share %{share_id} --skip`
+               or use `jv share %{share_id} --overwrite`
+          to select the merge mode
+
+        edit_not_allowed: |
+          Upstream prevented you from modifying this sheet!
+          Because you do not have edit rights for this sheet
+
+        share_id_not_found: |
+          Cannot find the share `%{share_id}` you provided in the upstream
+          You can use `jv share list` to list all shares after `jv update`
+
+        merge_failed: |
+          Merge failed: %{error}
 
     sheet:
       make:

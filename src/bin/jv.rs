@@ -21,8 +21,11 @@ use just_enough_vcs::{
             },
             sheet_actions::{
                 DropSheetActionResult, EditMappingActionArguments, EditMappingActionResult,
-                EditMappingOperations, InvalidMoveReason, MakeSheetActionResult, OperationArgument,
-                proc_drop_sheet_action, proc_edit_mapping_action, proc_make_sheet_action,
+                EditMappingOperations, InvalidMoveReason, MakeSheetActionResult,
+                MergeShareMappingActionResult, MergeShareMappingArguments, OperationArgument,
+                ShareMappingActionResult, ShareMappingArguments, proc_drop_sheet_action,
+                proc_edit_mapping_action, proc_make_sheet_action, proc_merge_share_mapping_action,
+                proc_share_mapping_action,
             },
             track_action::{
                 CreateTaskResult, NextVersion, SyncTaskResult, TrackFileActionArguments,
@@ -36,7 +39,7 @@ use just_enough_vcs::{
         },
         constants::{
             CLIENT_FILE_TODOLIST, CLIENT_FILE_WORKSPACE, CLIENT_FOLDER_WORKSPACE_ROOT_NAME,
-            CLIENT_PATH_WORKSPACE_ROOT, PORT,
+            CLIENT_PATH_WORKSPACE_ROOT, PORT, VAULT_HOST_NAME,
         },
         current::{correct_current_dir, current_cfg_dir, current_local_path},
         data::{
@@ -53,7 +56,10 @@ use just_enough_vcs::{
             member::{Member, MemberId},
             sheet::{SheetData, SheetMappingMetadata},
             user::UserDirectory,
-            vault::virtual_file::{VirtualFileId, VirtualFileVersion},
+            vault::{
+                sheet_share::{Share, ShareMergeMode},
+                virtual_file::{VirtualFileId, VirtualFileVersion},
+            },
         },
         docs::{ASCII_YIZI, document, documents},
     },
@@ -81,7 +87,7 @@ use just_enough_vcs_cli::{
         ipaddress_history::{get_recent_ip_address, insert_recent_ip_address},
     },
     utils::{
-        display::{SimpleTable, display_width, md, size_str},
+        display::{SimpleTable, display_width, md, render_share_path_tree, size_str},
         env::{auto_update_outdate, current_locales, enable_auto_update},
         fs::move_across_partitions,
         globber::{GlobItem, Globber},
@@ -171,7 +177,7 @@ enum JustEnoughVcsWorkspaceCommand {
     Move(MoveMappingArgs),
 
     /// Share file visibility to other sheets
-    Share(ShareFileArgs),
+    Share(ShareMappingArgs),
 
     /// Sync information from upstream vault
     #[command(alias = "u")]
@@ -639,7 +645,7 @@ struct MoveMappingArgs {
 }
 
 #[derive(Parser, Debug)]
-struct ShareFileArgs {
+struct ShareMappingArgs {
     /// Show help information
     #[arg(short, long)]
     help: bool,
@@ -652,6 +658,26 @@ struct ShareFileArgs {
 
     /// Arguments 3
     args3: Option<String>,
+
+    /// Safe merge
+    #[arg(short = 's', long)]
+    safe: bool,
+
+    /// Skip all conflicting mappings
+    #[arg(short = 'S', long)]
+    skip: bool,
+
+    /// Overwrite all conflicting mappings
+    #[arg(short = 'o', long)]
+    overwrite: bool,
+
+    /// Reject this share
+    #[arg(short = 'R', long)]
+    reject: bool,
+
+    /// Show raw output
+    #[arg(short = 'r', long)]
+    raw: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -4267,17 +4293,28 @@ async fn proc_mapping_edit(
     }
 }
 
-async fn jv_share(args: ShareFileArgs) {
+async fn jv_share(args: ShareMappingArgs) {
     // Import share mode
-    if let (Some(import_id), None, None) = (&args.args1, &args.args2, &args.args3) {
-        share_accept(import_id).await;
+    if let (Some(args1), None, None) = (&args.args1, &args.args2, &args.args3) {
+        // List mode
+        if args1.trim() == "list" || args1.trim() == "ls" {
+            share_list(args).await;
+            return;
+        }
+
+        share_accept(args1.to_string(), args).await;
         return;
     }
 
     // Pull mode
-    if let (Some(from_sheet), Some(import_pattern), None) = (&args.args1, &args.args2, &args.args3)
-    {
-        share_in(from_sheet, import_pattern).await;
+    if let (Some(args1), Some(args2), None) = (&args.args1, &args.args2, &args.args3) {
+        // See mode
+        if args1.trim() == "see" {
+            share_see(args2.to_string()).await;
+            return;
+        }
+
+        share_in(args1.to_string(), args2.to_string(), args).await;
         return;
     }
 
@@ -4285,26 +4322,422 @@ async fn jv_share(args: ShareFileArgs) {
     if let (Some(share_pattern), Some(to_sheet), Some(description)) =
         (&args.args1, &args.args2, &args.args3)
     {
-        share_out(share_pattern, to_sheet, description).await;
+        share_out(
+            share_pattern.to_string(),
+            to_sheet.to_string(),
+            description.to_string(),
+            args,
+        )
+        .await;
         return;
     }
 
     println!("{}", md(t!("jv.share")));
 }
 
-async fn share_accept(_import_id: &str) {
-    // TODO: Implement import share logic
-    eprintln!("share_accept not implemented yet");
+async fn share_list(args: ShareMappingArgs) {
+    let _ = correct_current_dir();
+
+    let Some(local_dir) = current_local_path() else {
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+        return;
+    };
+
+    let local_config = match precheck().await {
+        Some(config) => config,
+        None => return,
+    };
+
+    let sheet_name = local_config.sheet_in_use().clone().unwrap_or_default();
+
+    let Ok(latest_info) = LatestInfo::read_from(LatestInfo::latest_info_path(
+        &local_dir,
+        &local_config.current_account(),
+    ))
+    .await
+    else {
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.latest_info",
+                account = &local_config.current_account()
+            ))
+        );
+        return;
+    };
+
+    if let Some(shares) = latest_info.shares_in_my_sheets.get(&sheet_name) {
+        // Sort
+        let mut sorted_shares: BTreeMap<String, &Share> = BTreeMap::new();
+        for (id, share) in shares {
+            sorted_shares.insert(id.clone(), share);
+        }
+
+        if !args.raw {
+            // Create table and insert information
+            let mut table = SimpleTable::new(vec![
+                t!("jv.success.share.list.headers.id"),
+                t!("jv.success.share.list.headers.sharer"),
+                t!("jv.success.share.list.headers.description"),
+                t!("jv.success.share.list.headers.file_count"),
+            ]);
+            for (id, share) in sorted_shares {
+                table.insert_item(
+                    0,
+                    vec![
+                        id.to_string(),
+                        share.sharer.to_string(),
+                        truncate_first_line(share.description.to_string()),
+                        share.mappings.len().to_string(),
+                    ],
+                );
+            }
+
+            // Render
+            println!("{}", table);
+            println!("{}", md(t!("jv.success.share.list.footer")));
+        } else {
+            sorted_shares
+                .iter()
+                .for_each(|share| println!("{}", share.0));
+        }
+    }
 }
 
-async fn share_in(_from_sheet: &str, _import_pattern: &str) {
+async fn share_see(share_id: String) {
+    let _ = correct_current_dir();
+
+    let Some(local_dir) = current_local_path() else {
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+        return;
+    };
+
+    let local_config = match precheck().await {
+        Some(config) => config,
+        None => return,
+    };
+
+    let sheet_name = local_config.sheet_in_use().clone().unwrap_or_default();
+
+    let Ok(latest_info) = LatestInfo::read_from(LatestInfo::latest_info_path(
+        &local_dir,
+        &local_config.current_account(),
+    ))
+    .await
+    else {
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.latest_info",
+                account = &local_config.current_account()
+            ))
+        );
+        return;
+    };
+
+    if let Some(shares) = latest_info.shares_in_my_sheets.get(&sheet_name) {
+        if let Some(share) = shares.get(&share_id) {
+            println!(
+                "{}",
+                md(t!(
+                    "jv.success.share.content",
+                    share_id = share_id,
+                    sharer = share.sharer,
+                    description = share.description,
+                    mappings = render_share_path_tree(&share.mappings)
+                ))
+            );
+        }
+    }
+}
+
+async fn share_accept(import_id: String, args: ShareMappingArgs) {
+    let _ = correct_current_dir();
+
+    let Some(local_dir) = current_local_path() else {
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+        return;
+    };
+
+    let local_config = match precheck().await {
+        Some(config) => config,
+        None => return,
+    };
+
+    let sheet_name = local_config.sheet_in_use().clone().unwrap_or_default();
+
+    let Ok(latest_info) = LatestInfo::read_from(LatestInfo::latest_info_path(
+        &local_dir,
+        &local_config.current_account(),
+    ))
+    .await
+    else {
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.latest_info",
+                account = &local_config.current_account()
+            ))
+        );
+        return;
+    };
+
+    let contains_share = if let Some(share_ids) = latest_info.shares_in_my_sheets.get(&sheet_name) {
+        share_ids.contains_key(&import_id)
+    } else {
+        false
+    };
+
+    if !contains_share {
+        eprintln!(
+            "{}",
+            md(t!("jv.fail.share.share_id_not_exist", id = &import_id))
+        );
+        return;
+    }
+
+    let (pool, ctx, _output) = match build_pool_and_ctx(&local_config).await {
+        Some(result) => result,
+        None => return,
+    };
+
+    let share_merge_mode = {
+        if args.safe {
+            ShareMergeMode::Safe
+        } else if args.skip {
+            ShareMergeMode::Skip
+        } else if args.overwrite {
+            ShareMergeMode::Overwrite
+        } else if args.reject {
+            ShareMergeMode::RejectAll
+        } else {
+            ShareMergeMode::Safe
+        }
+    };
+
+    match proc_merge_share_mapping_action(
+        &pool,
+        ctx,
+        MergeShareMappingArguments {
+            share_id: import_id.clone(),
+            share_merge_mode,
+        },
+    )
+    .await
+    {
+        Ok(r) => match r {
+            MergeShareMappingActionResult::Success => {
+                if args.reject {
+                    println!(
+                        "{}",
+                        md(t!(
+                            "jv.result.share.merge_shares.success_reject",
+                            share_id = &import_id
+                        ))
+                    );
+                } else {
+                    println!(
+                        "{}",
+                        md(t!(
+                            "jv.result.share.merge_shares.success",
+                            share_id = &import_id,
+                            sheet = &sheet_name
+                        ))
+                    );
+                }
+            }
+            MergeShareMappingActionResult::HasConflicts => {
+                eprintln!(
+                    "{}",
+                    md(t!(
+                        "jv.result.share.merge_shares.has_conflicts",
+                        share_id = &import_id
+                    ))
+                );
+            }
+            MergeShareMappingActionResult::AuthorizeFailed(e) => {
+                eprintln!("{}", md(t!("jv.result.common.authroize_failed", err = e)));
+            }
+            MergeShareMappingActionResult::EditNotAllowed => {
+                eprintln!(
+                    "{}",
+                    md(t!("jv.result.share.merge_shares.edit_not_allowed"))
+                );
+            }
+            MergeShareMappingActionResult::ShareIdNotFound(share_id) => {
+                eprintln!(
+                    "{}",
+                    md(t!(
+                        "jv.result.share.merge_shares.share_id_not_found",
+                        share_id = share_id
+                    ))
+                );
+            }
+            MergeShareMappingActionResult::MergeFails(error) => {
+                eprintln!(
+                    "{}",
+                    md(t!(
+                        "jv.result.share.merge_shares.merge_failed",
+                        error = error
+                    ))
+                );
+            }
+            MergeShareMappingActionResult::Unknown => {
+                eprintln!("{}", md(t!("jv.result.share.merge_shares.unknown")));
+            }
+        },
+        Err(e) => handle_err(e),
+    }
+}
+
+async fn share_in(_from_sheet: String, _import_pattern: String, _args: ShareMappingArgs) {
     // TODO: Implement pull mode logic
-    eprintln!("share_in not implemented yet");
 }
 
-async fn share_out(_share_pattern: &str, _to_sheet: &str, _description: &str) {
-    // TODO: Implement share mode logic
-    eprintln!("share_out not implemented yet");
+async fn share_out(
+    share_pattern: String,
+    to_sheet: String,
+    description: String,
+    _args: ShareMappingArgs,
+) {
+    let shared_files = {
+        let local_dir = match current_local_path() {
+            Some(dir) => dir,
+            None => {
+                eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+                return;
+            }
+        };
+        let files = glob(share_pattern, &local_dir).await;
+        files
+            .iter()
+            .filter_map(|f| PathBuf::from_str(f.0).ok())
+            .collect::<Vec<_>>()
+    };
+
+    let _ = correct_current_dir();
+
+    let Some(local_dir) = current_local_path() else {
+        eprintln!("{}", t!("jv.fail.workspace_not_found").trim());
+        return;
+    };
+
+    let local_config = match precheck().await {
+        Some(config) => config,
+        None => return,
+    };
+
+    let Ok(latest_info) = LatestInfo::read_from(LatestInfo::latest_info_path(
+        &local_dir,
+        &local_config.current_account(),
+    ))
+    .await
+    else {
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.latest_info",
+                account = &local_config.current_account()
+            ))
+        );
+        return;
+    };
+
+    // Pre-check if the sheet exists
+    let contains_in_my_sheet = latest_info.visible_sheets.contains(&to_sheet);
+    let contains_in_other_sheet = latest_info
+        .invisible_sheets
+        .iter()
+        .find(|info| info.sheet_name == to_sheet)
+        .is_some();
+    if !contains_in_my_sheet && !contains_in_other_sheet {
+        eprintln!(
+            "{}",
+            md(t!("jv.fail.share.invalid_target_sheet", sheet = &to_sheet))
+        );
+        return;
+    }
+
+    let (pool, ctx, _output) = match build_pool_and_ctx(&local_config).await {
+        Some(result) => result,
+        None => return,
+    };
+
+    let to_sheet_holder = {
+        if latest_info.reference_sheets.contains(&to_sheet) {
+            VAULT_HOST_NAME.to_string()
+        } else if latest_info.visible_sheets.contains(&to_sheet) {
+            local_config.current_account()
+        } else {
+            let mut holder = String::new();
+            for info in &latest_info.invisible_sheets {
+                if info.sheet_name == to_sheet {
+                    holder = info.holder_name.as_ref().cloned().unwrap_or_default();
+                    break;
+                }
+            }
+            holder
+        }
+    };
+
+    match proc_share_mapping_action(
+        &pool,
+        ctx,
+        ShareMappingArguments {
+            mappings: shared_files.clone(),
+            description,
+
+            // Since the Action internally checks the current sheet,
+            // there's no need to fill in from_sheet here.
+            // This is prepared for pull operations.
+            from_sheet: None,
+            to_sheet: to_sheet.clone(),
+        },
+    )
+    .await
+    {
+        Ok(r) => match r {
+            ShareMappingActionResult::Success => {
+                println!(
+                    "{}",
+                    md(t!(
+                        "jv.result.share.share_mapping.success",
+                        file_nums = shared_files.len(),
+                        to_sheet = to_sheet,
+                        to_sheet_holder = to_sheet_holder
+                    ))
+                );
+            }
+            ShareMappingActionResult::AuthorizeFailed(e) => {
+                eprintln!("{}", md(t!("jv.result.common.authroize_failed", err = e)));
+            }
+            ShareMappingActionResult::TargetSheetNotFound(sheet) => {
+                eprintln!(
+                    "{}",
+                    md(t!(
+                        "jv.result.share.share_mapping.target_sheet_not_found",
+                        to_sheet = sheet
+                    ))
+                );
+            }
+            ShareMappingActionResult::TargetIsSelf => {
+                eprintln!("{}", md(t!("jv.result.share.share_mapping.target_is_self")));
+            }
+            ShareMappingActionResult::MappingNotFound(path_buf) => {
+                eprintln!(
+                    "{}",
+                    md(t!(
+                        "jv.result.share.share_mapping.mapping_not_found",
+                        mapping = path_buf.display()
+                    ))
+                );
+            }
+            ShareMappingActionResult::Unknown => {
+                eprintln!("{}", md(t!("jv.result.share.share_mapping.unknown")));
+            }
+        },
+        Err(e) => handle_err(e),
+    }
 }
 
 async fn jv_account_add(user_dir: UserDirectory, args: AccountAddArgs) {

@@ -441,15 +441,15 @@ jv:
     **用法**：
     jv share <文件> <表> <描述> - 分享映射到其他表
     jv share <分享ID> - 将分享导入到当前表
-    jv share <REF表> <文件> - 从其他参考表中导入映射
 
-    jv shares - 查看传入的分享
+    jv share list - 查看传入的分享
+    jv share see - 查看分享的详情
 
     **提示**：import 命令可使用如下参数
-      --only-remote - 只在表中导入映射，不修改本地结构
-      --strict - 严格的导入模式，拒绝所有冲突，这是默认的方案
-      --skip - 跳过冲突项
+      --safe - 安全导入，拒绝所有冲突，这是默认的方案
+      --skip - 跳过所有冲突项
       --overwrite - 强制覆盖冲突的映射，危险的操作
+      --reject - 拒绝该分享
 
     **分享** 是将文件可见性交由其他人的最简途径
 
@@ -566,6 +566,14 @@ jv:
 
     from_core: |
       **错误**：`%{err}`（该错误来自核心调用）
+
+    share:
+      share_id_not_exist: |
+        您给出的分享 `%{id}` 不存在
+
+      invalid_target_sheet: |
+        您所给出的表 `%{sheet}` 在您的上下文中并不存在
+        若您确定它存在，请使用 `jv update` 更新工作区
 
     sheet:
       align:
@@ -904,6 +912,22 @@ jv:
           description: 描述
         description_current: 正在编辑中 ...
 
+    share:
+      list:
+        headers:
+          id: 分享ID
+          sharer: 分享者
+          description: 描述
+          file_count: 文件数
+        footer: 使用 `jv share see <ID>` 查看分享的具体内容
+
+      content: |
+        %{share_id}
+        来自: %{sharer}
+        %{description}
+        映射：
+        %{mappings}
+
     status:
       struct_changes_display: |
         表 %{sheet_name} 的状态基于 %{h} 小时 %{m} 分钟 %{s} 秒前
@@ -1022,6 +1046,55 @@ jv:
           path_already_exist: |
             在同步上游信息至本地时发生了错误：本地已存在 %{path}，但是某个移动项需要移动到此处。
             请尝试移动该项至其他路径，再重新输入 `jv update`
+
+    share:
+      share_mapping:
+        success: |
+          成功将 %{file_nums} 个文件的可见性分享至 `%{to_sheet}`
+          该表的持有者 `%{to_sheet_holder}` 在执行更新后即可看到您的分享
+
+        target_sheet_not_found: |
+          您所指定的 `%{to_sheet}` 不存在，
+          您可以使用 `jv sheet list --all` 列出所有的表
+
+        target_is_self: |
+          您不能将自己的映射分享给自己
+
+        mapping_not_found: |
+          在您的分享中，找到并未被上游所承认的映射！
+          映射：%{mapping}
+
+          请确认您的本地映射和上游是否对齐，您可以使用 `jv align` 查看状态
+
+        unknown: |
+          未知的结果！
+
+      merge_shares:
+        success: |
+          成功将分享 `%{share_id}` 合入您的表 `%{sheet}`
+          上游信息已变更，请使用 `jv update` 同步至最新信息
+
+        success_reject:
+          已拒绝接受分享 `%{share_id}`
+
+        has_conflicts: |
+          从分享 `%{share_id}` 合并结构到您的表时发生冲突！
+          因为分享中存在和您表中重合的映射！
+          您可以使用 `jv share %{share_id} --skip`
+              或使用 `jv share %{share_id} --overwrite`
+          来选择合并模式
+
+        edit_not_allowed: |
+          上游阻止了您修改此表！
+          因为您没有该表的编辑权
+
+        share_id_not_found: |
+          在上游中无法找到您给出的分享 `%{share_id}`
+          您可以在 `jv update` 后使用
+                   `jv share list` 来列出所有的分享
+
+        merge_failed: |
+          合并失败：%{error}
 
     sheet:
       make:

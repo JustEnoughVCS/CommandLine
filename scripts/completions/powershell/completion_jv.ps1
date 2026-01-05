@@ -16,7 +16,7 @@ Register-ArgumentCompleter -Native -CommandName jv -ScriptBlock {
         "create", "init", "direct", "unstain", "account", "update",
         "sheet", "status", "here", "move", "mv", "docs", "exit", "use", "sheets", "accounts",
         "as", "make", "drop", "track", "hold", "throw", "login",
-        "jump", "align", "info"
+        "jump", "align", "info", "share"
     )
 
     # Account subcommands
@@ -172,6 +172,39 @@ Register-ArgumentCompleter -Native -CommandName jv -ScriptBlock {
             # File completion for the file argument
             return Get-ChildItem -Name -File -Path "." | Where-Object { $_ -like "$wordToComplete*" }
         }
+        return @()
+    }
+
+    # Completion for share command
+    if ($subcmd -eq "share") {
+        if ($currentIndex -eq 2) {
+            # First parameter: list, see, jv share list --raw results, or files in current directory
+            $staticOptions = @("list", "see")
+            $shareList = & $cmd share list --raw 2>$null
+            $files = Get-ChildItem -Name -File -Path "." 2>$null
+            $completions = $staticOptions + $shareList + $files
+            return $completions | Where-Object { $_ -like "$wordToComplete*" }
+        } elseif ($currentIndex -eq 3) {
+            # Second parameter: depends on the first parameter
+            $firstParam = $words[2]
+            if ($firstParam -eq "list") {
+                # list -> nothing
+                return @()
+            } elseif ($firstParam -eq "see") {
+                # see -> jv share list --raw results
+                $shareList = & $cmd share list --raw 2>$null
+                return $shareList | Where-Object { $_ -like "$wordToComplete*" }
+            } elseif ($firstParam -like "*@*") {
+                # Contains "@" (shareid) -> show options
+                $options = @("--safe", "--overwrite", "--skip", "--reject")
+                return $options | Where-Object { $_ -like "$wordToComplete*" }
+            } else {
+                # Otherwise, assume it's a file -> show jv sheet list --all --raw results
+                $allSheets = & $cmd sheet list --all --raw 2>$null
+                return $allSheets | Where-Object { $_ -like "$wordToComplete*" }
+            }
+        }
+        # Third parameter: no completion
         return @()
     }
 

@@ -18,7 +18,7 @@ _jv_completion() {
     local base_commands="create init direct unstain account update \
                          sheet status here move mv docs exit use sheets accounts \
                          as make drop track hold throw login \
-                         jump align info"
+                         jump align info share"
 
     # Subcommands - Account
     local account_commands="list as add remove movekey mvkey mvk genpub help"
@@ -154,6 +154,40 @@ _jv_completion() {
 
             COMPREPLY=($(compgen -W "$align_operations" -- "$cur"))
         fi
+        return 0
+    fi
+
+    # Completion share
+    if [[ "$subcmd" == "share" ]]; then
+        if [[ $cword -eq 2 ]]; then
+            # First parameter: list, see, jv share list --raw results, or files
+            local share_list
+            share_list=$($cmd share list --raw 2>/dev/null)
+            local first_param_options="list see $share_list"
+            COMPREPLY=($(compgen -W "$first_param_options" -f -- "$cur"))
+        elif [[ $cword -eq 3 ]]; then
+            # Second parameter: depends on first parameter
+            local first_param="${words[2]}"
+
+            if [[ "$first_param" == "list" ]]; then
+                # list -> nothing
+                COMPREPLY=()
+            elif [[ "$first_param" == "see" ]]; then
+                # see -> jv share list --raw results
+                local share_list
+                share_list=$($cmd share list --raw 2>/dev/null)
+                COMPREPLY=($(compgen -W "$share_list" -- "$cur"))
+            elif [[ "$first_param" == *"@"* ]]; then
+                # Contains "@" (shareid) -> show options
+                COMPREPLY=($(compgen -W "--safe --overwrite --skip --reject" -- "$cur"))
+            else
+                # File input -> show jv sheet list --all --raw results
+                local all_sheets
+                all_sheets=$($cmd sheet list --all --raw 2>/dev/null)
+                COMPREPLY=($(compgen -W "$all_sheets" -- "$cur"))
+            fi
+        fi
+        # Third parameter: no completion
         return 0
     fi
 
