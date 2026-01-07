@@ -76,7 +76,7 @@ use std::{
     time::SystemTime,
 };
 
-use clap::{Parser, Subcommand, arg, command};
+use clap::{Parser, Subcommand};
 use just_enough_vcs::{
     utils::tcp_connection::error::TcpTargetError,
     vcs::{actions::local_actions::proc_set_upstream_vault_action, registry::client_registry},

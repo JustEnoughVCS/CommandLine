@@ -4,7 +4,7 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 use std::time::Duration;
 
-use clap::{Parser, command};
+use clap::Parser;
 use crossterm::{
     QueueableCommand,
     cursor::MoveTo,
