@@ -86,6 +86,14 @@ use just_enough_vcs_cli::{
         compile_info::CompileInfo,
         ipaddress_history::{get_recent_ip_address, insert_recent_ip_address},
     },
+    output::{
+        accounts::{AccountItem, AccountListJsonResult},
+        align::{AlignJsonResult, AlignTaskMapping},
+        analyzer_result::{AnalyzerJsonResult, ModifiedType},
+        here::{HereJsonResult, HereJsonResultItem},
+        info::{InfoHistory, InfoJsonResult},
+        sheets::{SheetItem, SheetListJsonResult},
+    },
     utils::{
         display::{SimpleTable, display_width, md, render_share_path_tree, size_str},
         env::{auto_update_outdate, current_locales, enable_auto_update},
@@ -332,6 +340,14 @@ struct SheetListArgs {
     /// Show raw output
     #[arg(short, long)]
     raw: bool,
+
+    /// Show json output
+    #[arg(long = "json")]
+    json_output: bool,
+
+    /// Show json output pretty
+    #[arg(long = "pretty")]
+    pretty: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -406,6 +422,14 @@ struct SheetAlignArgs {
     /// Show raw output (for list)
     #[arg(short, long)]
     raw: bool,
+
+    /// Show json output (for list)
+    #[arg(long = "json")]
+    json_output: bool,
+
+    /// Show json output pretty
+    #[arg(long = "pretty")]
+    pretty: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -459,6 +483,14 @@ struct HereArgs {
     /// Show help information
     #[arg(short = 'd', long = "desc")]
     show_description: bool,
+
+    /// Show json output
+    #[arg(long = "json")]
+    json_output: bool,
+
+    /// Show json output pretty
+    #[arg(long = "pretty")]
+    pretty: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -466,6 +498,14 @@ struct StatusArgs {
     /// Show help information
     #[arg(short, long)]
     help: bool,
+
+    /// Show json output
+    #[arg(long = "json")]
+    json_output: bool,
+
+    /// Show json output pretty
+    #[arg(long = "pretty")]
+    pretty: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -480,6 +520,14 @@ struct InfoArgs {
     /// Full histories output
     #[arg(short, long = "full")]
     full: bool,
+
+    /// Show json output
+    #[arg(long = "json")]
+    json_output: bool,
+
+    /// Show json output pretty
+    #[arg(long = "pretty")]
+    pretty: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -515,6 +563,14 @@ struct AccountListArgs {
     /// Show raw output
     #[arg(short, long)]
     raw: bool,
+
+    /// Show json output
+    #[arg(long = "json")]
+    json_output: bool,
+
+    /// Show json output pretty
+    #[arg(long = "pretty")]
+    pretty: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -1182,6 +1238,8 @@ async fn main() {
                 others: false,
                 all: false,
                 raw: false,
+                json_output: false,
+                pretty: false,
             })
             .await
         }
@@ -1198,6 +1256,8 @@ async fn main() {
                 AccountListArgs {
                     help: false,
                     raw: false,
+                    json_output: false,
+                    pretty: false,
                 },
             )
             .await
@@ -1502,6 +1562,147 @@ async fn jv_here(args: HereArgs) {
         .duration_since(latest_info.update_instant.unwrap_or(SystemTime::now()))
         .unwrap_or_default();
     let minutes = duration_updated.as_secs() / 60;
+
+    // JSON output handling
+    if args.json_output {
+        let mut json_result = HereJsonResult::default();
+        let mut dirs = HashSet::new();
+        let mut files = HashSet::new();
+
+        // Process local files
+        if let Ok(mut entries) = fs::read_dir(&path).await {
+            while let Ok(Some(entry)) = entries.next_entry().await {
+                if let Ok(file_type) = entry.file_type().await {
+                    let file_name = entry.file_name().to_string_lossy().to_string();
+
+                    if file_name == CLIENT_FOLDER_WORKSPACE_ROOT_NAME {
+                        continue;
+                    }
+
+                    let metadata = match entry.metadata().await {
+                        Ok(meta) => meta,
+                        Err(_) => continue,
+                    };
+
+                    let size = metadata.len() as usize;
+                    let is_dir = file_type.is_dir();
+
+                    // Skip if already processed
+                    if is_dir {
+                        if dirs.contains(&file_name) {
+                            continue;
+                        }
+                        dirs.insert(file_name.clone());
+                    } else {
+                        if files.contains(&file_name) {
+                            continue;
+                        }
+                        files.insert(file_name.clone());
+                    }
+
+                    // Get current path
+                    let current_path = PathBuf::from_str(relative_path.as_ref())
+                        .unwrap()
+                        .join(file_name.clone());
+
+                    let mut current_version = VirtualFileVersion::default();
+                    let mut modified = false;
+                    let mut holder = None;
+
+                    // Get mapping info (only for files)
+                    if !is_dir {
+                        if let Some(mapping) = cached_sheet.mapping().get(&current_path) {
+                            let id = mapping.id.clone();
+                            if let Some(latest_version) = latest_file_data.file_version(&id) {
+                                current_version = latest_version.clone();
+                            }
+                            if let Some(file_holder) = latest_file_data.file_holder(&id) {
+                                holder = Some(file_holder.clone());
+                            }
+
+                            // Check if file is modified
+                            modified = analyzed.modified.contains(&current_path);
+                        }
+                    }
+
+                    // Remove from remote files list
+                    remote_files.remove(&file_name);
+
+                    // Add to JSON result
+                    json_result.items.push(HereJsonResultItem {
+                        mapping: if is_dir {
+                            "".to_string()
+                        } else {
+                            format_path_str(&current_path.display().to_string()).unwrap_or_default()
+                        },
+                        name: file_name.clone(),
+                        current_version,
+                        size,
+                        exist: true,
+                        modified,
+                        holder: holder.unwrap_or_default(),
+                        is_dir,
+                    });
+                }
+            }
+        }
+
+        // Process remote files (not existing locally)
+        for (name, metadata) in remote_files {
+            let current_path = PathBuf::from_str(relative_path.as_ref())
+                .unwrap()
+                .join(name.clone());
+
+            if let Some(metadata) = metadata {
+                // It's a file
+                // Skip if already processed
+                if files.contains(&name) {
+                    continue;
+                }
+                files.insert(name.clone());
+
+                let holder = latest_file_data.file_holder(&metadata.id).cloned();
+                json_result.items.push(HereJsonResultItem {
+                    mapping: format_path_str(&current_path.display().to_string())
+                        .unwrap_or_default(),
+                    name: name.clone(),
+                    current_version: metadata.version,
+                    size: 0,
+                    exist: false,
+                    modified: false,
+                    holder: holder.unwrap_or_default(),
+                    is_dir: false,
+                });
+            } else {
+                // It's a directory
+                // Skip if already processed
+                let trimmed_name = if name.ends_with('/') {
+                    name[..name.len() - 1].to_string()
+                } else {
+                    name.clone()
+                };
+
+                if dirs.contains(&trimmed_name) {
+                    continue;
+                }
+                dirs.insert(trimmed_name.clone());
+
+                json_result.items.push(HereJsonResultItem {
+                    mapping: String::default(),
+                    name: trimmed_name,
+                    current_version: VirtualFileVersion::default(),
+                    size: 0,
+                    exist: false,
+                    modified: false,
+                    holder: String::new(),
+                    is_dir: true,
+                });
+            }
+        }
+
+        print_json(json_result, args.pretty);
+        return;
+    }
 
     let account_str = if local_cfg.is_host_mode() {
         format!("{}/{}", "host".red(), local_cfg.current_account())
@@ -1811,7 +2012,7 @@ async fn jv_here(args: HereArgs) {
     );
 }
 
-async fn jv_status(_args: StatusArgs) {
+async fn jv_status(args: StatusArgs) {
     let Some(local_dir) = current_local_path() else {
         eprintln!("{}", md(t!("jv.fail.workspace_not_found")).trim());
         return;
@@ -1892,131 +2093,209 @@ async fn jv_status(_args: StatusArgs) {
         return;
     };
 
-    // Format created items
-    let mut created_items: Vec<String> = analyzed
-        .created
-        .iter()
-        .map(|path| {
-            t!(
-                "jv.success.status.created_item",
-                path = path.display().to_string()
-            )
-            .trim()
-            .green()
-            .to_string()
-        })
-        .collect();
+    let mut created_items: Vec<String>;
+    let mut erased_items: Vec<String>;
+    let mut lost_items: Vec<String>;
+    let mut moved_items: Vec<String>;
+    let mut modified_items: Vec<String>;
 
-    // Format erased items
-    let mut erased_items: Vec<String> = analyzed
-        .erased
-        .iter()
-        .map(|path| {
-            t!(
-                "jv.success.status.erased_item",
-                path = path.display().to_string()
-            )
-            .trim()
-            .magenta()
-            .to_string()
-        })
-        .collect();
-
-    // Format lost items
-    let mut lost_items: Vec<String> = analyzed
-        .lost
-        .iter()
-        .map(|path| {
-            t!(
-                "jv.success.status.lost_item",
-                path = path.display().to_string()
-            )
-            .trim()
-            .red()
-            .to_string()
-        })
-        .collect();
-
-    // Format moved items
-    let mut moved_items: Vec<String> = analyzed
-        .moved
-        .iter()
-        .map(|(_, (from, to))| {
-            t!(
-                "jv.success.status.moved_item",
-                from = from.display(),
-                to = to.display()
-            )
-            .trim()
-            .yellow()
-            .to_string()
-        })
-        .collect();
-
-    // Format modified items
-    let mut modified_items: Vec<String> = analyzed
-        .modified
-        .iter()
-        .map(|path| {
-            let holder_match = {
-                if let Ok(mapping) = local_sheet.mapping_data(path) {
-                    let vfid = mapping.mapping_vfid();
-                    match latest_file_data.file_holder(vfid) {
-                        Some(holder) => holder == &account,
-                        None => false,
+    if args.json_output {
+        let mut created: Vec<PathBuf> = analyzed.created.iter().cloned().collect();
+        let mut lost: Vec<PathBuf> = analyzed.lost.iter().cloned().collect();
+        let mut erased: Vec<PathBuf> = analyzed.erased.iter().cloned().collect();
+        let mut moved: Vec<(PathBuf, PathBuf)> = analyzed
+            .moved
+            .iter()
+            .map(|(_, (from, to))| (from.clone(), to.clone()))
+            .collect();
+        let mut modified: Vec<(PathBuf, ModifiedType)> = analyzed
+            .modified
+            .iter()
+            .cloned()
+            .map(|path| {
+                let holder_match = {
+                    if let Ok(mapping) = local_sheet.mapping_data(&path) {
+                        let vfid = mapping.mapping_vfid();
+                        match latest_file_data.file_holder(vfid) {
+                            Some(holder) => holder == &account,
+                            None => false,
+                        }
+                    } else {
+                        false
                     }
-                } else {
-                    false
-                }
-            };
+                };
 
-            let base_version_match = {
-                if let Ok(mapping) = local_sheet.mapping_data(path) {
-                    let vfid = mapping.mapping_vfid();
-                    let ver = mapping.version_when_updated();
-                    if let Some(latest_version) = latest_file_data.file_version(&vfid) {
-                        ver == latest_version
+                let base_version_match = {
+                    if let Ok(mapping) = local_sheet.mapping_data(&path) {
+                        let vfid = mapping.mapping_vfid();
+                        let ver = mapping.version_when_updated();
+                        if let Some(latest_version) = latest_file_data.file_version(&vfid) {
+                            ver == latest_version
+                        } else {
+                            true
+                        }
                     } else {
                         true
                     }
+                };
+
+                let modified_type = if !holder_match {
+                    ModifiedType::ModifiedButNotHeld
+                } else if !base_version_match {
+                    ModifiedType::ModifiedButBaseVersionMismatch
                 } else {
-                    true
+                    ModifiedType::Modified
+                };
+
+                (path, modified_type)
+            })
+            .collect();
+
+        // Sort
+        created.sort();
+        lost.sort();
+        erased.sort();
+        moved.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
+        modified.sort_by(|a, b| a.0.cmp(&b.0));
+
+        let json_result = AnalyzerJsonResult {
+            created,
+            lost,
+            erased,
+            moved,
+            modified,
+        };
+
+        print_json(json_result, args.pretty);
+        return;
+    } else {
+        // Format created items
+        created_items = analyzed
+            .created
+            .iter()
+            .map(|path| {
+                t!(
+                    "jv.success.status.created_item",
+                    path = path.display().to_string()
+                )
+                .trim()
+                .green()
+                .to_string()
+            })
+            .collect();
+
+        // Format erased items
+        erased_items = analyzed
+            .erased
+            .iter()
+            .map(|path| {
+                t!(
+                    "jv.success.status.erased_item",
+                    path = path.display().to_string()
+                )
+                .trim()
+                .magenta()
+                .to_string()
+            })
+            .collect();
+
+        // Format lost items
+        lost_items = analyzed
+            .lost
+            .iter()
+            .map(|path| {
+                t!(
+                    "jv.success.status.lost_item",
+                    path = path.display().to_string()
+                )
+                .trim()
+                .red()
+                .to_string()
+            })
+            .collect();
+
+        // Format moved items
+        moved_items = analyzed
+            .moved
+            .iter()
+            .map(|(_, (from, to))| {
+                t!(
+                    "jv.success.status.moved_item",
+                    from = from.display(),
+                    to = to.display()
+                )
+                .trim()
+                .yellow()
+                .to_string()
+            })
+            .collect();
+
+        // Format modified items
+        modified_items = analyzed
+            .modified
+            .iter()
+            .map(|path| {
+                let holder_match = {
+                    if let Ok(mapping) = local_sheet.mapping_data(path) {
+                        let vfid = mapping.mapping_vfid();
+                        match latest_file_data.file_holder(vfid) {
+                            Some(holder) => holder == &account,
+                            None => false,
+                        }
+                    } else {
+                        false
+                    }
+                };
+
+                let base_version_match = {
+                    if let Ok(mapping) = local_sheet.mapping_data(path) {
+                        let vfid = mapping.mapping_vfid();
+                        let ver = mapping.version_when_updated();
+                        if let Some(latest_version) = latest_file_data.file_version(&vfid) {
+                            ver == latest_version
+                        } else {
+                            true
+                        }
+                    } else {
+                        true
+                    }
+                };
+
+                // Holder dismatch
+                if !holder_match {
+                    return t!(
+                        "jv.success.status.invalid_modified_item",
+                        path = path.display().to_string(),
+                        reason = t!("jv.success.status.invalid_modified_reasons.not_holder")
+                    )
+                    .trim()
+                    .red()
+                    .to_string();
                 }
-            };
 
-            // Holder dismatch
-            if !holder_match {
-                return t!(
-                    "jv.success.status.invalid_modified_item",
-                    path = path.display().to_string(),
-                    reason = t!("jv.success.status.invalid_modified_reasons.not_holder")
+                // Base version mismatch
+                if !base_version_match {
+                    return t!(
+                        "jv.success.status.invalid_modified_item",
+                        path = path.display().to_string(),
+                        reason =
+                            t!("jv.success.status.invalid_modified_reasons.base_version_mismatch")
+                    )
+                    .trim()
+                    .red()
+                    .to_string();
+                }
+
+                t!(
+                    "jv.success.status.modified_item",
+                    path = path.display().to_string()
                 )
                 .trim()
-                .red()
-                .to_string();
-            }
-
-            // Base version mismatch
-            if !base_version_match {
-                return t!(
-                    "jv.success.status.invalid_modified_item",
-                    path = path.display().to_string(),
-                    reason = t!("jv.success.status.invalid_modified_reasons.base_version_mismatch")
-                )
-                .trim()
-                .red()
-                .to_string();
-            }
-
-            t!(
-                "jv.success.status.modified_item",
-                path = path.display().to_string()
-            )
-            .trim()
-            .cyan()
-            .to_string()
-        })
-        .collect();
+                .cyan()
+                .to_string()
+            })
+            .collect();
+    }
 
     let has_struct_changes = !created_items.is_empty()
         || !lost_items.is_empty()
@@ -2232,6 +2511,86 @@ async fn jv_info(args: InfoArgs) {
     let query_file_path_string =
         format_path_str(query_file_path.display().to_string()).unwrap_or_default();
 
+    // JSON output handling
+    if args.json_output {
+        let mut json_result = InfoJsonResult::default();
+        json_result.mapping = query_file_path_string.clone();
+
+        // Get reference sheet path
+        json_result.in_ref = if let Some(path) = latest_info.ref_sheet_vfs_mapping.get(vfid) {
+            path.display().to_string()
+        } else {
+            vfid.clone()
+        };
+
+        json_result.vfid = vfid.clone();
+
+        // Get file version in reference sheet
+        let version_in_ref = if let Some(mapping) = latest_info
+            .ref_sheet_content
+            .mapping()
+            .get(&query_file_path)
+        {
+            mapping.version.clone()
+        } else {
+            "".to_string()
+        };
+
+        // Get current file version
+        let version_current = latest_file_data
+            .file_version(vfid)
+            .cloned()
+            .unwrap_or_else(|| "".to_string());
+
+        // Check if file is being edited based on latest version (regardless of hold status)
+        let modified_correctly = if let Ok(mapping) = local_sheet.mapping_data(&query_file_path) {
+            // If base editing version is correct
+            if mapping.version_when_updated() == &version_current {
+                mapping.last_modifiy_check_result() // Return detection result
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+
+        // Build history list
+        if let Some(histories) = latest_file_data.file_histories(vfid) {
+            for (version, description) in histories {
+                json_result.histories.push(InfoHistory {
+                    version: version.clone(),
+                    version_creator: description.creator.clone(),
+                    version_description: description.description.clone(),
+                    is_current_version: version == &version_current,
+                    is_ref_version: version == &version_in_ref,
+                });
+            }
+        }
+
+        // Add current modification if exists
+        if modified_correctly {
+            json_result.histories.insert(
+                0,
+                InfoHistory {
+                    version: "CURRENT".to_string(),
+                    version_creator: local_workspace
+                        .config()
+                        .lock()
+                        .await
+                        .current_account()
+                        .clone(),
+                    version_description: t!("jv.success.info.oneline.description_current")
+                        .to_string(),
+                    is_current_version: true,
+                    is_ref_version: false,
+                },
+            );
+        }
+
+        print_json(json_result, args.pretty);
+        return;
+    }
+
     // Render initial location
     {
         println!("{}", query_file_path_string);
@@ -2421,6 +2780,40 @@ async fn jv_sheet_list(args: SheetListArgs) {
     let mut your_sheet_counts = 0;
     let mut other_sheet_counts = 0;
 
+    // JSON output handling
+    if args.json_output {
+        let mut json_result = SheetListJsonResult::default();
+
+        // Populate reference sheets
+        for sheet_name in &latest_info.reference_sheets {
+            json_result.reference_sheets.push(SheetItem {
+                name: sheet_name.clone(),
+                holder: local_cfg.current_account().clone(),
+            });
+        }
+
+        // Populate other sheets
+        for sheet in &latest_info.invisible_sheets {
+            json_result.other_sheets.push(SheetItem {
+                name: sheet.sheet_name.clone(),
+                holder: sheet.holder_name.clone().unwrap_or_default(),
+            });
+        }
+
+        // Populate my sheets (excluding reference sheets)
+        for sheet_name in &latest_info.visible_sheets {
+            if !latest_info.reference_sheets.contains(sheet_name) {
+                json_result.my_sheets.push(SheetItem {
+                    name: sheet_name.clone(),
+                    holder: local_cfg.current_account().clone(),
+                });
+            }
+        }
+
+        print_json(json_result, args.pretty);
+        return;
+    }
+
     if args.raw {
         // Print your sheets
         if !args.others && !args.all || !args.others {
@@ -2551,7 +2944,12 @@ async fn jv_sheet_use(args: SheetUseArgs) {
             };
 
             // After successfully switching sheets, status should be automatically prompted
-            jv_status(StatusArgs { help: false }).await;
+            jv_status(StatusArgs {
+                help: false,
+                json_output: false,
+                pretty: false,
+            })
+            .await;
         }
         Err(e) => match e.kind() {
             std::io::ErrorKind::AlreadyExists => {} // Already In Use
@@ -2845,6 +3243,51 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
                 align_tasks.erased.iter().for_each(|i| println!("{}", i.0));
                 return;
             }
+            return;
+        }
+
+        // Json Output
+        if args.json_output {
+            let mut json_result = AlignJsonResult::default();
+
+            for (name, local_path) in &align_tasks.created {
+                json_result.align_tasks.insert(
+                    name.clone(),
+                    AlignTaskMapping {
+                        local_mapping: local_path.clone(),
+                        remote_mapping: PathBuf::new(),
+                    },
+                );
+            }
+            for (name, (remote_path, local_path)) in &align_tasks.moved {
+                json_result.align_tasks.insert(
+                    name.clone(),
+                    AlignTaskMapping {
+                        local_mapping: local_path.clone(),
+                        remote_mapping: remote_path.clone(),
+                    },
+                );
+            }
+            for (name, local_path) in &align_tasks.lost {
+                json_result.align_tasks.insert(
+                    name.clone(),
+                    AlignTaskMapping {
+                        local_mapping: local_path.clone(),
+                        remote_mapping: PathBuf::new(),
+                    },
+                );
+            }
+            for (name, local_path) in &align_tasks.erased {
+                json_result.align_tasks.insert(
+                    name.clone(),
+                    AlignTaskMapping {
+                        local_mapping: local_path.clone(),
+                        remote_mapping: PathBuf::new(),
+                    },
+                );
+            }
+
+            print_json(json_result, args.pretty);
             return;
         }
 
@@ -4812,6 +5255,20 @@ async fn jv_account_remove(user_dir: UserDirectory, args: AccountRemoveArgs) {
 async fn jv_account_list(user_dir: UserDirectory, args: AccountListArgs) {
     let _ = correct_current_dir();
 
+    if args.json_output {
+        let Ok(account_ids) = user_dir.account_ids() else {
+            return;
+        };
+        let mut result = HashMap::new();
+        for account_id in account_ids {
+            let has_private_key = user_dir.has_private_key(&account_id);
+            result.insert(account_id, AccountItem { has_private_key });
+        }
+        let json_result = AccountListJsonResult { result };
+        print_json(json_result, args.pretty);
+        return;
+    }
+
     if args.raw {
         let Ok(account_ids) = user_dir.account_ids() else {
             return;
@@ -5548,4 +6005,13 @@ fn truncate_first_line(content: String) -> String {
     } else {
         first_line.to_string()
     }
+}
+
+fn print_json<T: serde::Serialize>(obj: T, pretty: bool) {
+    let result = if pretty {
+        serde_json::to_string_pretty(&obj)
+    } else {
+        serde_json::to_string(&obj)
+    };
+    println!("{}", result.unwrap_or("{}".to_string()));
 }
