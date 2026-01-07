@@ -388,26 +388,24 @@ jv:
     - File's version in `ref`
 
   track: |
-    **Track Files to Latest Fact**
+    **Track Files to Latest Version**
     **Usage**: jv track <FILE_PATH>
 
-    It is not uploading, nor downloading,
-    but a declaration of the result regarding [[cyan]]"which version should be considered fact"[[/]].
+    This operation is used to declare the latest valid version of a file, not simply uploading or downloading.
 
     **Creation**
-    When there is an untracked file in the workspace, that file does not yet exist in the recognized fact.
-    Executing track will create the factual version of this file, write it to your sheet, and grant you editing rights.
-    At this point, you are **the author of this fact**.
+    When there is an untracked file in the workspace, that file does not yet have a recognized version.
+    Executing track will create a version record for this file, incorporate it into your sheet management, and grant you editing rights.
 
     **Update**
-    When you hold a file and edit based on the current latest fact,
-    the version in your workspace will be considered the new latest fact.
-    Executing track will **update this fact to the upstream**.
+    When you hold a file and edit based on the current latest version,
+    the version in your workspace will be considered the new valid version.
+    Executing track will **update this version to the upstream**.
 
     **Synchronization**
-    When you do not hold the file, edit based on outdated facts, or the file does not exist locally,
-    your modifications do not have factual validity; everything follows the upstream latest version.
-    Executing track will **synchronize the upstream fact to local**.
+    When you do not hold the file, edit based on outdated versions, or the file does not exist locally,
+    your local modifications do not have version validity; everything follows the upstream latest version.
+    Executing track will **synchronize the upstream latest version to local**.
     To overwrite local modifications, you must explicitly specify `--overwrite`.
 
   hold: |
@@ -756,8 +754,6 @@ jv:
       as: Successfully switched this workspace's account to `%{account}`
       as_host: |
         Switched to account: `host/%{account}`
-        If the Host identity is recognized by the upstream vault, you can control all sheets and mappings.
-        Please remember: "*With great power comes great responsibility*"
       add: Successfully added account `%{account}`!
       remove: Successfully removed account `%{account}`!
       list:
@@ -1009,8 +1005,8 @@ jv:
         **Fact Advancement**
         5. You can directly use `jv track` in any sheet to advance file versions
 
-        [[red]]**Please remember**: Host is not administrator mode,
-        but the ultimate bearer of others' structure, history, and interpretive rights.
+        [[red]]**Please remember**:
+        You are now the ultimate bearer of others' structure, history, and interpretive rights.
         Every operation you perform will become a fact that others must accept.[[/]]
 
   result:
