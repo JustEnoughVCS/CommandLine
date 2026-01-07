@@ -13,8 +13,8 @@ fn main() {
 
     let repo_root = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
-    // Only generate installer script on Windows
     if cfg!(target_os = "windows") {
+        // Only generate installer script on Windows
         if let Err(e) = generate_installer_script(&repo_root) {
             eprintln!("Failed to generate installer script: {}", e);
             std::process::exit(1);

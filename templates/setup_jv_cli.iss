@@ -16,7 +16,7 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 LicenseFile=..\..\LICENSE
 PrivilegesRequired=lowest
-OutputDir=..\..\deploy\setup
+OutputDir=..\..\.temp\deploy\setup
 OutputBaseFilename=JustEnoughVCS For Windows
 SetupIconFile=..\..\docs\images\Yizi.ico
 SolidCompression=yes
@@ -26,7 +26,7 @@ WizardStyle=modern dynamic
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: "..\..\deploy\*"; Excludes: "setup"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\..\.temp\deploy\*"; Excludes: "setup"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "inst.ps1"; DestDir: "{app}\scripts\"; Flags: ignoreversion
 Source: "uninst.ps1"; DestDir: "{app}\scripts\"; Flags: ignoreversion
 
