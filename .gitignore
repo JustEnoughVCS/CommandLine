@@ -17,11 +17,9 @@
 # Target directory
 /target/
 
-# Export directory
-/export/
+# Deploy directory
+/deploy/
 
-# Compile info
+# Generated from templates
 /src/data/compile_info.rs
-
-# Setup script
 /setup/windows/setup_jv_cli.iss

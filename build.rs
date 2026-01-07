@@ -3,7 +3,10 @@ use std::path::PathBuf;
 use std::process::Command;
 
 const COMPILE_INFO_RS: &str = "./src/data/compile_info.rs";
-const COMPILE_INFO_RS_TEMPLATE: &str = "./src/data/compile_info.rs.template";
+const COMPILE_INFO_RS_TEMPLATE: &str = "./templates/compile_info.rs";
+
+const SETUP_JV_CLI_ISS: &str = "./setup/windows/setup_jv_cli.iss";
+const SETUP_JV_CLI_ISS_TEMPLATE: &str = "./templates/setup_jv_cli.iss";
 
 fn main() {
     println!("cargo:rerun-if-env-changed=FORCE_BUILD");
@@ -26,8 +29,8 @@ fn main() {
 
 /// Generate Inno Setup installer script (Windows only)
 fn generate_installer_script(repo_root: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
-    let template_path = repo_root.join("setup/windows/setup_jv_cli_template.iss");
-    let output_path = repo_root.join("setup/windows/setup_jv_cli.iss");
+    let template_path = repo_root.join(SETUP_JV_CLI_ISS_TEMPLATE);
+    let output_path = repo_root.join(SETUP_JV_CLI_ISS);
 
     let template = std::fs::read_to_string(&template_path)?;
 

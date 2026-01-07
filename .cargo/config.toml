@@ -2,7 +2,7 @@
 target-dir = "./.temp/target/"
 
 [publish]
-target-dir = "./export/"
+target-dir = "./deploy/"
 binaries = [
     "jv",
     "jv.exe",
