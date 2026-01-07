@@ -25,7 +25,7 @@ use rust_i18n::t;
 use tokio::time::Instant;
 
 // Import i18n files
-rust_i18n::i18n!("locales", fallback = "en");
+rust_i18n::i18n!("resources/locales", fallback = "en");
 
 #[derive(Parser, Debug)]
 #[command(

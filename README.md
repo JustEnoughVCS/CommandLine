@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://github.com/JustEnoughVCS/CommandLine">
-      <img alt="JustEnoughVCS" src="docs/images/Header_Large.png" width="100%">
+      <img alt="JustEnoughVCS" src="resources/images/Header_Large.png" width="100%">
   </a>
 </p>
 

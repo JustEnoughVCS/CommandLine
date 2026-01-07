@@ -18,7 +18,7 @@ LicenseFile=..\..\LICENSE
 PrivilegesRequired=lowest
 OutputDir=..\..\.temp\deploy\setup
 OutputBaseFilename=JustEnoughVCS For Windows
-SetupIconFile=..\..\docs\images\Yizi.ico
+SetupIconFile=..\..\resources\images\Yizi.ico
 SolidCompression=yes
 WizardStyle=modern dynamic
 
