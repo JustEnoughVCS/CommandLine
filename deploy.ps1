@@ -1,5 +1,13 @@
 # Require : Cargo (Rust), ISCC (Inno Setup)
 
+# Hide .cargo and .temp directories before build
+if (Test-Path .cargo) {
+    attrib +h .cargo
+}
+if (Test-Path .temp) {
+    attrib +h .temp
+}
+
 # Check for ISCC
 $isccPath = Get-Command ISCC -ErrorAction SilentlyContinue
 if (-not $isccPath) {
