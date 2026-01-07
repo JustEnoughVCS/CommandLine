@@ -16,7 +16,7 @@ if (-not $isccPath) {
 }
 
 # Build
-$env:CARGO_BUILD_RERUN_IF_ENV_CHANGED="FORCE_BUILD=$(Get-Date -Format 'mmss')"
+$env:FORCE_BUILD=$(Get-Date -Format 'mmss')
 cargo build --workspace --release
 if ($LASTEXITCODE -ne 0) {
     # Build failed
