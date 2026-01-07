@@ -639,7 +639,6 @@ jv:
 
     init_create_dir_not_empty: |
       当前目录并不是空的！
-      若您确实确定在此处创建，请使用 --force 来强制执行！
 
     create: 创建本地工作区失败！
     init: 在此处创建本地工作区失败！
@@ -1074,8 +1073,7 @@ jv:
           成功将分享 `%{share_id}` 合入您的表 `%{sheet}`
           上游信息已变更，请使用 `jv update` 同步至最新信息
 
-        success_reject:
-          已拒绝接受分享 `%{share_id}`
+        success_reject: 已拒绝接受分享 `%{share_id}`
 
         has_conflicts: |
           从分享 `%{share_id}` 合并结构到您的表时发生冲突！

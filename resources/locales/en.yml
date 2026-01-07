@@ -646,7 +646,6 @@ jv:
 
     init_create_dir_not_empty: |
       The current directory is not empty!
-      If you are certain you want to create here, please use --force to force execution!
 
     create: Failed to create local workspace!
     init: Failed to create workspace here!
@@ -1083,8 +1082,7 @@ jv:
           Successfully merged share `%{share_id}` into your sheet `%{sheet}`
           Upstream information has changed, please use `jv update` to sync to the latest information
 
-        success_reject:
-          Rejected share `%{share_id}`
+        success_reject: Rejected share `%{share_id}`
 
         has_conflicts: |
           Conflicts occurred when merging structure from share `%{share_id}` into your sheet!

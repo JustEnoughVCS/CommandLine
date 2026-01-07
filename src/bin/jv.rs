@@ -468,10 +468,6 @@ struct InitWorkspaceArgs {
     /// Show help information
     #[arg(short, long)]
     help: bool,
-
-    /// Force create, ignore files in the directory
-    #[arg(short, long)]
-    force: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -1410,7 +1406,7 @@ async fn jv_create(args: CreateWorkspaceArgs) {
     }
 }
 
-async fn jv_init(args: InitWorkspaceArgs) {
+async fn jv_init(_args: InitWorkspaceArgs) {
     let path = match current_dir() {
         Ok(path) => path,
         Err(e) => {
@@ -1419,7 +1415,7 @@ async fn jv_init(args: InitWorkspaceArgs) {
         }
     };
 
-    if !args.force && path.exists() && !is_directory_empty(&path).await {
+    if path.exists() && !is_directory_empty(&path).await {
         eprintln!("{}", t!("jv.fail.init_create_dir_not_empty").trim());
         return;
     }
