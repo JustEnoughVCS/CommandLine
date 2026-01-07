@@ -2229,9 +2229,12 @@ async fn jv_info(args: InfoArgs) {
     };
     let vfid = mapping.mapping_vfid();
 
+    let query_file_path_string =
+        format_path_str(query_file_path.display().to_string()).unwrap_or_default();
+
     // Render initial location
     {
-        println!("{}", query_file_path.display().to_string());
+        println!("{}", query_file_path_string);
     }
 
     // Render reference sheet location, use ID if not found
@@ -2243,7 +2246,6 @@ async fn jv_info(args: InfoArgs) {
         };
 
         // Offset string
-        let query_file_path_string = query_file_path.display().to_string();
         let offset_string = " ".repeat(display_width(
             if let Some(last_slash) = query_file_path_string.rfind('/') {
                 &query_file_path_string[..last_slash]
