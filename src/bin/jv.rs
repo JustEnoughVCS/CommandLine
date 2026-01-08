@@ -4,7 +4,7 @@ use just_enough_vcs::{
     system::action_system::{action::ActionContext, action_pool::ActionPool},
     utils::{
         cfg_file::config::ConfigFile,
-        data_struct::dada_sort::quick_sort_with_cmp,
+        data_struct::data_sort::quick_sort_with_cmp,
         sha1_hash,
         string_proc::{
             self,
