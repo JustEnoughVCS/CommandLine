@@ -8,8 +8,8 @@ pub struct AnalyzerJsonResult {
     pub created: Vec<PathBuf>,
     pub lost: Vec<PathBuf>,
     pub erased: Vec<PathBuf>,
-    pub moved: Vec<(PathBuf, PathBuf)>,
-    pub modified: Vec<(PathBuf, ModifiedType)>,
+    pub moved: Vec<MovedItem>,
+    pub modified: Vec<ModifiedItem>,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -18,4 +18,18 @@ pub enum ModifiedType {
     Modified,
     ModifiedButBaseVersionMismatch,
     ModifiedButNotHeld,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct MovedItem {
+    pub from: PathBuf,
+    pub to: PathBuf,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct ModifiedItem {
+    pub path: PathBuf,
+    pub modification_type: ModifiedType,
 }

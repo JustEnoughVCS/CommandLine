@@ -89,7 +89,7 @@ use just_enough_vcs_cli::{
     output::{
         accounts::{AccountItem, AccountListJsonResult},
         align::{AlignJsonResult, AlignTaskMapping},
-        analyzer_result::{AnalyzerJsonResult, ModifiedType},
+        analyzer_result::{AnalyzerJsonResult, ModifiedItem, ModifiedType, MovedItem},
         here::{HereJsonResult, HereJsonResultItem},
         info::{InfoHistory, InfoJsonResult},
         share::{SeeShareResult, ShareItem, ShareListResult},
@@ -2108,12 +2108,15 @@ async fn jv_status(args: StatusArgs) {
         let mut created: Vec<PathBuf> = analyzed.created.iter().cloned().collect();
         let mut lost: Vec<PathBuf> = analyzed.lost.iter().cloned().collect();
         let mut erased: Vec<PathBuf> = analyzed.erased.iter().cloned().collect();
-        let mut moved: Vec<(PathBuf, PathBuf)> = analyzed
+        let mut moved: Vec<MovedItem> = analyzed
             .moved
             .iter()
-            .map(|(_, (from, to))| (from.clone(), to.clone()))
+            .map(|(_, (from, to))| MovedItem {
+                from: from.clone(),
+                to: to.clone(),
+            })
             .collect();
-        let mut modified: Vec<(PathBuf, ModifiedType)> = analyzed
+        let mut modified: Vec<ModifiedItem> = analyzed
             .modified
             .iter()
             .cloned()
@@ -2144,7 +2147,7 @@ async fn jv_status(args: StatusArgs) {
                     }
                 };
 
-                let modified_type = if !holder_match {
+                let modification_type = if !holder_match {
                     ModifiedType::ModifiedButNotHeld
                 } else if !base_version_match {
                     ModifiedType::ModifiedButBaseVersionMismatch
@@ -2152,7 +2155,10 @@ async fn jv_status(args: StatusArgs) {
                     ModifiedType::Modified
                 };
 
-                (path, modified_type)
+                ModifiedItem {
+                    path,
+                    modification_type,
+                }
             })
             .collect();
 
@@ -2160,8 +2166,8 @@ async fn jv_status(args: StatusArgs) {
         created.sort();
         lost.sort();
         erased.sort();
-        moved.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
-        modified.sort_by(|a, b| a.0.cmp(&b.0));
+        moved.sort_by(|a, b| a.from.cmp(&b.from).then(a.to.cmp(&b.to)));
+        modified.sort_by(|a, b| a.path.cmp(&b.path));
 
         let json_result = AnalyzerJsonResult {
             created,
