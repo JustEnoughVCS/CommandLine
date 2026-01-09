@@ -276,8 +276,8 @@ jv:
     **FILE OPERATIONS**:
       move  <FILE> <TO>             - Safely rename files                      [[cyan]][REMOTE][[/]]
       track <FILE>                  - Track files to latest version            [[cyan]][REMOTE][[/]]
-      hold  <FILE>                  - Hold, sync and lock file                 [[cyan]][REMOTE][[/]]
-      throw <FILE>                  - Throw, sync and unlock file              [[cyan]][REMOTE][[/]]
+      hold  <FILE>                  - Hold, obtain file editing rights         [[cyan]][REMOTE][[/]]
+      throw <FILE>                  - Throw, release file editing rights       [[cyan]][REMOTE][[/]]
       jump  <FILE> <VERSION>        - Jump file to other version               [[cyan]][REMOTE][[/]]
 
     **DOCUMENTATION**:
