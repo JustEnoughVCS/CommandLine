@@ -271,7 +271,6 @@ jv:
     **FILE TRANSFER**:
       share <FILE> <SHEET> <DESC>   - Share mapping to other sheets            [[cyan]][REMOTE][[/]]
       share <SHARE_ID>              - Import share to current sheet            [[cyan]][REMOTE][[/]]
-      share <REF_SHEET> <FILE>      - Import mapping from other ref sheet      [[cyan]][REMOTE][[/]]
 
     **FILE OPERATIONS**:
       move  <FILE> <TO>             - Safely rename files                      [[cyan]][REMOTE][[/]]
@@ -452,7 +451,12 @@ jv:
     jv share list - View incoming shares
     jv share see - View share details
 
-    **Tip**: The import command can use the following parameters
+    **Sharing Mode**
+    The `jv share <FILE> <SHEET>` command can use the following parameters
+      --work - Start editor mode for detailed sharing control
+
+    **Import Mode**
+    The `jv share <SHARE_ID>` command can use the following parameters
       --safe - Safe import, reject all conflicts, this is the default scheme
       --skip - Skip all conflicting items
       --overwrite - Force overwrite conflicting mappings, dangerous operation
@@ -582,6 +586,9 @@ jv:
       invalid_target_sheet: |
         The sheet `%{sheet}` you specified does not exist in your context.
         If you are sure it exists, please use `jv update` to update the workspace.
+
+      no_description: |
+        Cannot provide share description!
 
     sheet:
       align:
@@ -1295,3 +1302,12 @@ editor:
       new_version: NEW
     content:
       arrow: ->
+
+  share_editor: |
+    # You are using editor mode to share files to another sheet
+    # The following files will be shared to `%{sheet}`
+
+    %{shared_files}
+    ----------------------------------------------------------------------
+    # Fill in the update description here,
+    # tell the holder of `%{sheet}`, `%{holder}`, the specific details

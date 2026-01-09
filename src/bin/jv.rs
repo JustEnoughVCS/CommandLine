@@ -739,6 +739,10 @@ struct ShareMappingArgs {
     /// Show json output pretty
     #[arg(long = "pretty")]
     pretty: bool,
+
+    /// Share - Editor mode
+    #[arg(short, long)]
+    work: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -4750,7 +4754,6 @@ async fn proc_mapping_edit(
 }
 
 async fn jv_share(args: ShareMappingArgs) {
-    // Import share mode
     if let (Some(args1), None, None) = (&args.args1, &args.args2, &args.args3) {
         // List mode
         if args1.trim() == "list" || args1.trim() == "ls" {
@@ -4762,8 +4765,19 @@ async fn jv_share(args: ShareMappingArgs) {
         return;
     }
 
-    // Pull mode
     if let (Some(args1), Some(args2), None) = (&args.args1, &args.args2, &args.args3) {
+        // 如果是 work 模式，那么就是分享
+        if args.work {
+            share_out(
+                args1.to_string(),
+                args2.to_string(),
+                String::default(),
+                args,
+            )
+            .await;
+            return;
+        }
+
         // See mode
         if args1.trim() == "see" {
             share_see(args2.to_string(), args).await;
@@ -4774,7 +4788,6 @@ async fn jv_share(args: ShareMappingArgs) {
         return;
     }
 
-    // Share mode
     if let (Some(share_pattern), Some(to_sheet), Some(description)) =
         (&args.args1, &args.args2, &args.args3)
     {
@@ -5080,9 +5093,9 @@ async fn share_out(
     share_pattern: String,
     to_sheet: String,
     description: String,
-    _args: ShareMappingArgs,
+    args: ShareMappingArgs,
 ) {
-    let shared_files = {
+    let mut shared_files = {
         let local_dir = match current_local_path() {
             Some(dir) => dir,
             None => {
@@ -5107,6 +5120,11 @@ async fn share_out(
     let local_config = match precheck().await {
         Some(config) => config,
         None => return,
+    };
+
+    let Some(local_workspace) = LocalWorkspace::init_current_dir(local_config.clone()) else {
+        eprintln!("{}", md(t!("jv.fail.workspace_not_found")).trim());
+        return;
     };
 
     let Ok(latest_info) = LatestInfo::read_from(LatestInfo::latest_info_path(
@@ -5160,6 +5178,15 @@ async fn share_out(
             }
             holder
         }
+    };
+
+    let Some(description) = (if args.work {
+        start_share_editor(&local_workspace, &mut shared_files, &to_sheet_holder).await
+    } else {
+        Some(description.to_string())
+    }) else {
+        eprintln!("{}", md(t!("jv.fail.share.no_description")));
+        return;
     };
 
     match proc_share_mapping_action(
@@ -5219,6 +5246,98 @@ async fn share_out(
             }
         },
         Err(e) => handle_err(e),
+    }
+}
+
+async fn start_share_editor(
+    workspace: &LocalWorkspace,
+    shared_files: &mut Vec<PathBuf>,
+    holder: &MemberId,
+) -> Option<String> {
+    let config = workspace.config().lock().await.clone();
+
+    let sheet_name = config.sheet_in_use().clone();
+    let Some(sheet_name) = sheet_name else {
+        eprintln!("{}", md(t!("jv.fail.status.no_sheet_in_use")).trim());
+        return None;
+    };
+
+    let account = config.current_account();
+    let Ok(local_sheet) = workspace.local_sheet(&account, &sheet_name).await else {
+        eprintln!(
+            "{}",
+            md(t!(
+                "jv.fail.cfg_not_found.local_sheet",
+                account = &account,
+                sheet = &sheet_name
+            ))
+        );
+        return None;
+    };
+
+    // Generate shared files and automatically comment out lost mappings
+    let shared_files_str: String = shared_files
+        .iter()
+        .map(|p| {
+            if local_sheet.mapping_data(p).is_err() {
+                format!("# {}", p.display().to_string())
+            } else {
+                p.display().to_string()
+            }
+        })
+        .collect::<Vec<String>>()
+        .join("\n");
+    let shared_files_str = shared_files_str.trim();
+
+    let editor_content = t!(
+        "editor.share_editor",
+        sheet = sheet_name,
+        holder = holder,
+        shared_files = shared_files_str
+    );
+
+    let path = workspace
+        .local_path()
+        .join(CLIENT_PATH_WORKSPACE_ROOT)
+        .join(".SHARE.md");
+
+    let result = input_with_editor(format!("{}\n", editor_content), path, "#")
+        .await
+        .unwrap_or_default();
+
+    // Find the last separator line (a line that, when trimmed, consists of at least 3 '-' characters)
+    let lines: Vec<&str> = result.lines().collect();
+    let mut last_separator_index = None;
+
+    for (i, line) in lines.iter().enumerate() {
+        let trimmed = line.trim();
+        if trimmed.chars().all(|c| c == '-') && trimmed.len() >= 3 {
+            last_separator_index = Some(i);
+        }
+    }
+
+    // Extract content after the last separator
+    let description = if let Some(sep_idx) = last_separator_index {
+        lines[sep_idx + 1..].join("\n").trim().to_string()
+    } else {
+        result.trim().to_string()
+    };
+
+    // Update shared_files with the first segment (before the first separator)
+    if let Some(sep_idx) = last_separator_index {
+        let first_segment: Vec<PathBuf> = lines[..sep_idx]
+            .iter()
+            .map(|line| line.trim())
+            .filter(|line| !line.is_empty())
+            .map(PathBuf::from)
+            .collect();
+        *shared_files = first_segment;
+    }
+
+    if description.trim().is_empty() {
+        None
+    } else {
+        Some(description)
     }
 }
 
