@@ -1,5 +1,10 @@
 # Require : Cargo (Rust), ISCC (Inno Setup)
 
+# Set location to script directory
+$scriptPath = $MyInvocation.MyCommand.Path
+$scriptDir = Split-Path $scriptPath -Parent
+Set-Location $scriptDir
+
 # Hide .cargo and .temp directories before build
 if (Test-Path .cargo) {
     attrib +h .cargo

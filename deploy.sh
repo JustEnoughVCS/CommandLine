@@ -2,6 +2,9 @@
 
 # Require : Cargo (Rust)
 
+# Change to the directory where the script is located
+cd "$(dirname "$0")" || exit 1
+
 # Build
 if FORCE_BUILD=$(date +%s) cargo build --workspace --release; then
     # Export
