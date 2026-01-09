@@ -92,6 +92,7 @@ use just_enough_vcs_cli::{
         analyzer_result::{AnalyzerJsonResult, ModifiedType},
         here::{HereJsonResult, HereJsonResultItem},
         info::{InfoHistory, InfoJsonResult},
+        share::{SeeShareResult, ShareItem, ShareListResult},
         sheets::{SheetItem, SheetListJsonResult},
     },
     utils::{
@@ -730,6 +731,14 @@ struct ShareMappingArgs {
     /// Show raw output
     #[arg(short = 'r', long)]
     raw: bool,
+
+    /// Show json output
+    #[arg(long = "json")]
+    json_output: bool,
+
+    /// Show json output pretty
+    #[arg(long = "pretty")]
+    pretty: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -4751,7 +4760,7 @@ async fn jv_share(args: ShareMappingArgs) {
     if let (Some(args1), Some(args2), None) = (&args.args1, &args.args2, &args.args3) {
         // See mode
         if args1.trim() == "see" {
-            share_see(args2.to_string()).await;
+            share_see(args2.to_string(), args).await;
             return;
         }
 
@@ -4814,6 +4823,21 @@ async fn share_list(args: ShareMappingArgs) {
             sorted_shares.insert(id.clone(), share);
         }
 
+        if args.json_output {
+            let share_list: Vec<ShareItem> = sorted_shares
+                .iter()
+                .map(|(share_id, share)| ShareItem {
+                    share_id: share_id.clone(),
+                    sharer: share.sharer.clone(),
+                    description: share.description.clone(),
+                    file_count: share.mappings.len(),
+                })
+                .collect();
+            let result = ShareListResult { share_list };
+            print_json(result, args.pretty);
+            return;
+        }
+
         if !args.raw {
             // Create table and insert information
             let mut table = SimpleTable::new(vec![
@@ -4845,7 +4869,7 @@ async fn share_list(args: ShareMappingArgs) {
     }
 }
 
-async fn share_see(share_id: String) {
+async fn share_see(share_id: String, args: ShareMappingArgs) {
     let _ = correct_current_dir();
 
     let Some(local_dir) = current_local_path() else {
@@ -4878,6 +4902,17 @@ async fn share_see(share_id: String) {
 
     if let Some(shares) = latest_info.shares_in_my_sheets.get(&sheet_name) {
         if let Some(share) = shares.get(&share_id) {
+            if args.json_output {
+                let result = SeeShareResult {
+                    share_id: share_id.clone(),
+                    sharer: share.sharer.clone(),
+                    description: share.description.clone(),
+                    mappings: share.mappings.clone(),
+                };
+                print_json(result, args.pretty);
+                return;
+            }
+
             println!(
                 "{}",
                 md(t!(
