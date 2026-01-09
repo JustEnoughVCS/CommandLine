@@ -21,16 +21,19 @@ binaries = [
 # Completions
 [copies.completion_jv_bash]
 from = "scripts/deploy/completions/bash/completion_jv.sh"
-to = "completions/bash/completion_jv.sh"
+to = "comp/jv.sh"
+platform = [ "linux", "macos" ]
 
 [copies.completion_jvv_bash]
 from = "scripts/deploy/completions/bash/completion_jvv.sh"
-to = "completions/bash/completion_jvv.sh"
+to = "comp/jvv.sh"
+platform = [ "linux", "macos" ]
 
 # Entries
 [copies.entry_bash]
 from = "scripts/deploy/jv_cli.sh"
 to = "jv_cli.sh"
+platform = [ "linux", "macos" ]
 
 ##################
 ### Powershell ###
@@ -39,16 +42,19 @@ to = "jv_cli.sh"
 # Completions
 [copies.completion_jv_powershell]
 from = "scripts/deploy/completions/powershell/completion_jv.ps1"
-to = "completions/powershell/completion_jv.ps1"
+to = "comp/jv.ps1"
+platform = [ "windows" ]
 
 [copies.completion_jvv_powershell]
 from = "scripts/deploy/completions/powershell/completion_jvv.ps1"
-to = "completions/powershell/completion_jvv.ps1"
+to = "comp/jvv.ps1"
+platform = [ "windows" ]
 
 # Entries
 [copies.entry_powershell]
 from = "scripts/deploy/jv_cli.ps1"
 to = "jv_cli.ps1"
+platform = [ "windows" ]
 
 ##################
 ### Zsh Plugin ###
@@ -56,8 +62,10 @@ to = "jv_cli.ps1"
 
 [copies.zsh_plugin]
 from = "scripts/deploy/zsh_support/jvcs.plugin.zsh"
-to = "scripts/zsh_support/jvcs.plugin.zsh"
+to = "zsh_support/jvcs.plugin.zsh"
+platform = [ "linux", "macos" ]
 
 [copies.zsh_plugin_installation]
 from = "scripts/deploy/zsh_support/how_to_install.md"
-to = "scripts/zsh_support/how_to_install.md"
+to = "zsh_support/how_to_install.md"
+platform = [ "linux", "macos" ]

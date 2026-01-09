@@ -28,7 +28,7 @@ if ($LASTEXITCODE -ne 0) {
 } else {
     # Build succeeded
     # Export
-    if (cargo run --manifest-path crates/build_helper/Cargo.toml --bin exporter) {
+    if (cargo run --manifest-path tools/build_helper/Cargo.toml --bin exporter) {
         Copy-Item -Path templates\compile_info.rs -Destination src\data\compile_info.rs -Force
         ISCC /Q .\setup\windows\setup_jv_cli.iss
     }

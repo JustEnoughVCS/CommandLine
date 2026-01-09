@@ -47,11 +47,11 @@ Set-Alias jmv jmv
 ### COMPLETION ###
 ##################
 
-if (Test-Path "$SCRIPT_DIR\completions\powershell\completion_jv.ps1") {
-    . "$SCRIPT_DIR\completions\powershell\completion_jv.ps1"
+if (Test-Path "$SCRIPT_DIR\comp\jv.ps1") {
+    . "$SCRIPT_DIR\comp\jv.ps1"
 }
-if (Test-Path "$SCRIPT_DIR\completions\powershell\completion_jvv.ps1") {
-    . "$SCRIPT_DIR\completions\powershell\completion_jvv.ps1"
+if (Test-Path "$SCRIPT_DIR\comp\jvv.ps1") {
+    . "$SCRIPT_DIR\comp\jvv.ps1"
 }
 
 ###################

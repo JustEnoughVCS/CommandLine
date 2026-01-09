@@ -91,6 +91,14 @@ fn export(
     // Copy additional files based on configuration
     let current = current_dir()?;
     for config in copy_configs {
+        // Check if platforms are specified and if current platform matches
+        if !config.platforms.is_empty() {
+            let current_platform = std::env::consts::OS;
+            if !config.platforms.contains(&current_platform.to_string()) {
+                continue;
+            }
+        }
+
         let source_path = current.join(&config.from);
         let dest_path = publish_dir.join(&config.to);
 
@@ -125,6 +133,7 @@ fn export(
 struct CopyConfig {
     from: String,
     to: String,
+    platforms: Vec<String>,
 }
 
 /// Get a target directory from the cargo config
@@ -193,9 +202,22 @@ fn copy_configs() -> Result<Vec<CopyConfig>, std::io::Error> {
             for (_, table) in tables {
                 if let Some(from) = table.get("from").and_then(|v| v.as_str()) {
                     let to = table.get("to").and_then(|v| v.as_str()).unwrap_or("");
+
+                    // Parse platforms array
+                    let mut platforms = Vec::new();
+                    if let Some(platforms_array) = table.get("platform").and_then(|v| v.as_array())
+                    {
+                        for platform in platforms_array {
+                            if let Some(platform_str) = platform.as_str() {
+                                platforms.push(platform_str.to_string());
+                            }
+                        }
+                    }
+
                     copy_configs.push(CopyConfig {
                         from: from.to_string(),
                         to: to.to_string(),
+                        platforms,
                     });
                 }
             }

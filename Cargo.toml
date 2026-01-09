@@ -6,7 +6,7 @@ authors = ["JustEnoughVCS Team"]
 homepage = "http://jvcs.cc/"
 
 [workspace]
-members = ["crates/build_helper"]
+members = ["tools/build_helper"]
 
 [workspace.package]
 version = "0.1.0-dev"

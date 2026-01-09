@@ -58,11 +58,11 @@ alias jvu='jv update'
 ### COMPLETION ###
 ##################
 
-if [ -f "$SCRIPT_DIR/completions/bash/completion_jv.sh" ]; then
-    source "$SCRIPT_DIR/completions/bash/completion_jv.sh"
+if [ -f "$SCRIPT_DIR/comp/jv.sh" ]; then
+    source "$SCRIPT_DIR/comp/jv.sh"
 fi
-if [ -f "$SCRIPT_DIR/completions/bash/completion_jvv.sh" ]; then
-    source "$SCRIPT_DIR/completions/bash/completion_jvv.sh"
+if [ -f "$SCRIPT_DIR/comp/jvv.sh" ]; then
+    source "$SCRIPT_DIR/comp/jvv.sh"
 fi
 
 ##################
