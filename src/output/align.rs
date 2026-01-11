@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path::PathBuf};
 
-use just_enough_vcs::vcs::data::local::align::AlignTaskName;
+use just_enough_vcs::vcs::data::local::align_tasks::AlignTaskName;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, Serialize, Deserialize)]

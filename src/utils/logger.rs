@@ -3,7 +3,7 @@ use std::path::Path;
 use colored::Colorize;
 use env_logger::{Builder, Target};
 use just_enough_vcs::{
-    utils::string_proc::format_path::format_path, vcs::data::vault::config::LoggerLevel,
+    utils::string_proc::format_path::format_path, vcs::data::vault::vault_config::LoggerLevel,
 };
 use log::{Level, LevelFilter};
 

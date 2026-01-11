@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use just_enough_vcs::vcs::data::{
     member::MemberId,
     sheet::{SheetMappingMetadata, SheetPathBuf},
-    vault::sheet_share::SheetShareId,
+    vault::mapping_share::SheetShareId,
 };
 use serde::{Deserialize, Serialize};
 

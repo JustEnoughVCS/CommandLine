@@ -8,11 +8,11 @@ use just_enough_vcs::{
     vcs::{
         connection::action_service::server_entry,
         constants::SERVER_FILE_VAULT,
-        current::current_vault_path,
         data::{
             member::Member,
-            vault::{Vault, config::VaultConfig},
+            vault::{Vault, vault_config::VaultConfig},
         },
+        env::current_vault_path,
     },
 };
 use just_enough_vcs_cli::{
