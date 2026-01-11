@@ -14,29 +14,6 @@ use just_enough_vcs::{
         tcp_connection::instance::ConnectionInstance,
     },
     vcs::{
-        actions::{
-            local_actions::{
-                SetUpstreamVaultActionResult, SyncCachedSheetFailReason, UpdateToLatestInfoResult,
-                proc_update_to_latest_info_action,
-            },
-            sheet_actions::{
-                DropSheetActionResult, EditMappingActionArguments, EditMappingActionResult,
-                EditMappingOperations, InvalidMoveReason, MakeSheetActionResult,
-                MergeShareMappingActionResult, MergeShareMappingArguments, OperationArgument,
-                ShareMappingActionResult, ShareMappingArguments, proc_drop_sheet_action,
-                proc_edit_mapping_action, proc_make_sheet_action, proc_merge_share_mapping_action,
-                proc_share_mapping_action,
-            },
-            track_action::{
-                CreateTaskResult, NextVersion, SyncTaskResult, TrackFileActionArguments,
-                TrackFileActionResult, UpdateDescription, UpdateTaskResult, VerifyFailReason,
-                proc_track_file_action,
-            },
-            user_actions::{
-                ChangeVirtualFileEditRightResult, EditRightChangeBehaviour,
-                proc_change_virtual_file_edit_right_action,
-            },
-        },
         constants::{
             CLIENT_FILE_TODOLIST, CLIENT_FILE_WORKSPACE, CLIENT_FOLDER_WORKSPACE_ROOT_NAME,
             CLIENT_PATH_WORKSPACE_ROOT, PORT, VAULT_HOST_NAME,
@@ -62,6 +39,44 @@ use just_enough_vcs::{
             },
         },
         docs::{ASCII_YIZI, document, documents},
+        registry::client_registry,
+        remote_actions::{
+            content_manage::track::{
+                CreateTaskResult, NextVersion, SyncTaskResult, TrackFileActionArguments,
+                TrackFileActionResult, UpdateDescription, UpdateTaskResult, VerifyFailReason,
+                proc_track_file_action,
+            },
+            edit_right_manage::change_virtual_file_edit_right::{
+                ChangeVirtualFileEditRightResult, EditRightChangeBehaviour,
+                proc_change_virtual_file_edit_right_action,
+            },
+            mapping_manage::{
+                edit_mapping::{
+                    EditMappingActionArguments, EditMappingActionResult, EditMappingOperations,
+                    InvalidMoveReason, OperationArgument, proc_edit_mapping_action,
+                },
+                merge_share_mapping::{
+                    MergeShareMappingActionResult, MergeShareMappingArguments,
+                    proc_merge_share_mapping_action,
+                },
+                share_mapping::{
+                    ShareMappingActionResult, ShareMappingArguments, proc_share_mapping_action,
+                },
+            },
+            sheet_manage::{
+                drop_sheet::{DropSheetActionResult, proc_drop_sheet_action},
+                make_sheet::{MakeSheetActionResult, proc_make_sheet_action},
+            },
+            workspace_manage::{
+                set_upstream_vault::{
+                    SetUpstreamVaultActionResult, proc_set_upstream_vault_action,
+                },
+                update_to_latest_info::{
+                    SyncCachedSheetFailReason, UpdateToLatestInfoResult,
+                    proc_update_to_latest_info_action,
+                },
+            },
+        },
     },
 };
 use std::{
@@ -77,10 +92,7 @@ use std::{
 };
 
 use clap::{Parser, Subcommand};
-use just_enough_vcs::{
-    utils::tcp_connection::error::TcpTargetError,
-    vcs::{actions::local_actions::proc_set_upstream_vault_action, registry::client_registry},
-};
+use just_enough_vcs::utils::tcp_connection::error::TcpTargetError;
 use just_enough_vcs_cli::{
     data::{
         compile_info::CompileInfo,
