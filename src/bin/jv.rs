@@ -41,7 +41,7 @@ use just_enough_vcs::{
         env::{correct_current_dir, current_cfg_dir, current_local_path},
         registry::client_registry,
         remote_actions::{
-            content_manage::track::{
+            content_manage::track_file::{
                 CreateTaskResult, NextVersion, SyncTaskResult, TrackFileActionArguments,
                 TrackFileActionResult, UpdateDescription, UpdateTaskResult, VerifyFailReason,
                 proc_track_file_action,
