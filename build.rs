@@ -2,17 +2,17 @@ use std::env;
 use std::path::PathBuf;
 use std::process::Command;
 
+const COMPILE_INFO_RS_TEMPLATE: &str = "./templates/compile_info.rs.template";
 const COMPILE_INFO_RS: &str = "./src/data/compile_info.rs";
-const COMPILE_INFO_RS_TEMPLATE: &str = "./templates/compile_info.rs";
 
+const SETUP_JV_CLI_ISS_TEMPLATE: &str = "./templates/setup_jv_cli.iss.template";
 const SETUP_JV_CLI_ISS: &str = "./setup/windows/setup_jv_cli.iss";
-const SETUP_JV_CLI_ISS_TEMPLATE: &str = "./templates/setup_jv_cli.iss";
 
-const REGISTRY_RS: &str = "./src/cmd/cmds/_registry.rs";
 const REGISTRY_RS_TEMPLATE: &str = "./templates/_registry.rs.template";
+const REGISTRY_RS: &str = "./src/cmd/cmds/_registry.rs";
 
-const RENDERER_LIST_TEMPLATE: &str = "./templates/renderer_list.rs.template";
-const RENDERER_LIST: &str = "./src/cmd/renderers/renderer_list.rs";
+const RENDERER_LIST_TEMPLATE: &str = "./templates/_renderers.rs.template";
+const RENDERER_LIST: &str = "./src/cmd/renderers/_renderers.rs";
 
 const REGISTRY_TOML: &str = "./.cargo/registry.toml";
 

@@ -35,7 +35,7 @@ where
     {
         async move {
             let renderer_str = renderer.as_str();
-            include!("renderers/renderer_list.rs")
+            include!("renderers/_renderers.rs")
         }
     }
 
