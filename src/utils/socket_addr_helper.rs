@@ -8,6 +8,14 @@ pub async fn get_socket_addr(
 ) -> Result<SocketAddr, std::io::Error> {
     let address = address_str.as_ref().trim();
 
+    // Return error if input is empty after trimming
+    if address.is_empty() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "Empty address string",
+        ));
+    }
+
     // Check if the address contains a port
     if let Some((host, port_str)) = parse_host_and_port(address) {
         let port = port_str.parse::<u16>().map_err(|e| {
@@ -28,11 +36,13 @@ pub async fn get_socket_addr(
 fn parse_host_and_port(address: &str) -> Option<(&str, &str)> {
     if address.starts_with('[')
         && let Some(close_bracket) = address.find(']')
-            && close_bracket + 1 < address.len() && address.as_bytes()[close_bracket + 1] == b':' {
-                let host = &address[1..close_bracket];
-                let port = &address[close_bracket + 2..];
-                return Some((host, port));
-            }
+        && close_bracket + 1 < address.len()
+        && address.as_bytes()[close_bracket + 1] == b':'
+    {
+        let host = &address[1..close_bracket];
+        let port = &address[close_bracket + 2..];
+        return Some((host, port));
+    }
 
     // Handle IPv4 addresses and hostnames with ports
     if let Some(colon_pos) = address.rfind(':') {
