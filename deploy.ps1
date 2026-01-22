@@ -5,14 +5,6 @@ $scriptPath = $MyInvocation.MyCommand.Path
 $scriptDir = Split-Path $scriptPath -Parent
 Set-Location $scriptDir
 
-# Hide .cargo and .temp directories before build
-if (Test-Path .cargo) {
-    attrib +h .cargo
-}
-if (Test-Path .temp) {
-    attrib +h .temp
-}
-
 # Check for ISCC
 $isccPath = Get-Command ISCC -ErrorAction SilentlyContinue
 if (-not $isccPath) {
@@ -28,7 +20,7 @@ if ($LASTEXITCODE -ne 0) {
 } else {
     # Build succeeded
     # Export
-    if (cargo run --manifest-path tools/build_helper/Cargo.toml --bin exporter) {
+    if (cargo run --manifest-path tools/build_helper/Cargo.toml --bin exporter release) {
         Copy-Item -Path templates\compile_info.rs.template -Destination src\data\compile_info.rs -Force
         ISCC /Q .\setup\windows\setup_jv_cli.iss
     }

@@ -7,13 +7,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let start_time = std::time::Instant::now();
 
+    let preferred_target = std::env::args()
+        .nth(1)
+        .unwrap_or_else(|| "debug".to_string());
     let target_dir = current_target_dir().expect("Failed to get target directory");
     let publish_dir = current_publish_dir().expect("Failed to get publish directory");
     let publish_binaries = publish_binaries().expect("Failed to get publish binaries");
     let copy_configs = copy_configs().expect("Failed to get copy configurations");
 
     // Final, export binaries to publish directory
-    let copied_files = export(target_dir, publish_dir, publish_binaries, copy_configs)?;
+    let copied_files = export(
+        target_dir,
+        publish_dir,
+        publish_binaries,
+        copy_configs,
+        preferred_target,
+    )?;
 
     let duration = start_time.elapsed();
     println!(
@@ -33,6 +42,7 @@ fn export(
     publish_dir: std::path::PathBuf,
     publish_binaries: Vec<String>,
     copy_configs: Vec<CopyConfig>,
+    preferred_target: String,
 ) -> Result<usize, Box<dyn std::error::Error>> {
     let mut copied_files = 0;
 
@@ -70,6 +80,12 @@ fn export(
             if let Some(file_name) = path.file_name().and_then(|n| n.to_str())
                 && publish_binaries.contains(&file_name.to_string())
             {
+                // Check if the path contains the preferred_target string
+                let path_str = path.to_string_lossy();
+                if !path_str.contains(&preferred_target) {
+                    continue;
+                }
+
                 let dest_path = bin_dir.join(file_name);
 
                 if let Some(parent) = dest_path.parent() {
