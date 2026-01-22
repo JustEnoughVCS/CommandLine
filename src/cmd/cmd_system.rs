@@ -25,7 +25,6 @@ where
     fn get_help_str() -> String;
 
     /// Process the command with a specified renderer, performing any necessary post-execution processing
-    #[rustfmt::skip]
     fn process_with_renderer_flag(
         args: Vec<String>,
         ctx: JVCommandContext,
@@ -36,10 +35,7 @@ where
     {
         async move {
             let renderer_str = renderer.as_str();
-            include!(concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/src/cmd/renderers/renderer_list.txt"
-            ))
+            include!("renderers/renderer_list.rs")
         }
     }
 

@@ -11,8 +11,8 @@ const SETUP_JV_CLI_ISS_TEMPLATE: &str = "./templates/setup_jv_cli.iss";
 const REGISTRY_RS: &str = "./src/cmd/cmds/_registry.rs";
 const REGISTRY_RS_TEMPLATE: &str = "./templates/_registry.rs.template";
 
-const RENDERER_LIST_TEMPLATE: &str = "./templates/renderer_list.txt";
-const RENDERER_LIST: &str = "./src/cmd/renderers/renderer_list.txt";
+const RENDERER_LIST_TEMPLATE: &str = "./templates/renderer_list.rs.template";
+const RENDERER_LIST: &str = "./src/cmd/renderers/renderer_list.rs";
 
 const REGISTRY_TOML: &str = "./Registry.toml";
 
@@ -387,7 +387,7 @@ fn generate_renderer_list_file(repo_root: &PathBuf) -> Result<(), Box<dyn std::e
         .map(|(name, renderer_type)| {
             renderer_template
                 .replace("<<NAME>>", name)
-                .replace("<<TYPE>>", renderer_type)
+                .replace("RendererType", renderer_type)
                 .trim_matches('\n')
                 .to_string()
         })

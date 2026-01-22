@@ -3,14 +3,14 @@ match renderer_str {
 // -- TEMPLATE START --
     "<<NAME>>" => {
         Self::process_with_renderer::<
-            <<TYPE>>,
+            RendererType
         >(args, ctx)
         .await
     }
 // -- TEMPLATE END --
     _ => {
         return Err(CmdProcessError::Render(CmdRenderError::RendererNotFound(
-            renderer,
+            renderer_str.to_string(),
         )));
     }
 }

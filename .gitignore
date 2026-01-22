@@ -24,4 +24,4 @@
 /src/data/compile_info.rs
 /setup/windows/setup_jv_cli.iss
 /src/cmd/cmds/_registry.rs
-/src/cmd/renderers/renderer_list.txt
+/src/cmd/renderers/renderer_list.rs
