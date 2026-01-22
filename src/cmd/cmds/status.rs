@@ -1,8 +1,8 @@
 use clap::Parser;
 use serde::Serialize;
 
-use crate::subcmd::{
-    cmd::{JVCommand, JVCommandContext},
+use crate::cmd::{
+    cmd_system::{JVCommand, JVCommandContext},
     errors::{CmdExecuteError, CmdPrepareError, CmdRenderError},
     renderer::{JVRenderResult, JVResultRenderer},
 };
@@ -21,10 +21,10 @@ impl JVCommand<JVStatusArgument, JVStatusInput, JVStatusOutput, JVStatusRenderer
     for JVStatusCommand
 {
     async fn prepare(
-        args: JVStatusArgument,
-        ctx: JVCommandContext,
+        _args: JVStatusArgument,
+        _ctx: JVCommandContext,
     ) -> Result<JVStatusInput, CmdPrepareError> {
-        todo!()
+        Ok(JVStatusInput)
     }
 
     async fn exec(args: JVStatusInput) -> Result<JVStatusOutput, CmdExecuteError> {

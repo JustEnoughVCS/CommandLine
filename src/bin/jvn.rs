@@ -1,7 +1,7 @@
-use just_enough_vcs_cli::subcmd::cmd::JVCommandContext;
+use just_enough_vcs_cli::cmd::cmd_system::JVCommandContext;
 use just_enough_vcs_cli::utils::display::md;
 use just_enough_vcs_cli::{
-    subcmd::{errors::CmdProcessError, processer::jv_cmd_process},
+    cmd::{errors::CmdProcessError, processer::jv_cmd_process},
     utils::env::current_locales,
 };
 use rust_i18n::{set_locale, t};

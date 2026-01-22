@@ -8,4 +8,4 @@ pub mod data;
 pub mod output;
 
 /// Command
-pub mod subcmd;
+pub mod cmd;

@@ -1,7 +1,7 @@
-use crate::subcmd::cmd::JVCommandContext;
-use crate::subcmd::cmds::_registry::{jv_cmd_nodes, jv_cmd_process_node};
-use crate::subcmd::errors::CmdProcessError;
-use crate::subcmd::renderer::JVRenderResult;
+use crate::cmd::cmd_system::JVCommandContext;
+use crate::cmd::cmds::_registry::{jv_cmd_nodes, jv_cmd_process_node};
+use crate::cmd::errors::CmdProcessError;
+use crate::cmd::renderer::JVRenderResult;
 
 pub async fn jv_cmd_process(
     args: Vec<String>,

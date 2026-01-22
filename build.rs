@@ -8,7 +8,7 @@ const COMPILE_INFO_RS_TEMPLATE: &str = "./templates/compile_info.rs";
 const SETUP_JV_CLI_ISS: &str = "./setup/windows/setup_jv_cli.iss";
 const SETUP_JV_CLI_ISS_TEMPLATE: &str = "./templates/setup_jv_cli.iss";
 
-const REGISTRY_RS: &str = "./src/subcmd/cmds/_registry.rs";
+const REGISTRY_RS: &str = "./src/cmd/cmds/_registry.rs";
 const REGISTRY_RS_TEMPLATE: &str = "./templates/_registry.rs.template";
 const REGISTRY_TOML: &str = "./Registry.toml";
 
