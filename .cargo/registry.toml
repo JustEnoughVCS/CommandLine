@@ -2,13 +2,19 @@
 ### Commands ###
 ################
 
-[cmd.status]
-node = "status"
-type = "cmds::status::JVStatusCommand"
+# The system will automatically register commands under ./src/cmds/.
+# This section is mainly for registering commands not in the automatic registration directory.
+
+# [cmd.name]
+# node = "name"
+# type = "your_command::JVUnknownCommand"
 
 #################
 ### Renderers ###
 #################
+
+# Only register renderers here that need to be overridden using the `--renderer` flag.
+# After registration, you can use the format `command --renderer renderer_name` to override the renderer.
 
 # Default Renderer
 [renderer.default]

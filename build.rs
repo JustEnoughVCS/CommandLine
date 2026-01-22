@@ -2,6 +2,10 @@ use std::env;
 use std::path::PathBuf;
 use std::process::Command;
 
+use string_proc::pascal_case;
+
+const COMMANDS_PATH: &str = "./src/cmds/";
+
 const COMPILE_INFO_RS_TEMPLATE: &str = "./templates/compile_info.rs.template";
 const COMPILE_INFO_RS: &str = "./src/data/compile_info.rs";
 
@@ -253,6 +257,7 @@ fn generate_cmd_registry_file(repo_root: &PathBuf) -> Result<(), Box<dyn std::er
     let mut commands = Vec::new();
     let mut nodes = Vec::new();
 
+    // First, collect commands from Registry.toml
     if let Some(table) = config.as_table() {
         if let Some(cmd_table) = table.get("cmd") {
             if let Some(cmd_table) = cmd_table.as_table() {
@@ -269,6 +274,48 @@ fn generate_cmd_registry_file(repo_root: &PathBuf) -> Result<(), Box<dyn std::er
                     }
                 }
             }
+        }
+    }
+
+    // Then, automatically register commands from COMMANDS_PATH
+    let commands_dir = repo_root.join(COMMANDS_PATH);
+    if commands_dir.exists() && commands_dir.is_dir() {
+        for entry in std::fs::read_dir(&commands_dir)? {
+            let entry = entry?;
+            let path = entry.path();
+
+            if !path.is_file() {
+                continue;
+            }
+
+            let extension = match path.extension() {
+                Some(ext) => ext,
+                None => continue,
+            };
+
+            if extension != "rs" {
+                continue;
+            }
+
+            let file_name = match path.file_stem().and_then(|s| s.to_str()) {
+                Some(name) => name,
+                None => continue,
+            };
+
+            // Skip files that start with underscore
+            if file_name.starts_with('_') {
+                continue;
+            }
+
+            // Convert filename to PascalCase
+            let pascal_name = pascal_case!(file_name);
+
+            let key = file_name.to_string();
+            let node = file_name.replace(".", " ");
+            let cmd_type = format!("cmds::{}::JV{}Command", file_name, pascal_name);
+
+            nodes.push(node.clone());
+            commands.push((key, node, cmd_type));
         }
     }
 
