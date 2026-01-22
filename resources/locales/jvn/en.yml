@@ -1,0 +1,35 @@
+process_error:
+  prepare_error: |
+    [[YELLOW]]Preparation Phase Error:[[/]]
+    %{error}
+  execute_error: |
+    [[RED]]Execution Phase Error:[[/]]
+    %{error}
+  render_error: |
+    [[YELLOW]]Rendering Phase Error:[[/]]
+    %{error}
+
+    Tip: If you need to ignore error output,
+    please append the `--no-error-logs` parameter to the command.
+
+  no_matching_command: |
+    No matching command found!
+
+  ambiguous_command: |
+    Multiple commands found, unable to determine which one you want:
+    %{nodes}
+
+  no_node_found: |
+    Unable to find command `%{node}`
+
+    This is usually a compilation-phase issue, not a user input error.
+    Please use `jv -v -C` to get detailed version traceback and contact the developers.
+
+    github: https://github.com/JustEnoughVCS/CommandLine/
+
+  parse_error: |
+    An error occurred while parsing your command arguments!
+    Please use `jv <command> --help` to view help
+
+  other: |
+    %{error}

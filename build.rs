@@ -8,6 +8,10 @@ const COMPILE_INFO_RS_TEMPLATE: &str = "./templates/compile_info.rs";
 const SETUP_JV_CLI_ISS: &str = "./setup/windows/setup_jv_cli.iss";
 const SETUP_JV_CLI_ISS_TEMPLATE: &str = "./templates/setup_jv_cli.iss";
 
+const REGISTRY_RS: &str = "./src/subcmd/cmds/_registry.rs";
+const REGISTRY_RS_TEMPLATE: &str = "./templates/_registry.rs.template";
+const REGISTRY_TOML: &str = "./Registry.toml";
+
 fn main() {
     println!("cargo:rerun-if-env-changed=FORCE_BUILD");
 
@@ -23,6 +27,11 @@ fn main() {
 
     if let Err(e) = generate_compile_info(&repo_root) {
         eprintln!("Failed to generate compile info: {}", e);
+        std::process::exit(1);
+    }
+
+    if let Err(e) = generate_registry_file(&repo_root) {
+        eprintln!("Failed to generate registry file: {}", e);
         std::process::exit(1);
     }
 }
@@ -211,4 +220,99 @@ fn get_git_commit() -> Result<String, Box<dyn std::error::Error>> {
     }
 
     Err("Failed to get git commit".into())
+}
+
+/// Generate registry file from Registry.toml configuration
+fn generate_registry_file(repo_root: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+    let template_path = repo_root.join(REGISTRY_RS_TEMPLATE);
+    let output_path = repo_root.join(REGISTRY_RS);
+    let config_path = repo_root.join(REGISTRY_TOML);
+
+    // Read the template
+    let template = std::fs::read_to_string(&template_path)?;
+
+    // Read and parse the TOML configuration
+    let config_content = std::fs::read_to_string(&config_path)?;
+    let config: toml::Value = toml::from_str(&config_content)?;
+
+    // Collect all command configurations
+    let mut commands = Vec::new();
+    let mut nodes = Vec::new();
+
+    if let Some(table) = config.as_table() {
+        for (key, value) in table {
+            if let Some(cmd_table) = value.as_table() {
+                if let (Some(node), Some(cmd_type)) = (
+                    cmd_table.get("node").and_then(|v| v.as_str()),
+                    cmd_table.get("type").and_then(|v| v.as_str()),
+                ) {
+                    let n = node.replace(".", " ");
+                    nodes.push(n.clone());
+                    commands.push((key.to_string(), n, cmd_type.to_string()));
+                }
+            }
+        }
+    }
+
+    // Extract the node_if template from the template content
+    const PROCESS_MARKER: &str = "// PROCESS";
+    const TEMPLATE_START: &str = "// -- TEMPLATE START --";
+    const TEMPLATE_END: &str = "// -- TEMPLATE END --";
+    const LINE: &str = "<<LINE>>";
+    const NODES: &str = "<<NODES>>";
+
+    let template_start_index = template
+        .find(TEMPLATE_START)
+        .ok_or("Template start marker not found")?;
+    let template_end_index = template
+        .find(TEMPLATE_END)
+        .ok_or("Template end marker not found")?;
+
+    let template_slice = &template[template_start_index..template_end_index + TEMPLATE_END.len()];
+    let node_if_template = template_slice
+        .trim_start_matches(TEMPLATE_START)
+        .trim_end_matches(TEMPLATE_END)
+        .trim_matches('\n');
+
+    // Generate the match arms for each command
+    let match_arms: String = commands
+        .iter()
+        .map(|(key, node, cmd_type)| {
+            node_if_template
+                .replace("<<KEY>>", key)
+                .replace("<<NODE_NAME>>", node)
+                .replace("<<COMMAND_TYPE>>", cmd_type)
+                .trim_matches('\n')
+                .to_string()
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    let nodes_str = format!(
+        "[\n        {}\n    ]",
+        nodes
+            .iter()
+            .map(|node| format!("\"{}\".to_string()", node))
+            .collect::<Vec<_>>()
+            .join(", ")
+    );
+
+    // Replace the template section with the generated match arms
+    let final_content = template
+        .replace(node_if_template, "")
+        .replace(TEMPLATE_START, "")
+        .replace(TEMPLATE_END, "")
+        .replace(PROCESS_MARKER, &match_arms)
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .collect::<Vec<_>>()
+        .join("\n")
+        .replace(LINE, "")
+        .replace(NODES, nodes_str.as_str());
+
+    // Write the generated code
+    std::fs::write(output_path, final_content)?;
+
+    println!("Generated registry file with {} commands", commands.len());
+    Ok(())
 }

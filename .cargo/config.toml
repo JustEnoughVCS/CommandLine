@@ -4,6 +4,7 @@ target-dir = "./.temp/target/"
 [publish]
 target-dir = "./.temp/deploy/"
 binaries = [
+    # The legacy command line
     "jv",
     "jv.exe",
 
@@ -11,7 +12,11 @@ binaries = [
     "jvv.exe",
 
     "jvii",
-    "jvii.exe"
+    "jvii.exe",
+
+    # The new command line
+    "jvn",
+    "jvn.exe"
 ]
 
 ############

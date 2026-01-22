@@ -1,0 +1,34 @@
+process_error:
+  prepare_error: |
+    [[YELLOW]]准备阶段错误：[[/]]
+    %{error}
+  execute_error: |
+    [[RED]]执行阶段错误：[[/]]
+    %{error}
+  render_error: |
+    [[YELLOW]]渲染阶段错误：[[/]]
+    %{error}
+
+    提示：若您需要忽略错误输出，请在命令后追加 `--no-error-logs` 参数
+
+  no_matching_command: |
+    无法找到匹配的命令！
+
+  ambiguous_command: |
+    找到多个命令，无法确定您想要哪一个：
+    %{nodes}
+
+  no_node_found: |
+    无法找到命令 `%{node}`
+
+    这通常是编译期造成的问题，而非用户的错误输入
+    请使用 `jv -v -C` 获得详细的版本追溯，并联系开发人员
+
+    github: https://github.com/JustEnoughVCS/CommandLine/
+
+  parse_error: |
+    在将您的命令参数进行解析时出现错误！
+    请使用 `jv <命令> --help` 查看帮助
+
+  other: |
+    %{error}

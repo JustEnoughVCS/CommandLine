@@ -1010,6 +1010,7 @@ dependencies = [
  "serde",
  "serde_json",
  "strip-ansi-escapes",
+ "thiserror",
  "tokio",
  "toml 0.9.8",
  "walkdir",

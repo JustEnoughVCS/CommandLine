@@ -3,7 +3,7 @@ name = "just_enough_vcs_cli"
 edition = "2024"
 build = "build.rs"
 authors = ["JustEnoughVCS Team"]
-homepage = "http://jvcs.cc/"
+homepage = "https://github.com/JustEnoughVCS/CommandLine/"
 
 [workspace]
 members = ["tools/build_helper"]
@@ -37,6 +37,9 @@ toml = "0.9"
 [dependencies]
 # Just Enough VCS
 just_enough_vcs = { path = "../VersionControl", features = ["all"] }
+
+# Error
+thiserror = "2.0.17"
 
 # Serialize
 serde = { version = "1", features = ["derive"] }
