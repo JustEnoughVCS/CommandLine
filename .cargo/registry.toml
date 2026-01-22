@@ -23,3 +23,22 @@ type = "crate::renderers::json::JVResultJsonRenderer"
 [renderer.json_pretty]
 name = "json-pretty"
 type = "crate::renderers::json_pretty::JVResultPrettyJsonRenderer"
+
+####################
+### Auto-Collect ###
+####################
+
+[collect.outputs]
+path = "src/outputs.rs"
+
+[collect.inputs]
+path = "src/inputs.rs"
+
+[collect.cmds]
+path = "src/cmds.rs"
+
+[collect.arguments]
+path = "src/arguments.rs"
+
+[collect.renderers]
+path = "src/renderers.rs"
