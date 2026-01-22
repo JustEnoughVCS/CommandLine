@@ -5,6 +5,13 @@ $scriptPath = $MyInvocation.MyCommand.Path
 $scriptDir = Split-Path $scriptPath -Parent
 Set-Location $scriptDir
 
+# Check if core library exists
+$coreLibPath = "..\VersionControl\"
+if (-not (Test-Path $coreLibPath)) {
+    Write-Warning "Core library not found at $coreLibPath. Aborting build."
+    exit 1
+}
+
 # Test core library
 cargo test --manifest-path ..\VersionControl\Cargo.toml --workspace
 if ($LASTEXITCODE -ne 0) {
@@ -19,10 +26,19 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-# Check if git worktree is clean
+# Check if main git worktree is clean
 $gitStatus = git status --porcelain
 if ($gitStatus) {
     Write-Warning "Git worktree is not clean. Commit or stash changes before building."
+    exit 1
+}
+
+# Check if core library git worktree is clean
+Push-Location $coreLibPath
+$coreGitStatus = git status --porcelain
+Pop-Location
+if ($coreGitStatus) {
+    Write-Warning "Core library git worktree is not clean. Commit or stash changes before building."
     exit 1
 }
 

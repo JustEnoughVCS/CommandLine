@@ -5,6 +5,13 @@
 # Change to the directory where the script is located
 cd "$(dirname "$0")" || exit 1
 
+# Check if core library exists
+coreLibPath="../VersionControl/"
+if [ ! -d "$coreLibPath" ]; then
+    echo "Core library not found at $coreLibPath. Aborting build."
+    exit 1
+fi
+
 # Test core library
 cargo test --manifest-path ../VersionControl/Cargo.toml --workspace
 if [ $? -ne 0 ]; then
@@ -19,10 +26,19 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Check if git worktree is clean
+# Check if main git worktree is clean
 git_status=$(git status --porcelain)
 if [ -n "$git_status" ]; then
     echo "Git worktree is not clean. Commit or stash changes before building."
+    exit 1
+fi
+
+# Check if core library git worktree is clean
+pushd "$coreLibPath" > /dev/null
+core_git_status=$(git status --porcelain)
+popd > /dev/null
+if [ -n "$core_git_status" ]; then
+    echo "Core library git worktree is not clean. Commit or stash changes before building."
     exit 1
 fi
 
