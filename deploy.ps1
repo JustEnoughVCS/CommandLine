@@ -5,6 +5,13 @@ $scriptPath = $MyInvocation.MyCommand.Path
 $scriptDir = Split-Path $scriptPath -Parent
 Set-Location $scriptDir
 
+# Check for ISCC
+$isccPath = Get-Command ISCC -ErrorAction SilentlyContinue
+if (-not $isccPath) {
+    Write-Warning '"Inno Setup" not installed. (https://jrsoftware.org/isinfo.php)'
+    exit 1
+}
+
 # Check if core library exists
 $coreLibPath = "..\VersionControl\"
 if (-not (Test-Path $coreLibPath)) {
@@ -13,14 +20,16 @@ if (-not (Test-Path $coreLibPath)) {
 }
 
 # Test core library
-cargo test --manifest-path ..\VersionControl\Cargo.toml --workspace
+Write-Host "Testing Core Library `".\..\VersionControl\Cargo.toml`""
+cargo test --manifest-path ..\VersionControl\Cargo.toml --workspace --quiet
 if ($LASTEXITCODE -ne 0) {
     Write-Warning "Core library tests failed. Aborting build."
     exit 1
 }
 
 # Test workspace
-cargo test --workspace
+Write-Host "Testing Command Line `".\Cargo.toml`""
+cargo test --workspace --quiet
 if ($LASTEXITCODE -ne 0) {
     Write-Warning "Workspace tests failed. Aborting build."
     exit 1
@@ -42,23 +51,19 @@ if ($coreGitStatus) {
     exit 1
 }
 
-# Check for ISCC
-$isccPath = Get-Command ISCC -ErrorAction SilentlyContinue
-if (-not $isccPath) {
-    Write-Warning '"Inno Setup" not installed. (https://jrsoftware.org/isinfo.php)'
-    exit 1
-}
-
 # Build
 $env:FORCE_BUILD=$(Get-Date -Format 'mmss')
-cargo build --workspace --release
+Write-Host "Building `".\Cargo.toml`""
+cargo build --workspace --release --quiet
 if ($LASTEXITCODE -ne 0) {
     # Build failed
 } else {
     # Build succeeded
     # Export
-    if (cargo run --manifest-path tools/build_helper/Cargo.toml --bin exporter release) {
+    Write-Host "Deploying `".\.cargo\config.toml`""
+    if (cargo run --manifest-path tools/build_helper/Cargo.toml --quiet --bin exporter release) {
         Copy-Item -Path templates\compile_info.rs.template -Destination src\data\compile_info.rs -Force
+        Write-Host "Packing Installer `".\setup\windows\setup_jv_cli.iss`""
         ISCC /Q .\setup\windows\setup_jv_cli.iss
     }
 }

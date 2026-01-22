@@ -13,14 +13,16 @@ if [ ! -d "$coreLibPath" ]; then
 fi
 
 # Test core library
-cargo test --manifest-path ../VersionControl/Cargo.toml --workspace
+echo "Testing Core Library \"../VersionControl/Cargo.toml\""
+cargo test --manifest-path ../VersionControl/Cargo.toml --workspace --quiet
 if [ $? -ne 0 ]; then
     echo "Core library tests failed. Aborting build."
     exit 1
 fi
 
 # Test workspace
-cargo test --workspace
+echo "Testing Command Line \"./Cargo.toml\""
+cargo test --workspace --quiet
 if [ $? -ne 0 ]; then
     echo "Workspace tests failed. Aborting build."
     exit 1
@@ -43,10 +45,13 @@ if [ -n "$core_git_status" ]; then
 fi
 
 # Build
-if FORCE_BUILD=$(date +%s) cargo build --workspace --release; then
+echo "Building \"./Cargo.toml\""
+if FORCE_BUILD=$(date +%s) cargo build --workspace --release --quiet; then
+    # Build succeeded
     # Export
-    if cargo run --manifest-path tools/build_helper/Cargo.toml --bin exporter release; then
+    echo "Deploying \"./.cargo/config.toml\""
+    if cargo run --manifest-path tools/build_helper/Cargo.toml --quiet --bin exporter release; then
         # Copy compile_info.rs.template to compile_info.rs after successful export
-        cp -f templates/compile_info.rs src/data/compile_info.rs
+        cp -f templates/compile_info.rs.template src/data/compile_info.rs
     fi
 fi
