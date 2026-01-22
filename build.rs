@@ -10,6 +10,10 @@ const SETUP_JV_CLI_ISS_TEMPLATE: &str = "./templates/setup_jv_cli.iss";
 
 const REGISTRY_RS: &str = "./src/cmd/cmds/_registry.rs";
 const REGISTRY_RS_TEMPLATE: &str = "./templates/_registry.rs.template";
+
+const RENDERER_LIST_TEMPLATE: &str = "./templates/renderer_list.txt";
+const RENDERER_LIST: &str = "./src/cmd/renderers/renderer_list.txt";
+
 const REGISTRY_TOML: &str = "./Registry.toml";
 
 fn main() {
@@ -30,8 +34,13 @@ fn main() {
         std::process::exit(1);
     }
 
-    if let Err(e) = generate_registry_file(&repo_root) {
+    if let Err(e) = generate_cmd_registry_file(&repo_root) {
         eprintln!("Failed to generate registry file: {}", e);
+        std::process::exit(1);
+    }
+
+    if let Err(e) = generate_renderer_list_file(&repo_root) {
+        eprintln!("Failed to generate renderer list: {}", e);
         std::process::exit(1);
     }
 }
@@ -223,7 +232,7 @@ fn get_git_commit() -> Result<String, Box<dyn std::error::Error>> {
 }
 
 /// Generate registry file from Registry.toml configuration
-fn generate_registry_file(repo_root: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+fn generate_cmd_registry_file(repo_root: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     let template_path = repo_root.join(REGISTRY_RS_TEMPLATE);
     let output_path = repo_root.join(REGISTRY_RS);
     let config_path = repo_root.join(REGISTRY_TOML);
@@ -240,15 +249,19 @@ fn generate_registry_file(repo_root: &PathBuf) -> Result<(), Box<dyn std::error:
     let mut nodes = Vec::new();
 
     if let Some(table) = config.as_table() {
-        for (key, value) in table {
-            if let Some(cmd_table) = value.as_table() {
-                if let (Some(node), Some(cmd_type)) = (
-                    cmd_table.get("node").and_then(|v| v.as_str()),
-                    cmd_table.get("type").and_then(|v| v.as_str()),
-                ) {
-                    let n = node.replace(".", " ");
-                    nodes.push(n.clone());
-                    commands.push((key.to_string(), n, cmd_type.to_string()));
+        if let Some(cmd_table) = table.get("cmd") {
+            if let Some(cmd_table) = cmd_table.as_table() {
+                for (key, cmd_value) in cmd_table {
+                    if let Some(cmd_config) = cmd_value.as_table() {
+                        if let (Some(node), Some(cmd_type)) = (
+                            cmd_config.get("node").and_then(|v| v.as_str()),
+                            cmd_config.get("type").and_then(|v| v.as_str()),
+                        ) {
+                            let n = node.replace(".", " ");
+                            nodes.push(n.clone());
+                            commands.push((key.to_string(), n, cmd_type.to_string()));
+                        }
+                    }
                 }
             }
         }
@@ -314,5 +327,90 @@ fn generate_registry_file(repo_root: &PathBuf) -> Result<(), Box<dyn std::error:
     std::fs::write(output_path, final_content)?;
 
     println!("Generated registry file with {} commands", commands.len());
+    Ok(())
+}
+
+/// Generate renderer list file from Registry.toml configuration
+fn generate_renderer_list_file(repo_root: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+    let template_path = repo_root.join(RENDERER_LIST_TEMPLATE);
+    let output_path = repo_root.join(RENDERER_LIST);
+    let config_path = repo_root.join(REGISTRY_TOML);
+
+    // Read the template
+    let template = std::fs::read_to_string(&template_path)?;
+
+    // Read and parse the TOML configuration
+    let config_content = std::fs::read_to_string(&config_path)?;
+    let config: toml::Value = toml::from_str(&config_content)?;
+
+    // Collect all renderer configurations
+    let mut renderers = Vec::new();
+
+    if let Some(table) = config.as_table() {
+        if let Some(renderer_table) = table.get("renderer") {
+            if let Some(renderer_table) = renderer_table.as_table() {
+                for (_, renderer_value) in renderer_table {
+                    if let Some(renderer_config) = renderer_value.as_table() {
+                        if let (Some(name), Some(renderer_type)) = (
+                            renderer_config.get("name").and_then(|v| v.as_str()),
+                            renderer_config.get("type").and_then(|v| v.as_str()),
+                        ) {
+                            renderers.push((name.to_string(), renderer_type.to_string()));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Extract the template section from the template content
+    const MATCH_MARKER: &str = "// MATCH";
+    const TEMPLATE_START: &str = "// -- TEMPLATE START --";
+    const TEMPLATE_END: &str = "// -- TEMPLATE END --";
+
+    let template_start_index = template
+        .find(TEMPLATE_START)
+        .ok_or("Template start marker not found")?;
+    let template_end_index = template
+        .find(TEMPLATE_END)
+        .ok_or("Template end marker not found")?;
+
+    let template_slice = &template[template_start_index..template_end_index + TEMPLATE_END.len()];
+    let renderer_template = template_slice
+        .trim_start_matches(TEMPLATE_START)
+        .trim_end_matches(TEMPLATE_END)
+        .trim_matches('\n');
+
+    // Generate the match arms for each renderer
+    let match_arms: String = renderers
+        .iter()
+        .map(|(name, renderer_type)| {
+            renderer_template
+                .replace("<<NAME>>", name)
+                .replace("<<TYPE>>", renderer_type)
+                .trim_matches('\n')
+                .to_string()
+        })
+        .collect::<Vec<String>>()
+        .join("\n");
+
+    // Replace the template section with the generated match arms
+    let final_content = template
+        .replace(renderer_template, "")
+        .replace(TEMPLATE_START, "")
+        .replace(TEMPLATE_END, "")
+        .replace(MATCH_MARKER, &match_arms)
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    // Write the generated code
+    std::fs::write(output_path, final_content)?;
+
+    println!(
+        "Generated renderer list file with {} renderers",
+        renderers.len()
+    );
     Ok(())
 }

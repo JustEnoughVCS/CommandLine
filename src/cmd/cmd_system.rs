@@ -2,7 +2,7 @@ use serde::Serialize;
 
 use crate::{
     cmd::{
-        errors::{CmdExecuteError, CmdPrepareError, CmdProcessError},
+        errors::{CmdExecuteError, CmdPrepareError, CmdProcessError, CmdRenderError},
         renderer::{JVRenderResult, JVResultRenderer},
     },
     r_println,
@@ -24,11 +24,30 @@ where
     /// Get help string for the command
     fn get_help_str() -> String;
 
+    /// Process the command with a specified renderer, performing any necessary post-execution processing
+    #[rustfmt::skip]
+    fn process_with_renderer_flag(
+        args: Vec<String>,
+        ctx: JVCommandContext,
+        renderer: String,
+    ) -> impl Future<Output = Result<JVRenderResult, CmdProcessError>> + Send
+    where
+        Self: Sync,
+    {
+        async move {
+            let renderer_str = renderer.as_str();
+            include!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/cmd/renderers/renderer_list.txt"
+            ))
+        }
+    }
+
     /// performing any necessary post-execution processing
     fn process(
         args: Vec<String>,
         ctx: JVCommandContext,
-    ) -> impl Future<Output = Result<JVRenderResult, CmdProcessError>> + Send + Sync
+    ) -> impl Future<Output = Result<JVRenderResult, CmdProcessError>> + Send
     where
         Self: Sync,
     {
@@ -40,7 +59,7 @@ where
     fn process_with_renderer<R: JVResultRenderer<Output> + Send + Sync>(
         args: Vec<String>,
         ctx: JVCommandContext,
-    ) -> impl Future<Output = Result<JVRenderResult, CmdProcessError>> + Send + Sync
+    ) -> impl Future<Output = Result<JVRenderResult, CmdProcessError>> + Send
     where
         Self: Sync,
     {
@@ -77,9 +96,9 @@ where
     fn prepare(
         args: Argument,
         ctx: JVCommandContext,
-    ) -> impl Future<Output = Result<Input, CmdPrepareError>> + Send + Sync;
+    ) -> impl Future<Output = Result<Input, CmdPrepareError>> + Send;
 
     /// Run the command phase,
     /// returning an output structure, waiting for rendering
-    fn exec(args: Input) -> impl Future<Output = Result<Output, CmdExecuteError>> + Send + Sync;
+    fn exec(input: Input) -> impl Future<Output = Result<Output, CmdExecuteError>> + Send;
 }

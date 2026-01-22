@@ -1,0 +1,16 @@
+match renderer_str {
+// MATCH
+// -- TEMPLATE START --
+    "<<NAME>>" => {
+        Self::process_with_renderer::<
+            <<TYPE>>,
+        >(args, ctx)
+        .await
+    }
+// -- TEMPLATE END --
+    _ => {
+        return Err(CmdProcessError::Render(CmdRenderError::RendererNotFound(
+            renderer,
+        )));
+    }
+}

@@ -6,6 +6,7 @@ use crate::cmd::renderer::JVRenderResult;
 pub async fn jv_cmd_process(
     args: Vec<String>,
     ctx: JVCommandContext,
+    renderer_override: String,
 ) -> Result<JVRenderResult, CmdProcessError> {
     let nodes = jv_cmd_nodes();
     let command = args.join(" ");
@@ -25,7 +26,7 @@ pub async fn jv_cmd_process(
             let matched_prefix = matching_nodes[0];
             let prefix_len = matched_prefix.split_whitespace().count();
             let trimmed_args: Vec<String> = args.into_iter().skip(prefix_len).collect();
-            return jv_cmd_process_node(matched_prefix, trimmed_args, ctx).await;
+            return jv_cmd_process_node(matched_prefix, trimmed_args, ctx, renderer_override).await;
         }
         _ => {
             // Multiple matching nodes found

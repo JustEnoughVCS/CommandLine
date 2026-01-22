@@ -27,7 +27,7 @@ impl JVCommand<JVUnknownArgument, JVUnknownInput, JVUnknownOutput, JVStatusRende
         todo!()
     }
 
-    async fn exec(_args: JVUnknownInput) -> Result<JVUnknownOutput, CmdExecuteError> {
+    async fn exec(_input: JVUnknownInput) -> Result<JVUnknownOutput, CmdExecuteError> {
         todo!()
     }
 

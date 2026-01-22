@@ -1,3 +1,5 @@
+use just_enough_vcs::vcs::data::{member::MemberId, sheet::SheetName};
+
 #[derive(thiserror::Error, Debug)]
 pub enum CmdPrepareError {
     #[error("IO error: {0}")]
@@ -5,6 +7,30 @@ pub enum CmdPrepareError {
 
     #[error("{0}")]
     Error(String),
+
+    #[error("LocalWorkspace not found")]
+    LocalWorkspaceNotFound,
+
+    #[error("LocalConfig not found")]
+    LocalConfigNotFound,
+
+    #[error("LatestInfo not found")]
+    LatestInfoNotFound,
+
+    #[error("LatestFileData of {0} not found")]
+    LatestFileDataNotExist(MemberId),
+
+    #[error("CachedSheet `{0}` not found")]
+    CachedSheetNotFound(SheetName),
+
+    #[error("LocalSheet `{0}/{1}` not found")]
+    LocalSheetNotFound(MemberId, SheetName),
+
+    #[error("LocalStatusAnalyzeFailed")]
+    LocalStatusAnalyzeFailed,
+
+    #[error("No sheet in use")]
+    NoSheetInUse,
 }
 
 impl CmdPrepareError {
@@ -44,6 +70,12 @@ pub enum CmdRenderError {
 
     #[error("{0}")]
     Error(String),
+
+    #[error("Serialize failed, {0}")]
+    SerializeFailed(String),
+
+    #[error("Renderer `{0}` not found")]
+    RendererNotFound(String),
 }
 
 impl CmdRenderError {

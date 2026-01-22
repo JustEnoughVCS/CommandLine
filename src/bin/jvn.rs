@@ -53,13 +53,21 @@ async fn main() {
     #[cfg(windows)]
     colored::control::set_virtual_terminal(true).unwrap();
 
+    let renderer_override = special_argument!(args, "--renderer").unwrap_or("default".to_string());
+
     let no_error_logs = special_flag!(args, "--no-error-logs");
     let quiet = special_flag!(args, "--quiet") || special_flag!(args, "-q");
     let help = special_flag!(args, "--help") || special_flag!(args, "-h");
     let confirmed = special_flag!(args, "--confirm") || special_flag!(args, "-C");
 
     // Process commands
-    let render_result = match jv_cmd_process(args, JVCommandContext { help, confirmed }).await {
+    let render_result = match jv_cmd_process(
+        args,
+        JVCommandContext { help, confirmed },
+        renderer_override,
+    )
+    .await
+    {
         Ok(result) => result,
         Err(e) => {
             if !no_error_logs {

@@ -1,3 +1,25 @@
-[status]
+################
+### Commands ###
+################
+
+[cmd.status]
 node = "status"
 type = "cmd::cmds::status::JVStatusCommand"
+
+#################
+### Renderers ###
+#################
+
+# Default Renderer
+[renderer.default]
+name = "default"
+type = "Renderer"
+
+# Json Renderer
+[renderer.json]
+name = "json"
+type = "crate::cmd::renderers::json_renderer::JVResultJsonRenderer"
+
+[renderer.json_pretty]
+name = "json-pretty"
+type = "crate::cmd::renderers::json_renderer::JVResultPrettyJsonRenderer"
