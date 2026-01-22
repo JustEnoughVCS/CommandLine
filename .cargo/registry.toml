@@ -4,7 +4,7 @@
 
 [cmd.status]
 node = "status"
-type = "cmd::cmds::status::JVStatusCommand"
+type = "cmds::status::JVStatusCommand"
 
 #################
 ### Renderers ###
@@ -18,8 +18,8 @@ type = "Renderer"
 # Json Renderer
 [renderer.json]
 name = "json"
-type = "crate::cmd::renderers::json_renderer::JVResultJsonRenderer"
+type = "crate::renderers::json::JVResultJsonRenderer"
 
 [renderer.json_pretty]
 name = "json-pretty"
-type = "crate::cmd::renderers::json_renderer::JVResultPrettyJsonRenderer"
+type = "crate::renderers::json_pretty::JVResultPrettyJsonRenderer"

@@ -1,11 +1,11 @@
 use serde::Serialize;
 
 use crate::{
-    cmd::{
+    r_println,
+    systems::cmd::{
         errors::{CmdExecuteError, CmdPrepareError, CmdProcessError, CmdRenderError},
         renderer::{JVRenderResult, JVResultRenderer},
     },
-    r_println,
 };
 use std::future::Future;
 
@@ -35,7 +35,7 @@ where
     {
         async move {
             let renderer_str = renderer.as_str();
-            include!("renderers/_renderers.rs")
+            include!("_renderers.rs")
         }
     }
 

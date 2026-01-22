@@ -17,7 +17,7 @@ use just_enough_vcs::vcs::data::{
 use serde::Serialize;
 
 use crate::{
-    cmd::{
+    systems::cmd::{
         cmd_system::{JVCommand, JVCommandContext},
         errors::{CmdExecuteError, CmdPrepareError, CmdRenderError},
         renderer::{JVRenderResult, JVResultRenderer},

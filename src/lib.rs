@@ -1,3 +1,5 @@
+// --- LIBS ---
+
 /// Utils
 pub mod utils;
 
@@ -7,5 +9,18 @@ pub mod data;
 /// Json Format
 pub mod leegacy_json_output;
 
-/// Command
-pub mod cmd;
+/// Systems
+pub mod systems;
+
+// --- ASSETS ---
+
+/// Commands
+pub mod cmds;
+
+/// Command Data
+pub mod arguments;
+pub mod inputs;
+pub mod outputs;
+
+/// Result Renderers
+pub mod renderers;

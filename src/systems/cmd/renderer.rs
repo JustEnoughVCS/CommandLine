@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use serde::Serialize;
 
-use crate::cmd::errors::CmdRenderError;
+use crate::systems::cmd::errors::CmdRenderError;
 
 pub trait JVResultRenderer<Data>
 where

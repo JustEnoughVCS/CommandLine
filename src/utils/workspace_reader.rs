@@ -20,7 +20,7 @@ use just_enough_vcs::{
     },
 };
 
-use crate::cmd::errors::CmdPrepareError;
+use crate::systems::cmd::errors::CmdPrepareError;
 
 /// Temporarily enter a directory to execute a block of code, then return to the original directory
 macro_rules! entry_dir {

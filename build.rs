@@ -9,10 +9,10 @@ const SETUP_JV_CLI_ISS_TEMPLATE: &str = "./templates/setup_jv_cli.iss.template";
 const SETUP_JV_CLI_ISS: &str = "./setup/windows/setup_jv_cli.iss";
 
 const REGISTRY_RS_TEMPLATE: &str = "./templates/_registry.rs.template";
-const REGISTRY_RS: &str = "./src/cmd/cmds/_registry.rs";
+const REGISTRY_RS: &str = "./src/systems/cmd/_registry.rs";
 
 const RENDERER_LIST_TEMPLATE: &str = "./templates/_renderers.rs.template";
-const RENDERER_LIST: &str = "./src/cmd/renderers/_renderers.rs";
+const RENDERER_LIST: &str = "./src/systems/cmd/_renderers.rs";
 
 const REGISTRY_TOML: &str = "./.cargo/registry.toml";
 
