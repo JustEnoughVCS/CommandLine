@@ -7,7 +7,7 @@ pub mod utils;
 pub mod data;
 
 /// Json Format
-pub mod leegacy_json_output;
+pub mod legacy_json_output;
 
 /// Systems
 pub mod systems;
