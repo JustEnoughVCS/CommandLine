@@ -14,7 +14,7 @@ const REGISTRY_RS_TEMPLATE: &str = "./templates/_registry.rs.template";
 const RENDERER_LIST_TEMPLATE: &str = "./templates/renderer_list.rs.template";
 const RENDERER_LIST: &str = "./src/cmd/renderers/renderer_list.rs";
 
-const REGISTRY_TOML: &str = "./Registry.toml";
+const REGISTRY_TOML: &str = "./.cargo/registry.toml";
 
 fn main() {
     println!("cargo:rerun-if-env-changed=FORCE_BUILD");
