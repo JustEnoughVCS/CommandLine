@@ -1,63 +1,17 @@
-use std::{
-    collections::{HashMap, HashSet},
-    path::PathBuf,
-    time::SystemTime,
-};
-
-use clap::Parser;
-use just_enough_vcs::vcs::data::{
-    local::workspace_analyzer::{
-        CreatedRelativePathBuf, FromRelativePathBuf, LostRelativePathBuf, ModifiedRelativePathBuf,
-        ToRelativePathBuf,
-    },
-    member::MemberId,
-    sheet::SheetName,
-    vault::virtual_file::VirtualFileId,
-};
-use serde::Serialize;
+use std::time::SystemTime;
 
 use crate::{
+    arguments::status::JVStatusArgument,
+    outputs::status::JVStatusResult,
+    renderers::status::JVStatusRenderer,
     systems::cmd::{
         cmd_system::{JVCommand, JVCommandContext},
-        errors::{CmdExecuteError, CmdPrepareError, CmdRenderError},
-        renderer::{JVRenderResult, JVResultRenderer},
+        errors::{CmdExecuteError, CmdPrepareError},
     },
     utils::workspace_reader::LocalWorkspaceReader,
 };
 
 pub struct JVStatusCommand;
-
-#[derive(Parser, Debug)]
-pub struct JVStatusArgument;
-
-#[derive(Serialize)]
-pub struct JVStatusResult {
-    pub current_account: MemberId,
-    pub current_sheet: SheetName,
-    pub moved: HashMap<VirtualFileId, (FromRelativePathBuf, ToRelativePathBuf)>,
-    pub created: HashSet<CreatedRelativePathBuf>,
-    pub lost: HashSet<LostRelativePathBuf>,
-    pub erased: HashSet<PathBuf>,
-    pub modified: HashSet<ModifiedRelativePathBuf>,
-    pub update_time: SystemTime,
-    pub now_time: SystemTime,
-}
-
-impl Default for JVStatusResult {
-    fn default() -> Self {
-        Self {
-            current_account: MemberId::default(),
-            current_sheet: SheetName::default(),
-            moved: HashMap::default(),
-            created: HashSet::default(),
-            lost: HashSet::default(),
-            erased: HashSet::default(),
-            modified: HashSet::default(),
-            update_time: SystemTime::now(),
-            now_time: SystemTime::now(),
-        }
-    }
-}
 
 impl JVCommand<JVStatusArgument, JVStatusResult, JVStatusResult, JVStatusRenderer>
     for JVStatusCommand
@@ -110,13 +64,5 @@ impl JVCommand<JVStatusArgument, JVStatusResult, JVStatusResult, JVStatusRendere
 
     fn get_help_str() -> String {
         "".to_string()
-    }
-}
-
-pub struct JVStatusRenderer;
-
-impl JVResultRenderer<JVStatusResult> for JVStatusRenderer {
-    async fn render(data: &JVStatusResult) -> Result<JVRenderResult, CmdRenderError> {
-        todo!()
     }
 }
