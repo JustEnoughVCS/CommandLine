@@ -5,7 +5,7 @@ pub mod utils;
 pub mod data;
 
 /// Json Format
-pub mod output;
+pub mod leegacy_json_output;
 
 /// Command
 pub mod cmd;

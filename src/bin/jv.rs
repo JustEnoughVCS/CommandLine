@@ -98,7 +98,7 @@ use just_enough_vcs_cli::{
         compile_info::CompileInfo,
         ipaddress_history::{get_recent_ip_address, insert_recent_ip_address},
     },
-    output::{
+    leegacy_json_output::{
         accounts::{AccountItem, AccountListJsonResult},
         align::{AlignJsonResult, AlignTaskMapping},
         analyzer_result::{AnalyzerJsonResult, ModifiedItem, ModifiedType, MovedItem},
