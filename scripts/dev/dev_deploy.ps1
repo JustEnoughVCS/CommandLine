@@ -7,9 +7,13 @@ $scriptDir = Split-Path $scriptPath -Parent
 # Run script to hide ignored files
 $hideScriptPath = Join-Path $scriptDir "hide_ignored_file.ps1"
 if (Test-Path $hideScriptPath) {
-    & $hideScriptPath
+    try {
+        & $hideScriptPath
+    } catch {
+        Write-Warning "Run `"hide_ignored_file.ps1`" failed"
+    }
 } else {
-    Write-Warning "hide_ignored_file.ps1 not found at $hideScriptPath"
+    Write-Warning "Script `"hide_ignored_file.ps1`" not found at $hideScriptPath"
 }
 
 Set-Location (Join-Path $scriptDir "..\..")
