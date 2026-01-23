@@ -253,4 +253,125 @@ impl LocalWorkspaceReader {
         };
         Ok(analyzed.into())
     }
+
+    // Pop the local configuration (take ownership if cached)
+    pub async fn pop_local_config(&mut self) -> Result<LocalConfig, CmdPrepareError> {
+        if let Some(local_config) = self.local_config.take() {
+            Ok(local_config)
+        } else {
+            let workspace_dir = self.workspace_dir()?;
+            let local_config = entry_dir!(workspace_dir, {
+                LocalConfig::read()
+                    .await
+                    .map_err(|_| CmdPrepareError::LocalConfigNotFound)?
+            });
+            Ok(local_config)
+        }
+    }
+
+    // Pop the local workspace (take ownership if cached)
+    pub async fn pop_local_workspace(&mut self) -> Result<LocalWorkspace, CmdPrepareError> {
+        if let Some(local_workspace) = self.local_workspace.take() {
+            Ok(local_workspace)
+        } else {
+            let workspace_dir = self.workspace_dir()?.clone();
+            let local_config = self.local_config().await?.clone();
+            let Some(local_workspace) = entry_dir!(&workspace_dir, {
+                LocalWorkspace::init_current_dir(local_config)
+            }) else {
+                return Err(CmdPrepareError::LocalWorkspaceNotFound);
+            };
+            Ok(local_workspace)
+        }
+    }
+
+    // Pop the latest information (take ownership if cached)
+    pub async fn pop_latest_info(&mut self) -> Result<LatestInfo, CmdPrepareError> {
+        if let Some(latest_info) = self.latest_info.take() {
+            Ok(latest_info)
+        } else {
+            let local_dir = self.workspace_dir()?.clone();
+            let local_config = self.local_config().await?.clone();
+            let latest_info = entry_dir!(&local_dir, {
+                match LatestInfo::read_from(LatestInfo::latest_info_path(
+                    &local_dir,
+                    &local_config.current_account(),
+                ))
+                .await
+                {
+                    Ok(info) => info,
+                    Err(_) => {
+                        return Err(CmdPrepareError::LatestInfoNotFound);
+                    }
+                }
+            });
+            Ok(latest_info)
+        }
+    }
+
+    // Pop the latest file data for a specific account (take ownership if cached)
+    pub async fn pop_latest_file_data(
+        &mut self,
+        account: &MemberId,
+    ) -> Result<LatestFileData, CmdPrepareError> {
+        if let Some(latest_file_data) = self.latest_file_data.remove(account) {
+            Ok(latest_file_data)
+        } else {
+            let local_dir = self.workspace_dir()?;
+            let latest_file_data_path =
+                match entry_dir!(&local_dir, { LatestFileData::data_path(account) }) {
+                    Ok(p) => p,
+                    Err(_) => return Err(CmdPrepareError::LatestFileDataNotExist(account.clone())),
+                };
+            let latest_file_data = LatestFileData::read_from(&latest_file_data_path).await?;
+            Ok(latest_file_data)
+        }
+    }
+
+    // Pop the cached sheet for a specific sheet name (take ownership if cached)
+    pub async fn pop_cached_sheet(
+        &mut self,
+        sheet_name: &SheetName,
+    ) -> Result<SheetData, CmdPrepareError> {
+        if let Some(cached_sheet) = self.cached_sheet.remove(sheet_name) {
+            Ok(cached_sheet)
+        } else {
+            let workspace_dir = self.workspace_dir()?;
+            let cached_sheet = entry_dir!(&workspace_dir, {
+                match just_enough_vcs::vcs::data::local::cached_sheet::CachedSheet::cached_sheet_data(sheet_name).await {
+                    Ok(data) => data,
+                    Err(_) => return Err(CmdPrepareError::CachedSheetNotFound(sheet_name.clone())),
+                }
+            });
+            Ok(cached_sheet)
+        }
+    }
+
+    // Pop the local sheet data for a specific account and sheet name (take ownership if cached)
+    pub async fn pop_local_sheet_data(
+        &mut self,
+        account: &MemberId,
+        sheet_name: &SheetName,
+    ) -> Result<LocalSheetData, CmdPrepareError> {
+        let key = (account.clone(), sheet_name.clone());
+        if let Some(local_sheet_data) = self.local_sheet_data.remove(&key) {
+            Ok(local_sheet_data)
+        } else {
+            let workspace_dir = self.workspace_dir()?.clone();
+            let local_workspace = self.local_workspace().await?;
+            let path = entry_dir!(&workspace_dir, {
+                local_workspace.local_sheet_path(account, sheet_name)
+            });
+            let local_sheet_data = match LocalSheetData::read_from(path).await {
+                Ok(data) => data,
+                Err(_) => {
+                    return Err(CmdPrepareError::LocalSheetNotFound(
+                        account.clone(),
+                        sheet_name.clone(),
+                    ));
+                }
+            };
+            Ok(local_sheet_data)
+        }
+    }
 }

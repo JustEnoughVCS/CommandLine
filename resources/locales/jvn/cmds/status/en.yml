@@ -1,0 +1,59 @@
+status:
+  header: |
+    You are viewing the status of `%{account}/%{sheet}`
+
+  current_mode:
+    structural: |
+      Use `jv align <item> <plan>` to align or confirm moved, erased, or lost items
+      %{info}
+    content: |
+      Use `jv track <mapping>` to track your changes
+      %{info}
+    clean: |
+      No changes, clean workspace
+
+  info_display:
+    moved:
+      header: |
+        [[yellow]]> MOVED:[[/]]
+      left: |
+        [[yellow]]>   %{left}[[/]]
+      right: |
+        [[yellow]]->  %{right}[[/]]
+    created:
+      header: |
+        [[green]]+ CREATED:[[/]]
+      item: |
+        [[green]]+   %{item}[[/]]
+    lost:
+      header: |
+        [[red]]? LOST:[[/]]
+      item: |
+        [[red]]?   %{item}[[/]]
+    erased:
+      header: |
+        [[magenta]]& ERASED:[[/]]
+      item: |
+        [[magenta]]&   %{item}[[/]]
+    modified:
+      header: |
+        [[cyan]]* MODIFIED:[[/]]
+      item: |
+        [[cyan]]*   %{item}[[/]]
+      item_wrong: |
+        [[red]]X   %{item}[[/]]
+        [[red]]    \____ %{reason}[[/]]
+      reason:
+        base_version_mismatch: Edited based on version `%{base_version}`, but the latest version is `%{latest_version}`
+        modified_but_not_held: Edited and held by @%{holder}
+        no_holder: Not held by anyone
+
+  hints:
+    outdate: |
+      [[yellow]]Note: Workspace information is from %{h}:%{m}:%{s} ago. Please use `jv update` to refresh the status.[[/]]
+
+    readonly: |
+      [[yellow]]Note: You are accessing the reference sheet as a guest. You cannot perform any version advancement or structural edits![[/]]
+
+    host: |
+      [[yellow]]Note: You are accessing this sheet in HOST mode. You can now directly operate on mappings and content![[/]]

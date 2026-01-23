@@ -268,17 +268,17 @@ pub fn md(text: impl AsRef<str>) -> String {
             }
         }
 
-        // Check for inline code `text`
-        if chars[i] == '`' {
+        // Check for angle-bracketed content <text>
+        if chars[i] == '<' {
             let mut j = i + 1;
-            while j < chars.len() && chars[j] != '`' {
+            while j < chars.len() && chars[j] != '>' {
                 j += 1;
             }
 
             if j < chars.len() {
-                // Include the backticks in the output
-                let code_text: String = chars[i..=j].iter().collect();
-                let mut formatted_text = code_text.green().to_string();
+                // Include the angle brackets in the output
+                let angle_text: String = chars[i..=j].iter().collect();
+                let mut formatted_text = angle_text.cyan().to_string();
 
                 // Apply current color stack
                 for color in color_stack.iter().rev() {
@@ -291,17 +291,17 @@ pub fn md(text: impl AsRef<str>) -> String {
             }
         }
 
-        // Check for angle-bracketed content <text>
-        if chars[i] == '<' {
+        // Check for inline code `text`
+        if chars[i] == '`' {
             let mut j = i + 1;
-            while j < chars.len() && chars[j] != '>' {
+            while j < chars.len() && chars[j] != '`' {
                 j += 1;
             }
 
             if j < chars.len() {
-                // Include the angle brackets in the output
-                let angle_text: String = chars[i..=j].iter().collect();
-                let mut formatted_text = angle_text.cyan().to_string();
+                // Include the backticks in the output
+                let code_text: String = chars[i..=j].iter().collect();
+                let mut formatted_text = code_text.green().to_string();
 
                 // Apply current color stack
                 for color in color_stack.iter().rev() {

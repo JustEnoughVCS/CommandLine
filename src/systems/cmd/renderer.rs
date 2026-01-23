@@ -42,13 +42,13 @@ impl JVRenderResult {
 #[macro_export]
 macro_rules! r_print {
     ($result:expr, $($arg:tt)*) => {
-        $result.print(&format!($($arg)*));
+        $result.print(&format!($($arg)*))
     };
 }
 
 #[macro_export]
 macro_rules! r_println {
     ($result:expr, $($arg:tt)*) => {
-        $result.println(&format!($($arg)*));
+        $result.println(&format!($($arg)*))
     };
 }
