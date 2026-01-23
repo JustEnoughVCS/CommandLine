@@ -21,7 +21,7 @@ if ($LASTEXITCODE -ne 0) {
 } else {
     # Build succeeded
     # Export
-    if (cargo run --manifest-path tools/build_helper/Cargo.toml --bin exporter debug) {
+    if (cargo run --manifest-path tools/build_helper/Cargo.toml --quiet --bin exporter debug) {
         Copy-Item -Path templates\compile_info.rs.template -Destination src\data\compile_info.rs -Force
     }
 }
