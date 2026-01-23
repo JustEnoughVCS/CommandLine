@@ -40,6 +40,9 @@ path = "src/outputs.rs"
 [collect.inputs]
 path = "src/inputs.rs"
 
+[collect.collects]
+path = "src/collects.rs"
+
 [collect.cmds]
 path = "src/cmds.rs"
 

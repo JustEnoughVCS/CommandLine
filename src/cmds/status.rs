@@ -1,9 +1,12 @@
-use std::time::SystemTime;
+use std::{collections::HashMap, time::SystemTime};
 
-use just_enough_vcs::vcs::constants::VAULT_HOST_NAME;
+use just_enough_vcs::vcs::{
+    constants::VAULT_HOST_NAME, data::local::workspace_analyzer::ModifiedRelativePathBuf,
+};
 
 use crate::{
     arguments::status::JVStatusArgument,
+    collects::status::JVStatusCollect,
     inputs::status::JVStatusInput,
     outputs::status::{JVStatusOutput, JVStatusWrongModifyReason},
     renderers::status::JVStatusRenderer,
@@ -16,16 +19,23 @@ use crate::{
 
 pub struct JVStatusCommand;
 
-impl JVCommand<JVStatusArgument, JVStatusInput, JVStatusOutput, JVStatusRenderer>
+impl JVCommand<JVStatusArgument, JVStatusInput, JVStatusCollect, JVStatusOutput, JVStatusRenderer>
     for JVStatusCommand
 {
     async fn prepare(
-        _args: JVStatusArgument,
-        _ctx: JVCommandContext,
+        _args: &JVStatusArgument,
+        _ctx: &JVCommandContext,
     ) -> Result<JVStatusInput, CmdPrepareError> {
+        Ok(JVStatusInput)
+    }
+
+    async fn collect(
+        _args: &JVStatusArgument,
+        _ctx: &JVCommandContext,
+    ) -> Result<JVStatusCollect, CmdPrepareError> {
         // Initialize a reader for the local workspace and a default result structure
         let mut reader = LocalWorkspaceReader::default();
-        let mut input = JVStatusInput::default();
+        let mut collect = JVStatusCollect::default();
 
         // Analyze the current status of the local workspace
         // (detects changes like created, modified, moved, etc.)
@@ -58,26 +68,31 @@ impl JVCommand<JVStatusArgument, JVStatusInput, JVStatusOutput, JVStatusRenderer
         let now_time = SystemTime::now();
 
         // Populate the result structure with the gathered data
-        input.current_account = account;
-        input.current_sheet = sheet_name;
-        input.is_host_mode = is_host_mode;
-        input.in_ref_sheet = is_ref_sheet;
-        input.analyzed_result = analyzed;
-        input.update_time = update_time;
-        input.now_time = now_time;
-        input.latest_file_data = latest_file_data;
-
-        Ok(input)
+        collect.current_account = account;
+        collect.current_sheet = sheet_name;
+        collect.is_host_mode = is_host_mode;
+        collect.in_ref_sheet = is_ref_sheet;
+        collect.analyzed_result = analyzed;
+        collect.update_time = update_time;
+        collect.now_time = now_time;
+        collect.latest_file_data = latest_file_data;
+        Ok(collect)
     }
 
-    async fn exec(mut input: JVStatusInput) -> Result<JVStatusOutput, CmdExecuteError> {
-        let latest_file_data = &input.latest_file_data;
+    async fn exec(
+        _input: JVStatusInput,
+        collect: JVStatusCollect,
+    ) -> Result<JVStatusOutput, CmdExecuteError> {
+        let mut wrong_modified_items: HashMap<ModifiedRelativePathBuf, JVStatusWrongModifyReason> =
+            HashMap::new();
+
+        let latest_file_data = &collect.latest_file_data;
 
         // Calculate whether modifications are correc
-        let modified = &input.analyzed_result.modified;
+        let modified = &collect.analyzed_result.modified;
         for item in modified {
             // Get mapping
-            let Ok(mapping) = input.local_sheet_data.mapping_data(&item) else {
+            let Ok(mapping) = collect.local_sheet_data.mapping_data(&item) else {
                 continue;
             };
 
@@ -93,7 +108,7 @@ impl JVCommand<JVStatusArgument, JVStatusInput, JVStatusOutput, JVStatusRenderer
 
                 // Base version dismatch
                 if base_version != latest_version {
-                    input.wrong_modified_items.insert(
+                    wrong_modified_items.insert(
                         item.clone(),
                         JVStatusWrongModifyReason::BaseVersionMismatch {
                             base_version,
@@ -105,18 +120,16 @@ impl JVCommand<JVStatusArgument, JVStatusInput, JVStatusOutput, JVStatusRenderer
             }
 
             // Check edit right (only check when current is not HOST)
-            if input.current_account != VAULT_HOST_NAME {
+            if collect.current_account != VAULT_HOST_NAME {
                 let holder = latest_file_data.file_holder(mapping.mapping_vfid());
                 if holder.is_none() {
-                    input
-                        .wrong_modified_items
-                        .insert(item.clone(), JVStatusWrongModifyReason::NoHolder);
+                    wrong_modified_items.insert(item.clone(), JVStatusWrongModifyReason::NoHolder);
                     continue;
                 }
 
                 let holder = holder.cloned().unwrap();
-                if &input.current_account != &holder {
-                    input.wrong_modified_items.insert(
+                if &collect.current_account != &holder {
+                    wrong_modified_items.insert(
                         item.clone(),
                         JVStatusWrongModifyReason::ModifiedButNotHeld { holder: holder },
                     );
@@ -125,14 +138,14 @@ impl JVCommand<JVStatusArgument, JVStatusInput, JVStatusOutput, JVStatusRenderer
         }
 
         let output = JVStatusOutput {
-            current_account: input.current_account,
-            current_sheet: input.current_sheet,
-            is_host_mode: input.is_host_mode,
-            in_ref_sheet: input.in_ref_sheet,
-            analyzed_result: input.analyzed_result,
-            wrong_modified_items: input.wrong_modified_items,
-            update_time: input.update_time,
-            now_time: input.now_time,
+            current_account: collect.current_account,
+            current_sheet: collect.current_sheet,
+            is_host_mode: collect.is_host_mode,
+            in_ref_sheet: collect.in_ref_sheet,
+            analyzed_result: collect.analyzed_result,
+            wrong_modified_items: wrong_modified_items,
+            update_time: collect.update_time,
+            now_time: collect.now_time,
         };
 
         Ok(output)

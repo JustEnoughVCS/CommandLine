@@ -21,6 +21,7 @@ pub mod cmds;
 
 /// Command Data
 pub mod arguments;
+pub mod collects;
 pub mod inputs;
 pub mod outputs;
 

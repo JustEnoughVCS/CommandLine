@@ -14,20 +14,38 @@ pub struct JVUnknownArgument;
 
 pub struct JVUnknownInput;
 
+pub struct JVUnknownCollect;
+
 #[derive(Serialize)]
 pub struct JVUnknownOutput;
 
-impl JVCommand<JVUnknownArgument, JVUnknownInput, JVUnknownOutput, JVStatusRenderer>
-    for JVUnknownCommand
+impl
+    JVCommand<
+        JVUnknownArgument, // Argument
+        JVUnknownInput,    // Input Data
+        JVUnknownCollect,  // Collect Resources
+        JVUnknownOutput,   // Output Data
+        JVStatusRenderer,  // Default Renderer
+    > for JVUnknownCommand
 {
     async fn prepare(
-        _args: JVUnknownArgument,
-        _ctx: JVCommandContext,
+        _args: &JVUnknownArgument,
+        _ctx: &JVCommandContext,
     ) -> Result<JVUnknownInput, CmdPrepareError> {
         todo!()
     }
 
-    async fn exec(_input: JVUnknownInput) -> Result<JVUnknownOutput, CmdExecuteError> {
+    async fn collect(
+        _args: &JVUnknownArgument,
+        _ctx: &JVCommandContext,
+    ) -> Result<JVUnknownCollect, CmdPrepareError> {
+        todo!()
+    }
+
+    async fn exec(
+        _input: JVUnknownInput,
+        _collect: JVUnknownCollect,
+    ) -> Result<JVUnknownOutput, CmdExecuteError> {
         todo!()
     }
 
