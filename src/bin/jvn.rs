@@ -51,15 +51,11 @@ async fn main() {
     let mut args: Vec<String> = std::env::args().skip(1).collect();
 
     // Init i18n
-    let lang = special_argument!(args, "--lang")
-        .or_else(|| special_argument!(args, "-L"))
-        .unwrap_or(current_locales());
+    let lang = special_argument!(args, "--lang").unwrap_or(current_locales());
     set_locale(&lang);
 
     // Renderer
-    let renderer_override = special_argument!(args, "--renderer")
-        .or_else(|| special_argument!(args, "-R"))
-        .unwrap_or("default".to_string());
+    let renderer_override = special_argument!(args, "--renderer").unwrap_or("default".to_string());
 
     // Other flags
     let no_error_logs = special_flag!(args, "--no-error-logs");
