@@ -73,6 +73,6 @@ if ($LASTEXITCODE -ne 0) {
     if (cargo run --manifest-path tools/build_helper/Cargo.toml --quiet --bin exporter release) {
         Copy-Item -Path templates\compile_info.rs.template -Destination src\data\compile_info.rs -Force
         Write-Host "Packing Installer `".\setup\windows\setup_jv_cli.iss`""
-        ISCC /Q .\setup\windows\setup_jv_cli.iss
+        ISCC /Q .\scripts\setup\windows\setup_jv_cli.iss
     }
 }
