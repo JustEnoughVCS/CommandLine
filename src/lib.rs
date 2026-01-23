@@ -20,7 +20,7 @@ pub mod systems;
 pub mod cmds;
 
 /// Command Data
-pub mod arguments;
+pub mod args;
 pub mod collects;
 pub mod inputs;
 pub mod outputs;
