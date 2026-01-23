@@ -15,10 +15,3 @@
     <img src="https://img.shields.io/badge/Status-Development%20in%20Progress-yellow?style=for-the-badge">
     <img src="https://img.shields.io/badge/Release-Not%20Available-lightgrey?style=for-the-badge">
 </p>
-
-# Install (From Source Code)
-
-```bash
-# Linux
-curl -s https://raw.githubusercontent.com/JustEnoughVCS/CommandLine/main/setup/linux/inst.sh | bash
-```

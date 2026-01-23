@@ -48,7 +48,7 @@ chmod +x setup.sh
 echo "Building CLI..."
 cd ../CommandLine
 chmod +x deploy.sh
-./deploy.sh
+./scripts/dev/deploy.sh
 
 # Configure shell to include CLI in PATH
 echo "Now adding JustEnoughVCS CLI to your environment. Please select your target shell:"
