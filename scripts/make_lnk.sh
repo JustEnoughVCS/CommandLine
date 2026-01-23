@@ -1,5 +1,6 @@
 #!/bin/bash
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+original_dir="$(pwd)"
 cd "$(dirname "$0")" || exit 1
 deploy_sh="$script_dir/dev/deploy.sh"
 dev_deploy_sh="$script_dir/dev/dev_deploy.sh"
@@ -20,3 +21,5 @@ if [ -f "$dev_deploy_sh" ]; then
     fi
     ln -s "$dev_deploy_sh" "$link_path"
 fi
+
+cd "$original_dir" || exit 1

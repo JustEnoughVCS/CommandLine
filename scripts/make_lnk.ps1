@@ -1,4 +1,5 @@
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$originalLocation = Get-Location
 Set-Location $scriptDir
 
 $deployPs1 = Join-Path $scriptDir "dev\deploy.ps1"
@@ -22,3 +23,5 @@ if (Test-Path $devDeployPs1) {
     $shortcut.TargetPath = $devDeployPs1
     $shortcut.Save()
 }
+
+Set-Location $originalLocation
