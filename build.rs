@@ -257,7 +257,7 @@ fn generate_cmd_registry_file(repo_root: &PathBuf) -> Result<(), Box<dyn std::er
     let mut commands = Vec::new();
     let mut nodes = Vec::new();
 
-    // First, collect commands from Registry.toml
+    // First, collect commands from registry.toml
     if let Some(table) = config.as_table() {
         if let Some(cmd_table) = table.get("cmd") {
             if let Some(cmd_table) = cmd_table.as_table() {
@@ -311,7 +311,7 @@ fn generate_cmd_registry_file(repo_root: &PathBuf) -> Result<(), Box<dyn std::er
             let pascal_name = pascal_case!(file_name);
 
             let key = file_name.to_string();
-            let node = file_name.replace(".", " ");
+            let node = file_name.replace(".", " ").replace("_", " ");
             let cmd_type = format!("cmds::{}::JV{}Command", file_name, pascal_name);
 
             nodes.push(node.clone());
