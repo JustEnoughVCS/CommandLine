@@ -3,7 +3,16 @@
 # Set location to script directory
 $scriptPath = $MyInvocation.MyCommand.Path
 $scriptDir = Split-Path $scriptPath -Parent
-Set-Location $scriptDir
+
+# Run script to hide ignored files
+$hideScriptPath = Join-Path $scriptDir "hide_ignored_file.ps1"
+if (Test-Path $hideScriptPath) {
+    & $hideScriptPath
+} else {
+    Write-Warning "hide_ignored_file.ps1 not found at $hideScriptPath"
+}
+
+Set-Location (Join-Path $scriptDir "..\..")
 
 # Check for ISCC
 $isccPath = Get-Command ISCC -ErrorAction SilentlyContinue

@@ -3,7 +3,7 @@
 # Require : Cargo (Rust)
 
 # Change to the directory where the script is located
-cd "$(dirname "$0")" || exit 1
+cd "$(dirname "$0")/../../" || exit 1
 
 # Check if core library exists
 coreLibPath="../VersionControl/"

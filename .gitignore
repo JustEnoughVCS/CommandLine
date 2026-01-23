@@ -32,3 +32,9 @@ _*.rs
 /src/cmds.rs
 /src/arguments.rs
 /src/renderers.rs
+
+# Symbolic links and shortcuts created by scripts
+/deploy.lnk
+/dev.lnk
+/deploy
+/dev
