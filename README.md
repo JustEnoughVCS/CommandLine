@@ -1,13 +1,13 @@
 <p align="center">
-  <a href="https://github.com/JustEnoughVCS/CommandLine">
-      <img alt="JustEnoughVCS" src="resources/images/Header_Large.png" width="100%">
-  </a>
+	<a href="https://github.com/JustEnoughVCS/VersionControl">
+		<img alt="JustEnoughVCS" src="resources/images/Yizi_Icon.png" width="20%">
+	</a>
 </p>
 
-<h2 align="center">JustEnoughVCS/CommandLine</h2>
+<h1 align="center">JVCS CommandLine</h1>
 
 <p align="center">
-    Command Line Tool for <a href="https://github.com/JustEnoughVCS/VersionControl">JustEnoughVCS</a>
+    CLI of <a href="https://github.com/JustEnoughVCS/VersionControl">JustEnoughVCS</a>
 </p>
 
 <p align="center">

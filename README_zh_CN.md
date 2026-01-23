@@ -1,13 +1,13 @@
 <p align="center">
-  <a href="https://github.com/JustEnoughVCS/CommandLine">
-      <img alt="JustEnoughVCS" src="resources/images/Header_Large.png" width="100%">
-  </a>
+	<a href="https://github.com/JustEnoughVCS/VersionControl">
+		<img alt="JustEnoughVCS" src="resources/images/Yizi_Icon.png" width="20%">
+	</a>
 </p>
 
-<h2 align="center">JustEnoughVCS/CommandLine</h2>
+<h1 align="center">JVCS CommandLine</h1>
 
 <p align="center">
-    <a href="https://github.com/JustEnoughVCS/VersionControl">JustEnoughVCS</a>的命令行前端
+    <a href="https://github.com/JustEnoughVCS/VersionControl">JustEnoughVCS</a> 命令行前端
 </p>
 
 <p align="center">
