@@ -64,6 +64,7 @@ prepare_error:
 
   local_status_analyze_failed: |
     分析本地工作区失败！
+    请检查当前工作区是否正确设置上游，并正在使用结构表
 
   no_sheet_in_use: |
     当前没有在使用表，请使用 `jv use <结构表名称>` 使用一张结构表

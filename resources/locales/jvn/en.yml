@@ -65,6 +65,8 @@ prepare_error:
 
   local_status_analyze_failed: |
     Failed to analyze local workspace!
+    Please check if the current workspace is correctly configured with an upstream.
+    Also, verify that a structure sheet is in use.
 
   no_sheet_in_use: |
     No sheet in use. Use `jv use <structure_sheet_name>`.
