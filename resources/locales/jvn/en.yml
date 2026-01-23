@@ -1,19 +1,16 @@
+help: |
+  NO
+
 process_error:
-  prepare_error: |
-    [[YELLOW]]Preparation Phase Error:[[/]]
-    %{error}
-  execute_error: |
-    [[RED]]Execution Phase Error:[[/]]
-    %{error}
-  render_error: |
-    [[YELLOW]]Rendering Phase Error:[[/]]
-    %{error}
-
-    Tip: If you need to ignore error output,
-    please append the `--no-error-logs` parameter to the command.
-
   no_matching_command: |
     No matching command found!
+    Use `jv -h` to get help
+
+  no_matching_command_but_similar: |
+    No matching command found, but similar commands were found:
+      jv %{similars}
+
+    Use `jv -h` to get help
 
   ambiguous_command: |
     Multiple commands found, unable to determine which one you want:
@@ -33,3 +30,66 @@ process_error:
 
   other: |
     %{error}
+
+prepare_error:
+  io: |
+    I/O error in preparation phase!
+    Error: %{error}
+
+  error: |
+    Unknown error in preparation phase!
+    Error: %{error}
+
+  local_workspace_not_found: |
+    Local workspace not found!
+    Create or enter a workspace directory first.
+
+  local_config_not_found: |
+    Failed to read workspace config. File may not exist or format mismatch.
+    Use `jv update` and try again.
+
+  latest_info_not_found: |
+    Unable to read latest upstream info!
+    Use `jv update` and try again.
+
+  latest_file_data_not_exist: |
+    Unable to read latest file info for member `%{member_id}`!
+    Use `jv update` and try again.
+
+  cached_sheet_not_found: |
+    Unable to read cached upstream sheet `%{sheet_name}`!
+    Use `jv update` and try again.
+
+  local_sheet_not_found: |
+    Unable to read local sheet `%{sheet_name}` for member `%{member_id}`.
+
+  local_status_analyze_failed: |
+    Failed to analyze local workspace!
+
+  no_sheet_in_use: |
+    No sheet in use. Use `jv use <structure_sheet_name>`.
+
+execute_error:
+  io: |
+    I/O error in execution phase!
+    Error: %{error}
+
+  error: |
+    Error in execution phase!
+    Error: %{error}
+
+render_error:
+  io: |
+    I/O error in rendering phase!
+    Error: %{error}
+
+  error: |
+    Error in rendering phase!
+    Error: %{error}
+
+  serialize_failed: |
+    Data serialization error!
+    Error: %{error}
+
+  renderer_not_found: |
+    Renderer `%{renderer_name}` not found!

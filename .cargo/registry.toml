@@ -9,6 +9,26 @@
 # node = "name"
 # type = "your_command::JVUnknownCommand"
 
+[cmd.sign]
+node = "sign"
+type = "cmds::status::JVStatusCommand"
+
+[cmd.sheet]
+node = "sheet"
+type = "cmds::status::JVStatusCommand"
+
+[cmd.sheet_add]
+node = "sheet.add"
+type = "cmds::status::JVStatusCommand"
+
+[cmd.drop]
+node = "drop"
+type = "cmds::status::JVStatusCommand"
+
+[cmd.drop_cat]
+node = "drop.cat"
+type = "cmds::status::JVStatusCommand"
+
 #################
 ### Renderers ###
 #################

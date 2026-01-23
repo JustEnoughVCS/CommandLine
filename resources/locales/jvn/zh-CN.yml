@@ -1,18 +1,15 @@
+help: |
+  NO
+
 process_error:
-  prepare_error: |
-    [[YELLOW]]准备阶段错误：[[/]]
-    %{error}
-  execute_error: |
-    [[RED]]执行阶段错误：[[/]]
-    %{error}
-  render_error: |
-    [[YELLOW]]渲染阶段错误：[[/]]
-    %{error}
-
-    提示：若您需要忽略错误输出，请在命令后追加 `--no-error-logs` 参数
-
   no_matching_command: |
-    无法找到匹配的命令！
+    无法匹配该命令，使用 `jv -h` 查看帮助
+
+  no_matching_command_but_similar: |
+    无法找到匹配的命令，但找到相似命令：
+      jv %{similars}
+
+    使用 `jv -h` 查看帮助
 
   ambiguous_command: |
     找到多个命令，无法确定您想要哪一个：
@@ -32,3 +29,66 @@ process_error:
 
   other: |
     %{error}
+
+prepare_error:
+  io: |
+    命令在准备阶段发生了 I/O 错误！
+    错误信息：%{error}
+
+  error: |
+    命令在准备阶段发生未知错误！
+    错误信息：%{error}
+
+  local_workspace_not_found: |
+    无法找到本地工作区！
+    请先创建或进入本地工作区目录
+
+  local_config_not_found: |
+    读取本地工作区配置文件失败，它可能不存在或格式不匹配
+    请使用 `jv update` 更新工作区信息后再尝试
+
+  latest_info_not_found: |
+    无法找到或读取最新上游信息！
+    请使用 `jv update` 更新工作区信息后再尝试
+
+  latest_file_data_not_exist: |
+    无法找到或读取成员 `%{member_id}` 的最新文件信息！
+    请使用 `jv update` 更新工作区信息后再尝试
+
+  cached_sheet_not_found: |
+    无法找到或读取上游结构表 `%{sheet_name}` 的缓存信息！
+    请使用 `jv update` 更新工作区信息后再尝试
+
+  local_sheet_not_found: |
+    无法找到或读取成员 `%{member_id}` 的本地结构表 `%{sheet_name}`
+
+  local_status_analyze_failed: |
+    分析本地工作区失败！
+
+  no_sheet_in_use: |
+    当前没有在使用表，请使用 `jv use <结构表名称>` 使用一张结构表
+
+execute_error:
+  io: |
+    命令在运行阶段发生了 I/O 错误！
+    错误信息：%{error}
+
+  error: |
+    命令在运行阶段发生错误！
+    错误信息：%{error}
+
+render_error:
+  io: |
+    命令在渲染阶段发生了 I/O 错误！
+    错误信息：%{error}
+
+  error: |
+    命令在渲染阶段发生错误！
+    错误信息：%{error}
+
+  serialize_failed: |
+    数据在序列化时发生了错误！
+    错误信息：%{error}
+
+  renderer_not_found: |
+    无法找到渲染器 `%{renderer_name}`！
