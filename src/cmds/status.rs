@@ -5,7 +5,7 @@ use just_enough_vcs::vcs::{
 };
 
 use crate::{
-    arguments::status::JVStatusArgument,
+    args::status::JVStatusArgument,
     collects::status::JVStatusCollect,
     inputs::status::JVStatusInput,
     outputs::status::{JVStatusOutput, JVStatusWrongModifyReason},
