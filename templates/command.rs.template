@@ -25,7 +25,7 @@ impl
         JVUnknownInput,    // Input Data
         JVUnknownCollect,  // Collect Resources
         JVUnknownOutput,   // Output Data
-        JVStatusRenderer,  // Default Renderer
+        JVUnknownRenderer,  // Default Renderer
     > for JVUnknownCommand
 {
     async fn prepare(
@@ -54,9 +54,9 @@ impl
     }
 }
 
-pub struct JVStatusRenderer;
+pub struct JVUnknownRenderer;
 
-impl JVResultRenderer<JVUnknownOutput> for JVStatusRenderer {
+impl JVResultRenderer<JVUnknownOutput> for JVUnknownRenderer {
     async fn render(_data: &JVUnknownOutput) -> Result<JVRenderResult, CmdRenderError> {
         todo!()
     }
