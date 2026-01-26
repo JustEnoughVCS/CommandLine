@@ -2,9 +2,9 @@ name: Deploy Build
 
 on:
   push:
-    branches: [github_action/deploy]
+    branches: [deploy/nightly]
   pull_request:
-    branches: [github_action/deploy]
+    branches: [deploy/nightly]
 
 env:
   CARGO_TERM_COLOR: always
