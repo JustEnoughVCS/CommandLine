@@ -2,7 +2,7 @@ use std::{io::Error, path::PathBuf, str::FromStr};
 
 use just_enough_vcs::utils::string_proc::format_path::format_path_str;
 
-use crate::utils::globber::constants::{SPLIT_STR, get_base_dir_current};
+use crate::globber::constants::{SPLIT_STR, get_base_dir_current};
 
 pub struct Globber {
     pattern: String,

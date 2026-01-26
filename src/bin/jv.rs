@@ -1,3 +1,4 @@
+use cli_utils::input::input_with_editor;
 use colored::Colorize;
 use just_enough_vcs::{
     data::compile_info::CoreCompileInfo,
@@ -92,6 +93,15 @@ use std::{
 };
 
 use clap::{Parser, Subcommand};
+use cli_utils::{
+    display::{SimpleTable, display_width, md, render_share_path_tree, size_str},
+    env::{auto_update_outdate, current_locales, enable_auto_update},
+    fs::move_across_partitions,
+    globber::{GlobItem, Globber},
+    input::{confirm_hint, confirm_hint_or, show_in_pager},
+    push_version::push_version,
+    socket_addr_helper,
+};
 use just_enough_vcs::utils::tcp_connection::error::TcpTargetError;
 use just_enough_vcs_cli::{
     data::{
@@ -106,15 +116,6 @@ use just_enough_vcs_cli::{
         info::{InfoHistory, InfoJsonResult},
         share::{SeeShareResult, ShareItem, ShareListResult},
         sheets::{SheetItem, SheetListJsonResult},
-    },
-    utils::{
-        display::{SimpleTable, display_width, md, render_share_path_tree, size_str},
-        env::{auto_update_outdate, current_locales, enable_auto_update},
-        fs::move_across_partitions,
-        globber::{GlobItem, Globber},
-        input::{confirm_hint, confirm_hint_or, input_with_editor, show_in_pager},
-        push_version::push_version,
-        socket_addr_helper,
     },
 };
 use rust_i18n::{set_locale, t};

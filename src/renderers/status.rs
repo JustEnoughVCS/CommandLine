@@ -1,3 +1,7 @@
+use cli_utils::{
+    display::{SimpleTable, md},
+    env::auto_update_outdate,
+};
 use rust_i18n::t;
 
 use crate::{
@@ -6,10 +10,6 @@ use crate::{
     systems::cmd::{
         errors::CmdRenderError,
         renderer::{JVRenderResult, JVResultRenderer},
-    },
-    utils::{
-        display::{SimpleTable, md},
-        env::auto_update_outdate,
     },
 };
 

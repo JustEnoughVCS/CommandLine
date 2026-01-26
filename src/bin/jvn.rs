@@ -1,14 +1,12 @@
 use std::process::exit;
 
+use cli_utils::display::md;
+use cli_utils::env::current_locales;
+use cli_utils::levenshtein_distance::levenshtein_distance;
 use just_enough_vcs_cli::systems::cmd::_registry::jv_cmd_nodes;
 use just_enough_vcs_cli::systems::cmd::cmd_system::JVCommandContext;
 use just_enough_vcs_cli::systems::cmd::errors::{CmdExecuteError, CmdPrepareError, CmdRenderError};
-use just_enough_vcs_cli::utils::display::md;
-use just_enough_vcs_cli::utils::levenshtein_distance::levenshtein_distance;
-use just_enough_vcs_cli::{
-    systems::cmd::{errors::CmdProcessError, processer::jv_cmd_process},
-    utils::env::current_locales,
-};
+use just_enough_vcs_cli::systems::cmd::{errors::CmdProcessError, processer::jv_cmd_process};
 use rust_i18n::{set_locale, t};
 
 rust_i18n::i18n!("resources/locales/jvn", fallback = "en");

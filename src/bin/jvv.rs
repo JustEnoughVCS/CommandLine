@@ -1,4 +1,9 @@
 use clap::{Parser, Subcommand};
+use cli_utils::{
+    display::{md, size_str},
+    env::current_locales,
+    logger::build_env_logger,
+};
 use just_enough_vcs::{
     data::compile_info::CoreCompileInfo,
     utils::{
@@ -15,14 +20,7 @@ use just_enough_vcs::{
         env::current_vault_path,
     },
 };
-use just_enough_vcs_cli::{
-    data::compile_info::CompileInfo,
-    utils::{
-        display::{md, size_str},
-        env::current_locales,
-        logger::build_env_logger,
-    },
-};
+use just_enough_vcs_cli::data::compile_info::CompileInfo;
 use log::{error, info};
 use rust_i18n::{set_locale, t};
 use tokio::fs::{self};

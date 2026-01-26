@@ -1,6 +1,6 @@
 use tokio::{fs, process::Command};
 
-use crate::utils::env::get_default_editor;
+use crate::env::get_default_editor;
 
 /// Confirm the current operation
 /// Waits for user input of 'y' or 'n'

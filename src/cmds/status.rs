@@ -13,8 +13,8 @@ use crate::{
     systems::cmd::{
         cmd_system::{JVCommand, JVCommandContext},
         errors::{CmdExecuteError, CmdPrepareError},
+        workspace_reader::LocalWorkspaceReader,
     },
-    utils::workspace_reader::LocalWorkspaceReader,
 };
 
 pub struct JVStatusCommand;

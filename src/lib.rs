@@ -2,9 +2,6 @@ rust_i18n::i18n!("resources/locales/jvn", fallback = "en");
 
 // --- LIBS ---
 
-/// Utils
-pub mod utils;
-
 /// Data
 pub mod data;
 

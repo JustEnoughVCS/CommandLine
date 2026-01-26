@@ -5,6 +5,9 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use clap::Parser;
+use cli_utils::display::display_width;
+use cli_utils::display::md;
+use cli_utils::env::current_locales;
 use crossterm::{
     QueueableCommand,
     cursor::MoveTo,
@@ -16,9 +19,6 @@ use crossterm::{
         enable_raw_mode,
     },
 };
-use just_enough_vcs_cli::utils::display::display_width;
-use just_enough_vcs_cli::utils::display::md;
-use just_enough_vcs_cli::utils::env::current_locales;
 use rust_i18n::set_locale;
 use rust_i18n::t;
 #[cfg(windows)]
