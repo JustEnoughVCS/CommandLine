@@ -5,11 +5,13 @@ use just_enough_vcs::vcs::{
 };
 
 use crate::{
-    args::status::JVStatusArgument,
-    collects::status::JVStatusCollect,
-    inputs::status::JVStatusInput,
-    outputs::status::{JVStatusOutput, JVStatusWrongModifyReason},
-    renderers::status::JVStatusRenderer,
+    cmds::{
+        arg::status::JVStatusArgument,
+        collect::status::JVStatusCollect,
+        r#in::status::JVStatusInput,
+        out::status::{JVStatusOutput, JVStatusWrongModifyReason},
+        renderer::status::JVStatusRenderer,
+    },
     systems::cmd::{
         cmd_system::{JVCommand, JVCommandContext},
         errors::{CmdExecuteError, CmdPrepareError},

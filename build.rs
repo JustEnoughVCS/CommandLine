@@ -4,7 +4,7 @@ use std::process::Command;
 
 use string_proc::pascal_case;
 
-const COMMANDS_PATH: &str = "./src/cmds/";
+const COMMANDS_PATH: &str = "./src/cmds/cmd/";
 
 const COMPILE_INFO_RS_TEMPLATE: &str = "./templates/compile_info.rs.template";
 const COMPILE_INFO_RS: &str = "./src/data/compile_info.rs";
@@ -312,7 +312,7 @@ fn generate_cmd_registry_file(repo_root: &PathBuf) -> Result<(), Box<dyn std::er
 
             let key = file_name.to_string();
             let node = file_name.replace(".", " ").replace("_", " ");
-            let cmd_type = format!("cmds::{}::JV{}Command", file_name, pascal_name);
+            let cmd_type = format!("cmds::cmd::{}::JV{}Command", file_name, pascal_name);
 
             nodes.push(node.clone());
             commands.push((key, node, cmd_type));

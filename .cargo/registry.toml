@@ -24,30 +24,30 @@ type = "Renderer"
 # Json Renderer
 [renderer.json]
 name = "json"
-type = "crate::renderers::json::JVResultJsonRenderer"
+type = "crate::cmds::renderer::json::JVResultJsonRenderer"
 
 [renderer.json_pretty]
 name = "json-pretty"
-type = "crate::renderers::json_pretty::JVResultPrettyJsonRenderer"
+type = "crate::cmds::renderer::json_pretty::JVResultPrettyJsonRenderer"
 
 ####################
 ### Auto-Collect ###
 ####################
 
 [collect.args]
-path = "src/args.rs"
+path = "src/cmds/arg.rs"
 
 [collect.cmds]
-path = "src/cmds.rs"
+path = "src/cmds/cmd.rs"
 
 [collect.collects]
-path = "src/collects.rs"
+path = "src/cmds/collect.rs"
 
 [collect.inputs]
-path = "src/inputs.rs"
+path = "src/cmds/in.rs"
 
 [collect.outputs]
-path = "src/outputs.rs"
+path = "src/cmds/out.rs"
 
 [collect.renderers]
-path = "src/renderers.rs"
+path = "src/cmds/renderer.rs"

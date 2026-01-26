@@ -5,7 +5,7 @@ use cli_utils::{
 use rust_i18n::t;
 
 use crate::{
-    outputs::status::{JVStatusOutput, JVStatusWrongModifyReason},
+    cmds::out::status::{JVStatusOutput, JVStatusWrongModifyReason},
     r_println,
     systems::cmd::{
         errors::CmdRenderError,
