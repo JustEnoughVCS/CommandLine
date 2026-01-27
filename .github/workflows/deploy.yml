@@ -20,14 +20,14 @@ jobs:
       - name: Checkout CommandLine repository
         uses: actions/checkout@v4
         with:
-          ref: github_action/deploy
+          ref: deploy/nightly
           path: CommandLine
 
       - name: Checkout VersionControl repository
         uses: actions/checkout@v4
         with:
           repository: JustEnoughVCS/VersionControl
-          ref: github_action/deploy
+          ref: deploy/nightly
           path: VersionControl
 
       - name: Setup Rust
@@ -101,14 +101,14 @@ jobs:
       - name: Checkout CommandLine repository
         uses: actions/checkout@v4
         with:
-          ref: github_action/deploy
+          ref: deploy/nightly
           path: CommandLine
 
       - name: Checkout VersionControl repository
         uses: actions/checkout@v4
         with:
           repository: JustEnoughVCS/VersionControl
-          ref: github_action/deploy
+          ref: deploy/nightly
           path: VersionControl
 
       - name: Setup Rust
@@ -178,14 +178,14 @@ jobs:
       - name: Checkout CommandLine repository
         uses: actions/checkout@v4
         with:
-          ref: github_action/deploy
+          ref: deploy/nightly
           path: CommandLine
 
       - name: Checkout VersionControl repository
         uses: actions/checkout@v4
         with:
           repository: JustEnoughVCS/VersionControl
-          ref: github_action/deploy
+          ref: deploy/nightly
           path: VersionControl
 
       - name: Setup Rust with musl target
