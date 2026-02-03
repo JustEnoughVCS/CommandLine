@@ -16,19 +16,14 @@
 # Only register renderers here that need to be overridden using the `--renderer` flag.
 # After registration, you can use the format `command --renderer renderer_name` to override the renderer.
 
-# Default Renderer
-[renderer.default]
-name = "default"
-type = "Renderer"
-
 # Json Renderer
 [renderer.json]
 name = "json"
-type = "crate::cmds::renderer::json::JVResultJsonRenderer"
+type = "crate::cmds::r#override::renderer::json"
 
 [renderer.json_pretty]
 name = "json-pretty"
-type = "crate::cmds::renderer::json_pretty::JVResultPrettyJsonRenderer"
+type = "crate::cmds::r#override::renderer::json_pretty"
 
 ####################
 ### Auto-Collect ###
@@ -51,3 +46,6 @@ path = "src/cmds/out.rs"
 
 [collect.renderers]
 path = "src/cmds/renderer.rs"
+
+[collect.override_renderers]
+path = "src/cmds/override/renderer.rs"

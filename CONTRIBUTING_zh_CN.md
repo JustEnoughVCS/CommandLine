@@ -98,18 +98,18 @@ sources ~/.../JustEnoughVCS/CommandLine/.temp/deploy/jv_cli.sh
 
 | 模块 | 路径 | 说明 |
 |------|------|------|
-| **命令定义** | `src/cmds/` | 命令的主逻辑实现。 |
-| **参数定义** | `src/args/` | 使用 `clap` 定义命令行输入。 |
-| **输入数据** | `src/inputs/` | 命令运行阶段的用户输入数据。 |
-| **收集数据** | `src/collects/` | 命令运行阶段从本地收集的数据。 |
-| **输出数据** | `src/outputs/` | 命令的输出数据。 |
-| **渲染器** | `src/renderers/` | 数据的默认呈现方式。 |
+| **命令定义** | `src/cmds/cmd/` | 命令的主逻辑实现。 |
+| **参数定义** | `src/cmds/arg/` | 使用 `clap` 定义命令行输入。 |
+| **输入数据** | `src/cmds/in/` | 命令运行阶段的用户输入数据。 |
+| **收集数据** | `src/cmds/collect/` | 命令运行阶段从本地收集的数据。 |
+| **输出数据** | `src/cmds/out/` | 命令的输出数据。 |
+| **渲染器** | `src/cmds/renderer/` | 数据的默认呈现方式。 |
 
 
 
 ### 命名规范
 
-- **文件命名**: 请遵循 `src/cmds/status.rs` 的格式，即使用命令名称作为文件名
+- **文件命名**: 请遵循 `src/cmds/cmd/status.rs` 的格式，即使用命令名称作为文件名
 - **多级子命令**: 在 `cmds` 目录下，使用 `sub_subsub.rs` 格式命名文件（例如：`sheet_drop.rs`）
 - **结构体命名**:
     - 命令结构体: `JV{Subcommand}{Subsubcommand}Command` (例如：`JVSheetDropCommand`)
@@ -123,7 +123,7 @@ sources ~/.../JustEnoughVCS/CommandLine/.temp/deploy/jv_cli.sh
         
 
 ### 其他开发约定
-- **工具函数**: 可复用的功能应置于 `src/utils/` 目录下（例如 `src/utils/feat.rs`），测试代码应直接写在对应的功能文件内
+- **工具函数**: 可复用的功能应置于 `utils/` 目录下（例如 `utils/feat.rs`），测试代码应直接写在对应的功能文件内
 - **特殊文件**: 以 `_` 下划线开头的 `.rs` 文件已被 `.gitignore` 规则排除，不会被 Git 追踪
 - **文件移动**: 如需移动文件，请务必使用 `git mv` 命令或确保文件已被 Git 追踪。在提交信息中应说明移动原因
 - **前后端职责**: 前端（命令行界面）应保持轻量，主要负责数据收集与展示。任何需要修改工作区数据的操作，都必须调用核心库提供的接口

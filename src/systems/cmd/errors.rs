@@ -76,6 +76,12 @@ pub enum CmdRenderError {
 
     #[error("Renderer `{0}` not found")]
     RendererNotFound(String),
+
+    #[error("Type mismatch: expected `{expected:?}`, got `{actual:?}`")]
+    TypeMismatch {
+        expected: std::any::TypeId,
+        actual: std::any::TypeId,
+    },
 }
 
 impl CmdRenderError {
@@ -109,6 +115,12 @@ pub enum CmdProcessError {
 
     #[error("Parse error")]
     ParseError(String),
+
+    #[error("Renderer override mode is active, but user requested help")]
+    RendererOverrideButRequestHelp,
+
+    #[error("Downcast failed")]
+    DowncastFailed,
 }
 
 impl CmdProcessError {

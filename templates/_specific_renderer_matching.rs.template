@@ -1,0 +1,14 @@
+match type_name_str {
+// MATCHING
+// -- TEMPLATE START --
+    "OutputTypeName" => {
+        RendererType::render(
+            &data
+                .downcast::<OutputType>()
+                .unwrap(),
+        )
+        .await
+    }
+// -- TEMPLATE END --
+    _ => Err(CmdRenderError::RendererNotFound(type_name)),
+}

@@ -8,18 +8,25 @@ pub async fn jv_cmd_process_node(
     args: Vec<String>,
     ctx: JVCommandContext,
     renderer_override: String
-) -> Result<crate::systems::cmd::renderer::JVRenderResult, crate::systems::cmd::errors::CmdProcessError> {
+) -> Result<crate::systems::render::renderer::JVRenderResult, crate::systems::cmd::errors::CmdProcessError> {
     match node {
 // PROCESS
 // -- TEMPLATE START --
         // Command `<<KEY>>`
         "<<NODE_NAME>>" => {
-            return crate::<<COMMAND_TYPE>>::process_with_renderer_flag(
-                args,
-                ctx,
-                renderer_override
-            )
-            .await;
+            if renderer_override == "default" {
+                return crate::<<COMMAND_TYPE>>::process_to_render_system(
+                    args, ctx,
+                )
+                .await;
+            } else {
+                return crate::<<COMMAND_TYPE>>::process_to_renderer_override(
+                    args,
+                    ctx,
+                    renderer_override,
+                )
+                .await;
+            }
         }
 // -- TEMPLATE END --
         _ => {}

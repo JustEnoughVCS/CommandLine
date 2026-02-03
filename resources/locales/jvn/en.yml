@@ -28,8 +28,23 @@ process_error:
     An error occurred while parsing your command arguments!
     Please use `jv <command> --help` to view help
 
+  renderer_override_but_request_help: |
+    Renderer override mode is enabled, but help output was requested.
+    This is not expected.
+
+    Tips: When using `--renderer` to specify a renderer, do not use `--help`.
+          If you wish to suppress all output when an error occurs, use the `--no-error-logs` flag.
+
   other: |
     %{error}
+
+  downcast_failed: |
+    Type conversion failed!
+
+    This is usually a compilation-phase issue, not a user input error.
+    Please use `jv -v -C` to get detailed version traceback and contact the developers.
+
+    github: https://github.com/JustEnoughVCS/CommandLine/
 
 prepare_error:
   io: |
@@ -95,3 +110,10 @@ render_error:
 
   renderer_not_found: |
     Renderer `%{renderer_name}` not found!
+
+  type_mismatch: |
+    Render type mismatch!
+    This is usually a compilation-phase issue, not a user input error.
+    Please use `jv -v -C` to get detailed version traceback and contact the developers.
+
+    github: https://github.com/JustEnoughVCS/CommandLine/

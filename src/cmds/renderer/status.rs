@@ -2,18 +2,15 @@ use cli_utils::{
     display::{SimpleTable, md},
     env::auto_update_outdate,
 };
+use render_system_macros::result_renderer;
 use rust_i18n::t;
 
+use crate::cmds::out::status::JVStatusWrongModifyReason;
 use crate::{
-    cmds::out::status::{JVStatusOutput, JVStatusWrongModifyReason},
+    cmds::out::status::JVStatusOutput,
     r_println,
-    systems::cmd::{
-        errors::CmdRenderError,
-        renderer::{JVRenderResult, JVResultRenderer},
-    },
+    systems::{cmd::errors::CmdRenderError, render::renderer::JVRenderResult},
 };
-
-pub struct JVStatusRenderer;
 
 enum Mode {
     StructuralChangesMode,
@@ -21,21 +18,20 @@ enum Mode {
     Clean,
 }
 
-impl JVResultRenderer<JVStatusOutput> for JVStatusRenderer {
-    async fn render(data: &JVStatusOutput) -> Result<JVRenderResult, CmdRenderError> {
-        let mut r = JVRenderResult::default();
+#[result_renderer(JVStatusRenderer)]
+pub async fn render(data: &JVStatusOutput) -> Result<JVRenderResult, CmdRenderError> {
+    let mut r = JVRenderResult::default();
 
-        // Render Header
-        render_header(&mut r, data);
+    // Render Header
+    render_header(&mut r, data);
 
-        // Render Info and Mode
-        render_info_and_mode(&mut r, data);
+    // Render Info and Mode
+    render_info_and_mode(&mut r, data);
 
-        // Render Hint
-        render_hint(&mut r, data);
+    // Render Hint
+    render_hint(&mut r, data);
 
-        Ok(r)
-    }
+    Ok(r)
 }
 
 fn render_header(r: &mut JVRenderResult, data: &JVStatusOutput) {

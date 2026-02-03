@@ -3,7 +3,7 @@ use std::process::exit;
 use cli_utils::display::md;
 use cli_utils::env::current_locales;
 use cli_utils::levenshtein_distance::levenshtein_distance;
-use just_enough_vcs_cli::systems::cmd::_registry::jv_cmd_nodes;
+use just_enough_vcs_cli::systems::cmd::_commands::jv_cmd_nodes;
 use just_enough_vcs_cli::systems::cmd::cmd_system::JVCommandContext;
 use just_enough_vcs_cli::systems::cmd::errors::{CmdExecuteError, CmdPrepareError, CmdRenderError};
 use just_enough_vcs_cli::systems::cmd::{errors::CmdProcessError, processer::jv_cmd_process};
@@ -119,6 +119,15 @@ async fn main() {
                         } else {
                             eprintln!("{}", help)
                         }
+                    }
+                    CmdProcessError::RendererOverrideButRequestHelp => {
+                        eprintln!(
+                            "{}",
+                            md(t!("process_error.renderer_override_but_request_help"))
+                        );
+                    }
+                    CmdProcessError::DowncastFailed => {
+                        eprintln!("{}", md(t!("process_error.downcast_failed")));
                     }
                 }
             }
@@ -252,6 +261,12 @@ fn handle_render_error(cmd_render_error: CmdRenderError) {
                     renderer_name = renderer_name
                 ))
             );
+        }
+        CmdRenderError::TypeMismatch {
+            expected: _,
+            actual: _,
+        } => {
+            eprintln!("{}", md(t!("render_error.type_mismatch")));
         }
     }
 }

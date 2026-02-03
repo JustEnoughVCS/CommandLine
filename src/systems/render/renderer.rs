@@ -1,16 +1,15 @@
 use std::fmt::{Display, Formatter};
-
-use serde::Serialize;
+use std::future::Future;
 
 use crate::systems::cmd::errors::CmdRenderError;
 
-pub trait JVResultRenderer<Data>
-where
-    Data: Serialize,
-{
+pub trait JVResultRenderer<Data> {
     fn render(
         data: &Data,
     ) -> impl Future<Output = Result<JVRenderResult, CmdRenderError>> + Send + Sync;
+
+    fn get_type_id(&self) -> std::any::TypeId;
+    fn get_data_type_id(&self) -> std::any::TypeId;
 }
 
 #[derive(Default, Debug, PartialEq)]

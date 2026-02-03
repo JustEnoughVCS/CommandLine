@@ -97,18 +97,18 @@ A complete command consists of the following components, organized by module:
 
 | Module | Path | Description |
 |--------|------|-------------|
-| **Command Definition** | `src/cmds/` | The main logic implementation of the command. |
-| **Argument Definition** | `src/args/` | Defines command-line inputs using `clap`. |
-| **Input Data** | `src/inputs/` | User input data during command execution. |
-| **Collected Data** | `src/collects/` | Data collected locally during command execution. |
-| **Output Data** | `src/outputs/` | The command's output data. |
-| **Renderer** | `src/renderers/` | The default presentation method for data. |
+| **Command Definition** | `src/cmds/cmd/` | The main logic implementation of the command. |
+| **Argument Definition** | `src/cmds/arg/` | Defines command-line inputs using `clap`. |
+| **Input Data** | `src/cmds/in/` | User input data during command execution. |
+| **Collected Data** | `src/cmds/collect/` | Data collected locally during command execution. |
+| **Output Data** | `src/cmds/out/` | The command's output data. |
+| **Renderer** | `src/cmds/renderer/` | The default presentation method for data. |
 
 
 
 ### Naming Conventions
 
-- **File Naming**: Follow the format of `src/cmds/status.rs`, i.e., use the command name as the filename.
+- **File Naming**: Follow the format of `src/cmds/cmd/status.rs`, i.e., use the command name as the filename.
 - **Multi-level Subcommands**: In the `cmds` directory, use the `sub_subsub.rs` format for filenames (e.g., `sheet_drop.rs`).
 - **Struct Naming**:
 				- Command Struct: `JV{Subcommand}{Subsubcommand}Command` (e.g., `JVSheetDropCommand`).
@@ -122,7 +122,7 @@ A complete command consists of the following components, organized by module:
 
 
 ### Other Development Conventions
-- **Utility Functions**: Reusable functionality should be placed in the `src/utils/` directory (e.g., `src/utils/feat.rs`). Test code should be written directly within the corresponding feature file.
+- **Utility Functions**: Reusable functionality should be placed in the `utils/` directory (e.g., `utils/feat.rs`). Test code should be written directly within the corresponding feature file.
 - **Special Files**: `.rs` files starting with an underscore `_` are excluded by the `.gitignore` rule and will not be tracked by Git.
 - **File Movement**: If you need to move a file, be sure to use the `git mv` command or ensure the file is already tracked by Git. The commit message should explain the reason for the move.
 - **Frontend/Backend Responsibilities**: The frontend (command-line interface) should remain lightweight, primarily responsible for data collection and presentation. Any operation that needs to modify workspace data must call the interfaces provided by the core library.

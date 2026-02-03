@@ -6,7 +6,12 @@ authors = ["JustEnoughVCS Team"]
 homepage = "https://github.com/JustEnoughVCS/CommandLine/"
 
 [workspace]
-members = ["utils/", "tools/build_helper"]
+members = [
+    "utils/",
+    "tools/build_helper",
+    "macros/render_system_macros",
+    "macros/cmd_system_macros"
+]
 
 [workspace.package]
 version = "0.1.0-dev"
@@ -34,12 +39,20 @@ strip = true
 # Just Enough VCS String Formatter
 string_proc = { path = "../VersionControl/utils/string_proc/" }
 
+tokio = { version = "1", features = ["rt", "rt-multi-thread"] }
 chrono = "0.4"
 toml = "0.9"
+regex = "1.12"
 
 [dependencies]
 # Just Enough VCS
 just_enough_vcs = { path = "../VersionControl", features = ["all"] }
+
+# RenderSystem Macros
+render_system_macros = { path = "macros/render_system_macros" }
+
+# CommandSystem Macros
+cmd_system_macros = { path = "macros/cmd_system_macros" }
 
 # CommandLine Utilities
 cli_utils = { path = "utils" }
@@ -48,6 +61,8 @@ cli_utils = { path = "utils" }
 thiserror = "2.0.17"
 
 # Serialize
+# What the heck, why does this crate use kebab-case instead of snake_case ????
+erased_serde = { package = "erased-serde", version = "0.4" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 

@@ -1,16 +1,13 @@
-match renderer_str {
+match renderer_override {
 // MATCH
 // -- TEMPLATE START --
     "<<NAME>>" => {
-        Self::process_with_renderer::<
-            RendererType
-        >(args, ctx)
-        .await
+        RendererType::render(&concrete_data).await
     }
 // -- TEMPLATE END --
     _ => {
         return Err(CmdProcessError::Render(CmdRenderError::RendererNotFound(
-            renderer_str.to_string(),
+            renderer_override.to_string(),
         )));
     }
 }

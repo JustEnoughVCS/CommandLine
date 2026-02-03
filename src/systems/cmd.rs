@@ -1,6 +1,6 @@
-pub mod _registry;
+pub mod _commands;
 pub mod cmd_system;
 pub mod errors;
+pub mod macros;
 pub mod processer;
-pub mod renderer;
 pub mod workspace_reader;

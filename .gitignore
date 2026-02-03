@@ -32,6 +32,7 @@ _*.rs
 /src/cmds/in.rs
 /src/cmds/out.rs
 /src/cmds/renderer.rs
+/src/cmds/override/renderer.rs
 
 # Symbolic links and shortcuts created by scripts
 /deploy.lnk

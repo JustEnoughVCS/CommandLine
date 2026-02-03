@@ -27,8 +27,23 @@ process_error:
     在将您的命令参数进行解析时出现错误！
     请使用 `jv <命令> --help` 查看帮助
 
+  renderer_override_but_request_help: |
+    启用渲染器覆盖模式，但请求输出帮助信息
+    这不符合预期
+
+    请在使用 `--renderer` 指定渲染器时，不要使用 `--help`
+    若您希望在出现错误时，不输出任何内容，请使用 `--no-error-logs` 标识
+
   other: |
     %{error}
+
+  downcast_failed: |
+    类型转换失败！
+
+    这通常是编译期造成的问题，而非用户的错误输入
+    请使用 `jv -v -C` 获得详细的版本追溯，并联系开发人员
+
+    github: https://github.com/JustEnoughVCS/CommandLine/
 
 prepare_error:
   io: |
@@ -93,3 +108,10 @@ render_error:
 
   renderer_not_found: |
     无法找到渲染器 `%{renderer_name}`！
+
+  type_mismatch: |
+    渲染类型不匹配！
+    这通常是编译期造成的问题，而非用户的错误输入
+    请使用 `jv -v -C` 获得详细的版本追溯，并联系开发人员
+
+    github: https://github.com/JustEnoughVCS/CommandLine/
