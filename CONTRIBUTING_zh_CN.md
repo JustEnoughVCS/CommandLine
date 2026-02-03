@@ -79,7 +79,7 @@ sources ~/.../JustEnoughVCS/CommandLine/.temp/deploy/jv_cli.sh
 
 ### 提交与合并
 -   在推送代码前，请务必执行 `scripts/dev/deploy.sh` 进行一次正式的本地部署，以检查潜在问题
--   创建 Pull Request (PR) 时，请将目标分支设置为命令行仓库的 `deploy/nightly`。**提交至 `main` 或 `dev` 分支的 PR 将不予处理**
+-   创建 Pull Request (PR) 时，请将目标分支设置为命令行仓库的 `dev`。**提交至 `main` 或 `deploy/` 分支的 PR 将不予处理**
 
 
 
