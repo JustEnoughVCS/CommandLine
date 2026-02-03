@@ -78,7 +78,7 @@ source ~/.../JustEnoughVCS/CommandLine/.temp/deploy/jv_cli.sh
 
 ### Submitting and Merging
 -   Before pushing code, be sure to execute `scripts/dev/deploy.sh` for a formal local deployment to check for potential issues.
--   When creating a Pull Request (PR), please set the target branch to the command-line repository's `github_action/deploy`. **PRs submitted to the `main` or `dev` branches will not be processed.**
+-   When creating a Pull Request (PR), please set the target branch to the command-line repository's `deploy/nightly`. **PRs submitted to the `main` or `dev` branches will not be processed.**
 
 
 
