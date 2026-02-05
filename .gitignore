@@ -39,3 +39,6 @@ _*.rs
 /dev.lnk
 /deploy
 /dev
+
+# todo files
+*[T|t]odo*.txt
