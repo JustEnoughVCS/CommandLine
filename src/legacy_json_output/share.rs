@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use just_enough_vcs::vcs::data::{
+use just_enough_vcs::lib::data::{
     member::MemberId,
     sheet::{SheetMappingMetadata, SheetPathBuf},
     vault::mapping_share::SheetShareId,

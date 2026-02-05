@@ -2,19 +2,7 @@ use cli_utils::input::input_with_editor;
 use colored::Colorize;
 use just_enough_vcs::{
     data::compile_info::CoreCompileInfo,
-    system::action_system::{action::ActionContext, action_pool::ActionPool},
-    utils::{
-        cfg_file::config::ConfigFile,
-        data_struct::data_sort::quick_sort_with_cmp,
-        sha1_hash,
-        string_proc::{
-            self,
-            format_path::{format_path, format_path_str},
-            snake_case,
-        },
-        tcp_connection::instance::ConnectionInstance,
-    },
-    vcs::{
+    lib::{
         constants::{
             CLIENT_FILE_TODOLIST, CLIENT_FILE_WORKSPACE, CLIENT_FOLDER_WORKSPACE_ROOT_NAME,
             CLIENT_PATH_WORKSPACE_ROOT, PORT, VAULT_HOST_NAME,
@@ -78,6 +66,18 @@ use just_enough_vcs::{
                 },
             },
         },
+    },
+    system::action_system::{action::ActionContext, action_pool::ActionPool},
+    utils::{
+        cfg_file::config::ConfigFile,
+        data_struct::data_sort::quick_sort_with_cmp,
+        sha1_hash,
+        string_proc::{
+            self,
+            format_path::{format_path, format_path_str},
+            snake_case,
+        },
+        tcp_connection::instance::ConnectionInstance,
     },
 };
 use std::{

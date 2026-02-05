@@ -1,4 +1,4 @@
-use just_enough_vcs::vcs::data::{member::MemberId, sheet::SheetName};
+use just_enough_vcs::lib::data::{member::MemberId, sheet::SheetName};
 
 #[derive(thiserror::Error, Debug)]
 pub enum CmdPrepareError {

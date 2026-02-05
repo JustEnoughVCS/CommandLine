@@ -1,11 +1,11 @@
 use std::{collections::HashMap, net::SocketAddr, path::PathBuf};
 
 use just_enough_vcs::{
-    utils::cfg_file::config::ConfigFile,
-    vcs::{
+    lib::{
         data::{
             local::{
                 LocalWorkspace,
+                cached_sheet::CachedSheet,
                 latest_file_data::LatestFileData,
                 latest_info::LatestInfo,
                 local_sheet::{LocalSheet, LocalSheetData},
@@ -18,6 +18,7 @@ use just_enough_vcs::{
         },
         env::current_local_path,
     },
+    utils::cfg_file::config::ConfigFile,
 };
 
 use crate::systems::cmd::errors::CmdPrepareError;
@@ -191,7 +192,7 @@ impl LocalWorkspaceReader {
         if !self.cached_sheet.contains_key(sheet_name) {
             let workspace_dir = self.workspace_dir()?;
             let cached_sheet = entry_dir!(&workspace_dir, {
-                match just_enough_vcs::vcs::data::local::cached_sheet::CachedSheet::cached_sheet_data(sheet_name).await {
+                match CachedSheet::cached_sheet_data(sheet_name).await {
                     Ok(data) => data,
                     Err(_) => return Err(CmdPrepareError::CachedSheetNotFound(sheet_name.clone())),
                 }
@@ -338,7 +339,7 @@ impl LocalWorkspaceReader {
         } else {
             let workspace_dir = self.workspace_dir()?;
             let cached_sheet = entry_dir!(&workspace_dir, {
-                match just_enough_vcs::vcs::data::local::cached_sheet::CachedSheet::cached_sheet_data(sheet_name).await {
+                match CachedSheet::cached_sheet_data(sheet_name).await {
                     Ok(data) => data,
                     Err(_) => return Err(CmdPrepareError::CachedSheetNotFound(sheet_name.clone())),
                 }

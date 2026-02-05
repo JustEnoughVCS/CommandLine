@@ -1,4 +1,4 @@
-use just_enough_vcs::vcs::data::{
+use just_enough_vcs::lib::data::{
     member::MemberId,
     vault::virtual_file::{VirtualFileId, VirtualFileVersion},
 };

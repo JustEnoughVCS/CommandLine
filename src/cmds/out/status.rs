@@ -1,6 +1,6 @@
 use std::{collections::HashMap, time::SystemTime};
 
-use just_enough_vcs::vcs::data::{
+use just_enough_vcs::lib::data::{
     local::workspace_analyzer::{AnalyzeResultPure, ModifiedRelativePathBuf},
     member::MemberId,
     sheet::SheetName,

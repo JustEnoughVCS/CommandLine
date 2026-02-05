@@ -6,11 +6,7 @@ use cli_utils::{
 };
 use just_enough_vcs::{
     data::compile_info::CoreCompileInfo,
-    utils::{
-        cfg_file::config::ConfigFile,
-        string_proc::{self, pascal_case},
-    },
-    vcs::{
+    lib::{
         connection::action_service::server_entry,
         constants::SERVER_FILE_VAULT,
         data::{
@@ -18,6 +14,10 @@ use just_enough_vcs::{
             vault::{Vault, vault_config::VaultConfig},
         },
         env::current_vault_path,
+    },
+    utils::{
+        cfg_file::config::ConfigFile,
+        string_proc::{self, pascal_case},
     },
 };
 use just_enough_vcs_cli::data::compile_info::CompileInfo;
@@ -402,7 +402,7 @@ async fn jvv_here(_args: HereArgs) {
             if metadata.is_file() {
                 *total_size += metadata.len();
                 // Check if file name matches SERVER_NAME_VF_META
-                if entry.file_name() == just_enough_vcs::vcs::constants::SERVER_NAME_VF_META {
+                if entry.file_name() == just_enough_vcs::lib::constants::SERVER_NAME_VF_META {
                     *file_count += 1;
                 }
             } else if metadata.is_dir() {

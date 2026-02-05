@@ -1,4 +1,4 @@
-use just_enough_vcs::vcs::env::current_cfg_dir;
+use just_enough_vcs::lib::env::current_cfg_dir;
 
 const IP_HISTORY_NAME: &str = "ip_history.txt";
 

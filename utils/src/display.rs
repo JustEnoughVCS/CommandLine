@@ -1,5 +1,5 @@
 use colored::*;
-use just_enough_vcs::vcs::data::sheet::SheetMappingMetadata;
+use just_enough_vcs::lib::data::sheet::SheetMappingMetadata;
 use std::{
     collections::{BTreeMap, HashMap, VecDeque},
     path::PathBuf,

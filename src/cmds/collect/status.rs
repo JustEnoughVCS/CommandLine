@@ -1,6 +1,6 @@
 use std::time::SystemTime;
 
-use just_enough_vcs::vcs::data::{
+use just_enough_vcs::lib::data::{
     local::{
         latest_file_data::LatestFileData, local_sheet::LocalSheetData,
         workspace_analyzer::AnalyzeResultPure,

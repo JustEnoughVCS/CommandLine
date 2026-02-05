@@ -1,4 +1,4 @@
-use just_enough_vcs::vcs::data::member::MemberId;
+use just_enough_vcs::lib::data::member::MemberId;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, Serialize, Deserialize)]

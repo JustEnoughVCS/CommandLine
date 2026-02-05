@@ -15,7 +15,7 @@ use crate::{
     },
 };
 use cmd_system_macros::exec;
-use just_enough_vcs::vcs::{
+use just_enough_vcs::lib::{
     constants::VAULT_HOST_NAME, data::local::workspace_analyzer::ModifiedRelativePathBuf,
 };
 
