@@ -46,7 +46,7 @@ regex = "1.12"
 
 [dependencies]
 # Just Enough VCS
-just_enough_vcs = { path = "../VersionControl", features = ["all"] }
+just_enough_vcs = { path = "../VersionControl", features = ["all", "deprecated"] }
 
 # RenderSystem Macros
 render_system_macros = { path = "macros/render_system_macros" }

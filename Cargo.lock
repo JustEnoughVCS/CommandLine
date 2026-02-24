@@ -146,9 +146,9 @@ checksum = "7c02d123df017efcdfbd739ef81735b36c5ba83ec3c59c80a9d7ecc718f92e50"
 name = "asset_macros"
 version = "0.1.0"
 dependencies = [
+ "just_fmt",
  "proc-macro2",
  "quote",
- "string_proc",
  "syn",
 ]
 
@@ -158,7 +158,7 @@ version = "0.1.0"
 dependencies = [
  "asset_macros",
  "constants",
- "string_proc",
+ "just_fmt",
  "thiserror 1.0.69",
  "tokio",
  "winapi",
@@ -963,6 +963,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
+name = "hex_display"
+version = "0.1.0"
+
+[[package]]
 name = "hmac"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1113,6 +1117,7 @@ dependencies = [
  "chrono",
  "constants",
  "data_struct",
+ "hex_display",
  "jvlib",
  "sha1_hash",
  "sheet_system",
@@ -1151,9 +1156,9 @@ dependencies = [
 
 [[package]]
 name = "just_fmt"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61c95f58372d20b5d57843d9e060974f5b15619c77ac52df281f344f97681c5b"
+checksum = "5454cda0d57db59778608d7a47bff5b16c6705598265869fb052b657f66cf05e"
 
 [[package]]
 name = "jvlib"
@@ -1935,11 +1940,13 @@ version = "0.1.0"
 dependencies = [
  "asset_system",
  "constants",
+ "hex_display",
  "just_fmt",
  "memmap2",
  "sha2 0.10.9",
  "sheet_system_macros",
  "thiserror 1.0.69",
+ "tokio",
 ]
 
 [[package]]
