@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use string_proc::pascal_case;
+use just_fmt::pascal_case;
 
 use crate::r#gen::constants::{
     COMMAND_LIST, COMMAND_LIST_TEMPLATE, COMMANDS_PATH, REGISTRY_TOML, TEMPLATE_END, TEMPLATE_START,

@@ -15,12 +15,10 @@ use just_enough_vcs::{
         },
         env::current_vault_path,
     },
-    utils::{
-        cfg_file::config::ConfigFile,
-        string_proc::{self, pascal_case},
-    },
+    utils::cfg_file::config::ConfigFile,
 };
 use just_enough_vcs_cli::data::compile_info::CompileInfo;
+use just_fmt::pascal_case;
 use log::{error, info};
 use rust_i18n::{set_locale, t};
 use tokio::fs::{self};

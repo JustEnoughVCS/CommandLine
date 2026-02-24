@@ -69,16 +69,13 @@ use just_enough_vcs::{
     },
     system::action_system::{action::ActionContext, action_pool::ActionPool},
     utils::{
-        cfg_file::config::ConfigFile,
-        data_struct::data_sort::quick_sort_with_cmp,
-        sha1_hash,
-        string_proc::{
-            self,
-            format_path::{format_path, format_path_str},
-            snake_case,
-        },
+        cfg_file::config::ConfigFile, data_struct::data_sort::quick_sort_with_cmp, sha1_hash,
         tcp_connection::instance::ConnectionInstance,
     },
+};
+use just_fmt::{
+    fmt_path::{fmt_path, fmt_path_str},
+    snake_case,
 };
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
@@ -1655,7 +1652,7 @@ async fn jv_here(args: HereArgs) {
                         mapping: if is_dir {
                             "".to_string()
                         } else {
-                            format_path_str(&current_path.display().to_string()).unwrap_or_default()
+                            fmt_path_str(&current_path.display().to_string()).unwrap_or_default()
                         },
                         name: file_name.clone(),
                         current_version,
@@ -1685,8 +1682,7 @@ async fn jv_here(args: HereArgs) {
 
                 let holder = latest_file_data.file_holder(&metadata.id).cloned();
                 json_result.items.push(HereJsonResultItem {
-                    mapping: format_path_str(&current_path.display().to_string())
-                        .unwrap_or_default(),
+                    mapping: fmt_path_str(&current_path.display().to_string()).unwrap_or_default(),
                     name: name.clone(),
                     current_version: metadata.version,
                     size: 0,
@@ -2537,7 +2533,7 @@ async fn jv_info(args: InfoArgs) {
     let vfid = mapping.mapping_vfid();
 
     let query_file_path_string =
-        format_path_str(query_file_path.display().to_string()).unwrap_or_default();
+        fmt_path_str(query_file_path.display().to_string()).unwrap_or_default();
 
     // JSON output handling
     if args.json_output {
@@ -4563,7 +4559,7 @@ async fn jv_move(args: MoveMappingArgs) {
         .collect::<Vec<_>>();
 
     let base_path = Globber::from(&to_pattern).base().clone();
-    let base_path = format_path(base_path.strip_prefix(&local_dir).unwrap().join("./")).unwrap();
+    let base_path = fmt_path(base_path.strip_prefix(&local_dir).unwrap().join("./")).unwrap();
     let to_path = base_path.join(to_pattern);
 
     let mut edit_mapping_args: EditMappingActionArguments = EditMappingActionArguments {
@@ -4581,10 +4577,10 @@ async fn jv_move(args: MoveMappingArgs) {
         // Generate move operation parameters
         // Single file move
         if from_mappings.len() == 1 {
-            let from = format_path_str(from_mappings[0].clone()).unwrap();
+            let from = fmt_path_str(from_mappings[0].clone()).unwrap();
             let to = if is_to_pattern_a_dir {
                 // Input is a directory, append the filename
-                format_path(
+                fmt_path(
                     to_path
                         .join(from.strip_prefix(&base_path.display().to_string()).unwrap())
                         .to_path_buf(),
@@ -4592,7 +4588,7 @@ async fn jv_move(args: MoveMappingArgs) {
                 .unwrap()
             } else {
                 // Input is a filename, use it directly
-                format_path(to_path.to_path_buf()).unwrap()
+                fmt_path(to_path.to_path_buf()).unwrap()
             };
 
             let from: PathBuf = from.into();
@@ -4605,13 +4601,10 @@ async fn jv_move(args: MoveMappingArgs) {
         } else
         // Multiple file move
         if from_mappings.len() > 1 && is_to_pattern_a_dir {
-            let to_path = format_path(to_path).unwrap();
+            let to_path = fmt_path(to_path).unwrap();
             for p in &from_mappings {
                 let name = p.strip_prefix(&base_path.display().to_string()).unwrap();
-                let to = format_path(to_path.join(name))
-                    .unwrap()
-                    .display()
-                    .to_string();
+                let to = fmt_path(to_path.join(name)).unwrap().display().to_string();
 
                 let from: PathBuf = p.into();
                 // If the from path contains to_path, ignore it to avoid duplicate moves

@@ -10,6 +10,7 @@ just_enough_vcs = { path = "../../VersionControl", features = ["all"] }
 # Display
 colored = "3.0"
 strip-ansi-escapes = "0.2.1"
+just_fmt = "0.1.2"
 
 # Async
 tokio = { version = "1", features = ["full"] }

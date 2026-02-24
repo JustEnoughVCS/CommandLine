@@ -1,6 +1,6 @@
 use std::{io::Error, path::PathBuf, str::FromStr};
 
-use just_enough_vcs::utils::string_proc::format_path::format_path_str;
+use just_fmt::fmt_path::fmt_path_str;
 
 use crate::globber::constants::{SPLIT_STR, get_base_dir_current};
 
@@ -48,10 +48,13 @@ impl Globber {
             if !path.ends_with(SPLIT_STR) {
                 path.push_str(SPLIT_STR);
             }
-            (
-                format_path_str(path)?,
-                pattern_part[SPLIT_STR.len()..].to_string(),
-            )
+            let Ok(result) = fmt_path_str(&path) else {
+                return Err(Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    format!("Invalid path: \"{}\"", &path),
+                ));
+            };
+            (result, pattern_part[SPLIT_STR.len()..].to_string())
         } else {
             (String::default(), full_path)
         };
@@ -103,14 +106,14 @@ impl Globber {
                 match item {
                     GlobItem::File(file_name) => {
                         let relative_path = {
-                            format_path_str(format!("{}{}{}", current, SPLIT_STR, file_name))
+                            fmt_path_str(format!("{}{}{}", current, SPLIT_STR, file_name))
                                 .unwrap_or_default()
                         };
                         file_names.push(relative_path)
                     }
                     GlobItem::Directory(dir_name) => {
                         let new_current = {
-                            format_path_str(format!("{}{}{}", current, SPLIT_STR, dir_name))
+                            fmt_path_str(format!("{}{}{}", current, SPLIT_STR, dir_name))
                                 .unwrap_or_default()
                         };
                         collect_files(base, new_current, file_names, get_names);

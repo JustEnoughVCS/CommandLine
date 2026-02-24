@@ -36,8 +36,7 @@ panic = "abort"
 strip = true
 
 [build-dependencies]
-# Just Enough VCS String Formatter
-string_proc = { path = "../VersionControl/utils/string_proc/" }
+just_fmt = "0.1.2"
 
 tokio = { version = "1", features = ["rt", "rt-multi-thread"] }
 chrono = "0.4"
@@ -46,7 +45,7 @@ regex = "1.12"
 
 [dependencies]
 # Just Enough VCS
-just_enough_vcs = { path = "../VersionControl", features = ["all", "deprecated"] }
+just_enough_vcs = { path = "../VersionControl", features = ["all"] }
 
 # RenderSystem Macros
 render_system_macros = { path = "macros/render_system_macros" }
@@ -89,3 +88,6 @@ rust-i18n = "3"
 
 # File & Directory
 walkdir = "2.5.0"
+
+# String format
+just_fmt = "0.1.2"
