@@ -330,7 +330,9 @@ pub fn md(text: impl AsRef<str>) -> String {
 }
 
 // Helper function to apply color to text
-fn apply_color(text: &str, color_name: &str) -> String {
+fn apply_color(text: impl AsRef<str>, color_name: impl AsRef<str>) -> String {
+    let text = text.as_ref();
+    let color_name = color_name.as_ref();
     match color_name {
         // Normal colors
         "black" => text.black().to_string(),
