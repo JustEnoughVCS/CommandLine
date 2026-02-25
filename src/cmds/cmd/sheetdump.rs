@@ -58,7 +58,7 @@ async fn exec(
     let result = JVMappingsOutput {
         mappings: mappings_vec,
     };
-    cmd_output!(result, JVMappingsOutput)
+    cmd_output!(JVMappingsOutput => result)
 }
 
 crate::command_template!();

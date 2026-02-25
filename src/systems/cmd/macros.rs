@@ -76,7 +76,7 @@
 ///     todo!();
 ///
 ///     // Use the following method to return results
-///     cmd_output!(output, JVCustomOutput)
+///     cmd_output!(JVCustomOutput => output)
 /// }
 /// ```
 ///
@@ -119,7 +119,7 @@
 ///     collect: Collect,
 /// ) -> Result<(Box<dyn std::any::Any + Send + 'static>, TypeId), CmdExecuteError> {
 ///     todo!();
-///     cmd_output!(output, JVCustomOutput)
+///     cmd_output!(JVCustomOutput => output)
 /// }
 /// ```
 macro_rules! command_template {
@@ -162,10 +162,11 @@ macro_rules! command_template {
 
 #[macro_export]
 macro_rules! cmd_output {
-    ($v:expr, $t:ty) => {
+    ($t:ty => $v:expr) => {{
+        let checked_value: $t = $v;
         Ok((
-            Box::new($v) as Box<dyn std::any::Any + Send + 'static>,
+            Box::new(checked_value) as Box<dyn std::any::Any + Send + 'static>,
             std::any::TypeId::of::<$t>(),
         ))
-    };
+    }};
 }

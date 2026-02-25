@@ -40,7 +40,7 @@ async fn exec(
     collect: Collect,
 ) -> Result<(Box<dyn std::any::Any + Send + 'static>, TypeId), CmdExecuteError> {
     let output = JVHexOutput { data: collect.data };
-    cmd_output!(output, JVHexOutput)
+    cmd_output!(JVHexOutput => output)
 }
 
 crate::command_template!();

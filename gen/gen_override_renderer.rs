@@ -126,7 +126,7 @@ pub fn get_output_types(code: &String) -> Option<Vec<String>> {
     let mut output_types = Vec::new();
 
     // Find all cmd_output! macros
-    let cmd_output_re = Regex::new(r"cmd_output!\s*\(\s*[^,]+,\s*([^)]+)\s*\)").ok()?;
+    let cmd_output_re = Regex::new(r"cmd_output!\s*\(\s*([^,]+)\s*=>\s*[^)]+\s*\)").ok()?;
     for cap in cmd_output_re.captures_iter(code) {
         let type_name = cap[1].trim();
         output_types.push(type_name.to_string());

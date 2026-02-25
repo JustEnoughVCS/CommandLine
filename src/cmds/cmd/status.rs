@@ -150,7 +150,7 @@ async fn exec(
         now_time: collect.now_time,
     };
 
-    cmd_output!(output, JVStatusOutput)
+    cmd_output!(JVStatusOutput => output)
 }
 
 crate::command_template!();
