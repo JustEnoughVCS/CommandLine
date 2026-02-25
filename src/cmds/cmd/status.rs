@@ -5,7 +5,7 @@ use crate::{
     cmds::{
         arg::status::JVStatusArgument,
         collect::status::JVStatusCollect,
-        r#in::status::JVStatusInput,
+        r#in::empty::JVEmptyInput,
         out::status::{JVStatusOutput, JVStatusWrongModifyReason},
     },
     systems::cmd::{
@@ -22,7 +22,7 @@ use just_enough_vcs::lib::{
 pub struct JVStatusCommand;
 type Cmd = JVStatusCommand;
 type Arg = JVStatusArgument;
-type In = JVStatusInput;
+type In = JVEmptyInput;
 type Collect = JVStatusCollect;
 
 fn help_str() -> String {
@@ -30,7 +30,7 @@ fn help_str() -> String {
 }
 
 async fn prepare(_args: &Arg, _ctx: &JVCommandContext) -> Result<In, CmdPrepareError> {
-    Ok(JVStatusInput)
+    Ok(In {})
 }
 
 async fn collect(_args: &Arg, _ctx: &JVCommandContext) -> Result<Collect, CmdPrepareError> {
