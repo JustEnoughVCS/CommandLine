@@ -64,6 +64,9 @@ thiserror = "2.0.17"
 erased_serde = { package = "erased-serde", version = "0.4" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+serde_yaml = "0.9"
+ron = "0.11.0"
+toml = "0.9"
 
 # Command Line
 clap = { version = "4.5", features = ["derive"] }

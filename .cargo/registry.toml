@@ -25,6 +25,22 @@ type = "crate::cmds::r#override::renderer::json"
 name = "json-pretty"
 type = "crate::cmds::r#override::renderer::json_pretty"
 
+[renderer.ron]
+name = "ron"
+type = "crate::cmds::r#override::renderer::ron"
+
+[renderer.ron_pretty]
+name = "ron-pretty"
+type = "crate::cmds::r#override::renderer::ron_pretty"
+
+[renderer.toml]
+name = "toml"
+type = "crate::cmds::r#override::renderer::toml"
+
+[renderer.yaml]
+name = "yaml"
+type = "crate::cmds::r#override::renderer::yaml"
+
 ####################
 ### Auto-Collect ###
 ####################
