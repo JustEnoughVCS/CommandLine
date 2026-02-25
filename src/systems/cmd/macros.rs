@@ -161,6 +161,9 @@ macro_rules! command_template {
 #[macro_export]
 macro_rules! cmd_output {
     ($v:expr, $t:ty) => {
-        Ok((Box::new($v), stringify!($t).to_string()))
+        Ok((
+            Box::new($v) as Box<dyn std::any::Any + Send + 'static>,
+            stringify!($t).to_string(),
+        ))
     };
 }

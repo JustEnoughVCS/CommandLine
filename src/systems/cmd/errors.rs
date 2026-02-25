@@ -8,6 +8,7 @@ pub enum CmdPrepareError {
     #[error("{0}")]
     Error(String),
 
+    // Workspace Reader Errors
     #[error("LocalWorkspace not found")]
     LocalWorkspaceNotFound,
 
@@ -109,9 +110,6 @@ pub enum CmdProcessError {
 
     #[error("No matching command found")]
     NoMatchingCommand,
-
-    #[error("Ambiguous command, multiple matches found")]
-    AmbiguousCommand(Vec<String>),
 
     #[error("Parse error")]
     ParseError(String),

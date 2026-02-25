@@ -37,12 +37,11 @@ pub async fn jv_cmd_process(
         }
         _ => {
             // Multiple matching nodes found
-            return Err(CmdProcessError::AmbiguousCommand(
-                matching_nodes
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect::<Vec<String>>(),
-            ));
+            // Find the node with the longest length (most specific match)
+            let matched_prefix = matching_nodes.iter().max_by_key(|node| node.len()).unwrap();
+            let prefix_len = matched_prefix.split_whitespace().count();
+            let trimmed_args: Vec<String> = args.into_iter().cloned().skip(prefix_len).collect();
+            return jv_cmd_process_node(matched_prefix, trimmed_args, ctx, renderer_override).await;
         }
     }
 }

@@ -12,10 +12,6 @@ process_error:
 
     Use `jv -h` to get help
 
-  ambiguous_command: |
-    Multiple commands found, unable to determine which one you want:
-    %{nodes}
-
   no_node_found: |
     Unable to find command `%{node}`
 

@@ -11,10 +11,6 @@ process_error:
 
     使用 `jv -h` 查看帮助
 
-  ambiguous_command: |
-    找到多个命令，无法确定您想要哪一个：
-    %{nodes}
-
   no_node_found: |
     无法找到命令 `%{node}`
 

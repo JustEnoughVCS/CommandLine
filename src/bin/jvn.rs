@@ -101,18 +101,6 @@ async fn main() {
                     CmdProcessError::NoMatchingCommand => {
                         handle_no_matching_command_error(args);
                     }
-                    CmdProcessError::AmbiguousCommand(nodes) => {
-                        let nodes_list = nodes
-                            .iter()
-                            .enumerate()
-                            .map(|(i, node)| format!("{}. {}", i + 1, node))
-                            .collect::<Vec<String>>()
-                            .join("\n");
-                        eprintln!(
-                            "{}",
-                            md(t!("process_error.ambiguous_command", nodes = nodes_list))
-                        );
-                    }
                     CmdProcessError::ParseError(help) => {
                         if help.trim().len() < 1 {
                             eprintln!("{}", md(t!("process_error.parse_error")));

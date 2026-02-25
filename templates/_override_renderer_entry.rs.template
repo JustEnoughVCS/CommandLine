@@ -8,6 +8,6 @@ match type_name.as_str() {
             .map_err(|_| CmdProcessError::DowncastFailed)?;
         include!("../render/_override_renderer_dispatcher.rs")
     }
-    _ => return Err(CmdProcessError::NoMatchingCommand),
 // -- TEMPLATE END --
+    _ => return Err(CmdProcessError::NoMatchingCommand),
 }
