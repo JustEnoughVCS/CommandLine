@@ -1,4 +1,4 @@
-use std::{collections::HashMap, time::SystemTime};
+use std::{any::TypeId, collections::HashMap, time::SystemTime};
 
 use crate::{
     cmd_output,
@@ -84,7 +84,7 @@ async fn collect(_args: &Arg, _ctx: &JVCommandContext) -> Result<Collect, CmdPre
 async fn exec(
     _input: In,
     collect: Collect,
-) -> Result<(Box<dyn std::any::Any + Send + 'static>, String), CmdExecuteError> {
+) -> Result<(Box<dyn std::any::Any + Send + 'static>, TypeId), CmdExecuteError> {
     let mut wrong_modified_items: HashMap<ModifiedRelativePathBuf, JVStatusWrongModifyReason> =
         HashMap::new();
 

@@ -42,12 +42,34 @@ where
                 return Err(CmdProcessError::RendererOverrideButRequestHelp);
             }
 
-            let (data, type_name) = Self::process(args, ctx).await?;
+            let (data, type_id) = Self::process(args, ctx).await?;
 
             let renderer_override = renderer_override.as_str();
 
             // Serialize the data based on its concrete type
-            let render_result = include!("../render/_override_renderer_entry.rs");
+            let render_result: Result<JVRenderResult, CmdRenderError> = if type_id
+                == std::any::TypeId::of::<crate::cmds::out::hex::JVHexOutput>()
+            {
+                let concrete_data = data
+                    .downcast::<crate::cmds::out::hex::JVHexOutput>()
+                    .map_err(|_| CmdProcessError::DowncastFailed)?;
+                include!("../render/_override_renderer_dispatcher.rs")
+            } else if type_id
+                == std::any::TypeId::of::<crate::cmds::out::mappings::JVMappingsOutput>()
+            {
+                let concrete_data = data
+                    .downcast::<crate::cmds::out::mappings::JVMappingsOutput>()
+                    .map_err(|_| CmdProcessError::DowncastFailed)?;
+                include!("../render/_override_renderer_dispatcher.rs")
+            } else if type_id == std::any::TypeId::of::<crate::cmds::out::status::JVStatusOutput>()
+            {
+                let concrete_data = data
+                    .downcast::<crate::cmds::out::status::JVStatusOutput>()
+                    .map_err(|_| CmdProcessError::DowncastFailed)?;
+                include!("../render/_override_renderer_dispatcher.rs")
+            } else {
+                return Err(CmdProcessError::NoMatchingCommand);
+            };
 
             match render_result {
                 Ok(r) => Ok(r),
@@ -71,8 +93,8 @@ where
                 return Ok(r);
             }
 
-            let (data, id_str) = Self::process(args, ctx).await?;
-            match render(data, id_str).await {
+            let (data, id) = Self::process(args, ctx).await?;
+            match render(data, id).await {
                 Ok(r) => Ok(r),
                 Err(e) => Err(CmdProcessError::Render(e)),
             }
@@ -82,7 +104,7 @@ where
     fn process(
         args: Vec<String>,
         ctx: JVCommandContext,
-    ) -> impl Future<Output = Result<(Box<dyn Any + Send + 'static>, String), CmdProcessError>> + Send
+    ) -> impl Future<Output = Result<(Box<dyn Any + Send + 'static>, TypeId), CmdProcessError>> + Send
     {
         async move {
             let mut full_args = vec!["jv".to_string()];
@@ -131,7 +153,7 @@ where
     fn exec(
         input: Input,
         collect: Collect,
-    ) -> impl Future<Output = Result<(Box<dyn Any + Send + 'static>, String), CmdExecuteError>> + Send;
+    ) -> impl Future<Output = Result<(Box<dyn Any + Send + 'static>, TypeId), CmdExecuteError>> + Send;
 
     /// Get output type mapping
     fn get_output_type_mapping() -> HashMap<String, TypeId>;

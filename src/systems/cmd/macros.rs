@@ -12,6 +12,7 @@
 /// Then paste the following content into your code
 ///
 /// ```ignore
+/// use std::any::TypeId;
 /// use cmd_system_macros::exec;
 /// use crate::{
 ///     cmd_output,
@@ -71,7 +72,7 @@
 /// async fn exec(
 ///     input: In,
 ///     collect: Collect,
-/// ) -> Result<(Box<dyn std::any::Any + Send + 'static>, String), CmdExecuteError> {
+/// ) -> Result<(Box<dyn std::any::Any + Send + 'static>, TypeId), CmdExecuteError> {
 ///     todo!();
 ///
 ///     // Use the following method to return results
@@ -82,6 +83,7 @@
 /// Of course, you can also use the comment-free version
 ///
 /// ```ignore
+/// use std::any::TypeId;
 /// use cmd_system_macros::exec;
 /// use crate::{
 ///     cmd_output,
@@ -115,7 +117,7 @@
 /// async fn exec(
 ///     input: In,
 ///     collect: Collect,
-/// ) -> Result<(Box<dyn std::any::Any + Send + 'static>, String), CmdExecuteError> {
+/// ) -> Result<(Box<dyn std::any::Any + Send + 'static>, TypeId), CmdExecuteError> {
 ///     todo!();
 ///     cmd_output!(output, JVCustomOutput)
 /// }
@@ -145,7 +147,7 @@ macro_rules! command_template {
                 input: In,
                 collect: Collect,
             ) -> Result<
-                (Box<dyn std::any::Any + Send + 'static>, String),
+                (Box<dyn std::any::Any + Send + 'static>, std::any::TypeId),
                 $crate::systems::cmd::errors::CmdExecuteError,
             > {
                 exec(input, collect).await
@@ -163,7 +165,7 @@ macro_rules! cmd_output {
     ($v:expr, $t:ty) => {
         Ok((
             Box::new($v) as Box<dyn std::any::Any + Send + 'static>,
-            stringify!($t).to_string(),
+            std::any::TypeId::of::<$t>(),
         ))
     };
 }
