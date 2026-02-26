@@ -84,8 +84,12 @@ async fn main() {
 
     // Process commands
     let render_result = match jv_cmd_process(
-        &args,
-        JVCommandContext { help, confirmed },
+        &args.clone(),
+        JVCommandContext {
+            help,
+            confirmed,
+            args: args.clone(),
+        },
         renderer_override,
     )
     .await

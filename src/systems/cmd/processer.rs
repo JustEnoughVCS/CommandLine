@@ -6,8 +6,6 @@ use crate::systems::cmd::cmd_system::JVCommandContext;
 use crate::systems::cmd::errors::CmdProcessError;
 use crate::systems::render::renderer::JVRenderResult;
 
-rust_i18n::i18n!("resources/locales/jvn", fallback = "en");
-
 pub async fn jv_cmd_process(
     args: &Vec<String>,
     ctx: JVCommandContext,

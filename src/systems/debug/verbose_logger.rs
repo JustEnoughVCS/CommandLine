@@ -4,8 +4,6 @@ use log::Level;
 use rust_i18n::t;
 use std::io::Write;
 
-rust_i18n::i18n!("resources/locales/jvn", fallback = "en");
-
 pub fn init_verbose_logger(level_filter: Option<log::LevelFilter>) {
     let mut builder = match level_filter {
         Some(f) => {

@@ -14,11 +14,10 @@ use std::{
     future::Future,
 };
 
-rust_i18n::i18n!("resources/locales/jvn", fallback = "en");
-
 pub struct JVCommandContext {
     pub help: bool,
     pub confirmed: bool,
+    pub args: Vec<String>,
 }
 
 pub trait JVCommand<Argument, Input, Collect>
