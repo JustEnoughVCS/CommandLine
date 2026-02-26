@@ -1,0 +1,11 @@
+storage_write:
+  unknown_chunking_policy: |
+    未知的分块策略！
+    请按需增加下列标签以指定该文件的分块策略
+      `--cdc <size>`
+      `--fixed <size>`
+      `--line`
+
+  hash_too_short: |
+    计算中产生了过短的哈希值，无法定位到具体的块存储目录
+    该问题由核心库的错误计算引起！

@@ -1,0 +1,11 @@
+storage_write:
+  unknown_chunking_policy: |
+    Unknown chunking policy!
+    Please add one of the following tags as needed to specify the file's chunking policy:
+      `--cdc <size>`
+      `--fixed <size>`
+      `--line`
+
+  hash_too_short: |
+    The hash value generated during computation is too short to locate the specific chunk storage directory.
+    This issue is caused by erroneous calculations in the core library!
