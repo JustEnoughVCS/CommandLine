@@ -1,0 +1,21 @@
+sheetedit:
+  editor: |
+    # 正在编辑 `%{file_dir}`
+
+    # 索引源格式：
+    #   本地命名空间索引：~id/ver
+    #   上游命名空间索引： id/ver
+
+    # 前方格式：
+    #   指向最新版本："Mapping" => "ID/VER"
+    #   指向参考版本："Mapping" => "ID/VER" => "ref"
+    #   指向指定版本："Mapping" == "ID/VER"
+    #           或者："Mapping" => "ID/VER" == "VER"
+
+    %{info}
+
+    # 完成编辑后，保存文件并退出编辑器，将会自动写入到原始文件
+
+  mapping: 映射地址
+  index_source: 索引源
+  forward: 前方

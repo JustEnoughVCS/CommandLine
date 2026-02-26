@@ -1,0 +1,22 @@
+sheetedit:
+  editor: |
+    # Editing `%{file_dir}`
+
+    # Index format:
+    #   Upstream:  id/ver
+    #      Local: ~id/ver
+
+    # Forward format:
+    #     Latest Version: "Mapping" => "ID/VER"
+    #   RefSheet Version: "Mapping" => "ID/VER" => "ref"
+    #   Specific Version: "Mapping" == "ID/VER"
+    #                 Or: "Mapping" => "ID/VER" == "VER"
+
+    %{info}
+
+    # TIPS: After editing, save file and exit editor.
+    #       It will be automatically written to the original file.
+
+  mapping: Mapping
+  index_source: Index
+  forward: Forward
