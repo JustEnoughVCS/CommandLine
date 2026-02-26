@@ -13,3 +13,6 @@ pub mod systems;
 
 /// Commands
 pub mod cmds;
+
+/// Macros
+pub mod macros;

@@ -1140,6 +1140,7 @@ dependencies = [
  "cmd_system_macros",
  "colored",
  "crossterm",
+ "env_logger",
  "erased-serde",
  "just_enough_vcs",
  "just_fmt",

@@ -1,3 +1,6 @@
+use log::{error, info};
+use rust_i18n::t;
+
 use crate::{
     r_println,
     systems::{
@@ -6,10 +9,12 @@ use crate::{
     },
 };
 use std::{
-    any::{Any, TypeId},
+    any::{Any, TypeId, type_name},
     collections::HashMap,
     future::Future,
 };
+
+rust_i18n::i18n!("resources/locales/jvn", fallback = "en");
 
 pub struct JVCommandContext {
     pub help: bool,
@@ -42,39 +47,17 @@ where
                 return Err(CmdProcessError::RendererOverrideButRequestHelp);
             }
 
+            info!("{}", t!("verbose.cmd_process"));
             let (data, type_id) = Self::process(args, ctx).await?;
 
-            let renderer_override = renderer_override.as_str();
+            let renderer = renderer_override.as_str();
 
             // Serialize the data based on its concrete type
-            let render_result: Result<JVRenderResult, CmdRenderError> = if type_id
-                == std::any::TypeId::of::<crate::cmds::out::hex::JVHexOutput>()
-            {
-                let concrete_data = data
-                    .downcast::<crate::cmds::out::hex::JVHexOutput>()
-                    .map_err(|_| CmdProcessError::DowncastFailed)?;
-                include!("../render/_override_renderer_dispatcher.rs")
-            } else if type_id
-                == std::any::TypeId::of::<crate::cmds::out::mappings::JVMappingsOutput>()
-            {
-                let concrete_data = data
-                    .downcast::<crate::cmds::out::mappings::JVMappingsOutput>()
-                    .map_err(|_| CmdProcessError::DowncastFailed)?;
-                include!("../render/_override_renderer_dispatcher.rs")
-            } else if type_id == std::any::TypeId::of::<crate::cmds::out::status::JVStatusOutput>()
-            {
-                let concrete_data = data
-                    .downcast::<crate::cmds::out::status::JVStatusOutput>()
-                    .map_err(|_| CmdProcessError::DowncastFailed)?;
-                include!("../render/_override_renderer_dispatcher.rs")
-            } else {
-                return Err(CmdProcessError::NoMatchingCommand);
-            };
-
-            match render_result {
-                Ok(r) => Ok(r),
-                Err(e) => Err(CmdProcessError::Render(e)),
-            }
+            info!(
+                "{}",
+                t!("verbose.render_with_override_renderer", renderer = renderer)
+            );
+            include!("../render/_override_renderer_entry.rs")
         }
     }
 
@@ -93,7 +76,10 @@ where
                 return Ok(r);
             }
 
+            info!("{}", t!("verbose.cmd_process"));
             let (data, id) = Self::process(args, ctx).await?;
+
+            info!("{}", t!("verbose.render_with_specific_renderer"));
             match render(data, id).await {
                 Ok(r) => Ok(r),
                 Err(e) => Err(CmdProcessError::Render(e)),
@@ -111,22 +97,53 @@ where
 
             full_args.extend(args);
 
+            info!(
+                "{}",
+                t!("verbose.cmd_process_parse", t = type_name::<Argument>())
+            );
+
             let parsed_args = match Argument::try_parse_from(full_args) {
                 Ok(args) => args,
-                Err(_) => return Err(CmdProcessError::ParseError(Self::get_help_str())),
+                Err(_) => {
+                    error!(
+                        "{}",
+                        t!(
+                            "verbose.cmd_process_parse_failed",
+                            t = type_name::<Argument>()
+                        )
+                    );
+                    return Err(CmdProcessError::ParseError(Self::get_help_str()));
+                }
             };
+
+            info!(
+                "{}",
+                t!(
+                    "verbose.cmd_process_prepare",
+                    i = type_name::<Input>(),
+                    c = type_name::<Collect>()
+                )
+            );
 
             let (input, collect) = match tokio::try_join!(
                 Self::prepare(&parsed_args, &ctx),
                 Self::collect(&parsed_args, &ctx)
             ) {
                 Ok((input, collect)) => (input, collect),
-                Err(e) => return Err(CmdProcessError::from(e)),
+                Err(e) => {
+                    error!("{}", t!("verbose.cmd_process_prepare_failed"));
+                    return Err(CmdProcessError::from(e));
+                }
             };
+
+            info!("{}", t!("verbose.cmd_process_exec"));
 
             let data = match Self::exec(input, collect).await {
                 Ok(output) => output,
-                Err(e) => return Err(CmdProcessError::from(e)),
+                Err(e) => {
+                    error!("{}", t!("verbose.cmd_process_exec_failed"));
+                    return Err(CmdProcessError::from(e));
+                }
             };
 
             Ok(data)

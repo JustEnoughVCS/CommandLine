@@ -1,13 +1,20 @@
+use log::{error, info, warn};
+use rust_i18n::t;
+
 use crate::systems::cmd::_commands::{jv_cmd_nodes, jv_cmd_process_node};
 use crate::systems::cmd::cmd_system::JVCommandContext;
 use crate::systems::cmd::errors::CmdProcessError;
 use crate::systems::render::renderer::JVRenderResult;
+
+rust_i18n::i18n!("resources/locales/jvn", fallback = "en");
 
 pub async fn jv_cmd_process(
     args: &Vec<String>,
     ctx: JVCommandContext,
     renderer_override: String,
 ) -> Result<JVRenderResult, CmdProcessError> {
+    info!("{}", t!("verbose.cmd_process_start"));
+
     let nodes = jv_cmd_nodes();
 
     // Why add a space?
@@ -27,10 +34,18 @@ pub async fn jv_cmd_process(
     match matching_nodes.len() {
         0 => {
             // No matching node found
+            error!("{}", t!("verbose.cmd_match_no_node"));
             return Err(CmdProcessError::NoMatchingCommand);
         }
         1 => {
             let matched_prefix = matching_nodes[0];
+
+            // DEBUG
+            info!(
+                "{}",
+                t!("verbose.cmd_match_matched_single", node = matched_prefix)
+            );
+
             let prefix_len = matched_prefix.split_whitespace().count();
             let trimmed_args: Vec<String> = args.into_iter().cloned().skip(prefix_len).collect();
             return jv_cmd_process_node(matched_prefix, trimmed_args, ctx, renderer_override).await;
@@ -39,6 +54,22 @@ pub async fn jv_cmd_process(
             // Multiple matching nodes found
             // Find the node with the longest length (most specific match)
             let matched_prefix = matching_nodes.iter().max_by_key(|node| node.len()).unwrap();
+
+            // DEBUG
+            let nodes_str = matching_nodes
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<_>>()
+                .join(", ");
+            warn!(
+                "{}",
+                t!(
+                    "verbose.cmd_match_matched_multi",
+                    nodes = nodes_str,
+                    node = matched_prefix
+                )
+            );
+
             let prefix_len = matched_prefix.split_whitespace().count();
             let trimmed_args: Vec<String> = args.into_iter().cloned().skip(prefix_len).collect();
             return jv_cmd_process_node(matched_prefix, trimmed_args, ctx, renderer_override).await;

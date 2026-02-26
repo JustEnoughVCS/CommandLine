@@ -44,7 +44,7 @@ process_error:
 prepare_error:
   io: |
     命令在准备阶段发生了 I/O 错误！
-    错误信息：%{error}
+    %{error}
 
   error: |
     命令在准备阶段发生未知错误！
@@ -83,7 +83,7 @@ prepare_error:
 execute_error:
   io: |
     命令在运行阶段发生了 I/O 错误！
-    错误信息：%{error}
+    %{error}
 
   error: |
     命令在运行阶段发生错误！
@@ -92,7 +92,7 @@ execute_error:
 render_error:
   io: |
     命令在渲染阶段发生了 I/O 错误！
-    错误信息：%{error}
+    %{error}
 
   error: |
     命令在渲染阶段发生错误！
@@ -111,3 +111,244 @@ render_error:
     请使用 `jv -v -C` 获得详细的版本追溯，并联系开发人员
 
     github: https://github.com/JustEnoughVCS/CommandLine/
+
+io_error:
+  not_found: |
+    找不到文件或目录！
+    请检查路径是否正确，或文件是否存在
+    %{raw_error}
+
+  permission_denied: |
+    权限被拒绝！
+    请检查您是否有足够的权限访问该文件或目录
+    %{raw_error}
+
+  connection_refused: |
+    连接被拒绝！
+    请检查目标地址和端口是否正确，以及服务是否正在运行
+    %{raw_error}
+
+  connection_reset: |
+    连接被重置！
+    网络连接在传输过程中被意外中断
+    %{raw_error}
+
+  host_unreachable: |
+    主机不可达！
+    请检查网络连接和目标主机状态
+    %{raw_error}
+
+  network_unreachable: |
+    网络不可达！
+    请检查网络连接和路由设置
+    %{raw_error}
+
+  connection_aborted: |
+    连接被中止！
+    网络连接在建立过程中被中断
+    %{raw_error}
+
+  not_connected: |
+    未连接到网络！
+    请检查网络连接状态
+    %{raw_error}
+
+  addr_in_use: |
+    地址已被占用！
+    请尝试使用其他地址或端口
+    %{raw_error}
+
+  addr_not_available: |
+    地址不可用！
+    请检查地址配置是否正确
+    %{raw_error}
+
+  network_down: |
+    网络已断开！
+    请检查网络连接
+    %{raw_error}
+
+  broken_pipe: |
+    管道已损坏！
+    通信管道在传输过程中被中断
+    %{raw_error}
+
+  already_exists: |
+    文件或目录已存在！
+    请尝试使用其他名称或删除现有文件
+    %{raw_error}
+
+  would_block: |
+    操作将被阻塞！
+    非阻塞操作无法立即完成
+    %{raw_error}
+
+  not_a_directory: |
+    不是目录！
+    请检查路径是否指向一个目录
+    %{raw_error}
+
+  is_a_directory: |
+    是一个目录！
+    请检查路径是否指向一个文件
+    %{raw_error}
+
+  directory_not_empty: |
+    目录非空！
+    请先清空目录内容
+    %{raw_error}
+
+  read_only_filesystem: |
+    文件系统只读！
+    无法写入只读文件系统
+    %{raw_error}
+
+  stale_network_file_handle: |
+    网络文件句柄已失效！
+    请重新建立连接
+    %{raw_error}
+
+  invalid_input: |
+    输入无效！
+    请检查输入参数是否正确
+    %{raw_error}
+
+  invalid_data: |
+    数据无效！
+    请检查数据格式和内容
+    %{raw_error}
+
+  timed_out: |
+    操作超时！
+    请检查网络连接或重试操作
+    %{raw_error}
+
+  write_zero: |
+    写入零字节！
+    写入操作未写入任何数据
+    %{raw_error}
+
+  storage_full: |
+    存储空间已满！
+    请清理磁盘空间
+    %{raw_error}
+
+  not_seekable: |
+    文件不可寻址！
+    该文件不支持寻址操作
+    %{raw_error}
+
+  quota_exceeded: |
+    超出配额限制！
+    请检查磁盘配额设置
+    %{raw_error}
+
+  file_too_large: |
+    文件过大！
+    请检查文件大小限制
+    %{raw_error}
+
+  resource_busy: |
+    资源正忙！
+    请稍后重试或释放占用资源
+    %{raw_error}
+
+  executable_file_busy: |
+    可执行文件正忙！
+    请等待程序结束运行
+    %{raw_error}
+
+  deadlock: |
+    死锁！
+    多个操作相互等待导致无法继续执行
+    %{raw_error}
+
+  crosses_devices: |
+    跨设备操作！
+    操作涉及多个设备，不支持此类操作
+    %{raw_error}
+
+  too_many_links: |
+    链接过多！
+    文件系统链接数量超出限制
+    %{raw_error}
+
+  invalid_filename: |
+    文件名无效！
+    请检查文件名是否符合系统要求
+    %{raw_error}
+
+  argument_list_too_long: |
+    参数列表过长！
+    请减少参数数量或长度
+    %{raw_error}
+
+  interrupted: |
+    操作被中断！
+    操作被信号中断，请重试
+    %{raw_error}
+
+  unsupported: |
+    操作不支持！
+    当前系统或环境不支持此操作
+    %{raw_error}
+
+  unexpected_eof: |
+    意外的文件结束！
+    在读取过程中遇到意外的文件结束符
+    %{raw_error}
+
+  out_of_memory: |
+    内存不足！
+    系统内存不足，无法完成操作
+    %{raw_error}
+
+  other: |
+    %{error}
+
+logger:
+  error: |
+    错误
+  warn: |
+    警告
+  info: |
+    信息
+  debug: |
+    调试
+  trace: |
+    追踪
+
+verbose:
+  setup_verbose: 启动 `Verbose` 模式
+  setup_i18n: 设置语言为 `%{lang}`
+  setup_renderer: 设置渲染器为 `%{renderer}`
+  no_error_logs: 禁用错误输出
+  help: 帮助符号已输入，将不会执行命令
+  confirmed: 确认符号已输入，所有命令将无需确认即可运行
+
+  no_arguments: 无命令输入！将输出帮助信息
+
+  user_input: 用户输入命令：%{command}
+
+  process_success: 命令执行成功！
+  process_fail: 命令执行失败！
+
+  print_render_result: 结果已渲染完成：
+
+  cmd_process_start: 开始搜寻节点以匹配命令 ...
+  cmd_match_no_node: 无法找到任何相匹配的命令节点
+  cmd_match_matched_single: 找到相匹配的命令节点 `%{node}`
+  cmd_match_matched_multi: 匹配多个命令节点 `%{nodes}`，选择 `${node} (最相关)`
+
+  cmd_process: 命令开始执行！
+  render_with_specific_renderer: 结果将用默认渲染器呈现
+  render_with_override_renderer: 结果将用覆盖渲染器 (%{renderer}) 呈现
+
+  cmd_process_parse: 命令将转换为 `%{t}`
+  cmd_process_parse_failed: 命令转换为 `%{t}` 失败！
+
+  cmd_process_prepare: 进入准备阶段，并行转换为 `%{i}` 和 `%{c}`
+  cmd_process_prepare_failed: 准备阶段失败！
+
+  cmd_process_exec: 进入执行阶段
+  cmd_process_exec_failed: 执行阶段失败！

@@ -45,7 +45,7 @@ process_error:
 prepare_error:
   io: |
     I/O error in preparation phase!
-    Error: %{error}
+    %{error}
 
   error: |
     Unknown error in preparation phase!
@@ -85,7 +85,7 @@ prepare_error:
 execute_error:
   io: |
     I/O error in execution phase!
-    Error: %{error}
+    %{error}
 
   error: |
     Error in execution phase!
@@ -94,7 +94,7 @@ execute_error:
 render_error:
   io: |
     I/O error in rendering phase!
-    Error: %{error}
+    %{error}
 
   error: |
     Error in rendering phase!
@@ -113,3 +113,244 @@ render_error:
     Please use `jv -v -C` to get detailed version traceback and contact the developers.
 
     github: https://github.com/JustEnoughVCS/CommandLine/
+
+io_error:
+  not_found: |
+    File or directory not found!
+    Please check if the path is correct or if the file exists.
+    %{raw_error}
+
+  permission_denied: |
+    Permission denied!
+    Please check if you have sufficient permissions to access the file or directory.
+    %{raw_error}
+
+  connection_refused: |
+    Connection refused!
+    Please check if the target address and port are correct and if the service is running.
+    %{raw_error}
+
+  connection_reset: |
+    Connection reset!
+    The network connection was unexpectedly interrupted during transmission.
+    %{raw_error}
+
+  host_unreachable: |
+    Host unreachable!
+    Please check your network connection and the status of the target host.
+    %{raw_error}
+
+  network_unreachable: |
+    Network unreachable!
+    Please check your network connection and routing settings.
+    %{raw_error}
+
+  connection_aborted: |
+    Connection aborted!
+    The network connection was interrupted during establishment.
+    %{raw_error}
+
+  not_connected: |
+    Not connected to network!
+    Please check your network connection status.
+    %{raw_error}
+
+  addr_in_use: |
+    Address already in use!
+    Please try a different address or port.
+    %{raw_error}
+
+  addr_not_available: |
+    Address not available!
+    Please check if the address configuration is correct.
+    %{raw_error}
+
+  network_down: |
+    Network is down!
+    Please check your network connection.
+    %{raw_error}
+
+  broken_pipe: |
+    Broken pipe!
+    The communication pipe was interrupted during transmission.
+    %{raw_error}
+
+  already_exists: |
+    File or directory already exists!
+    Please try a different name or delete the existing file.
+    %{raw_error}
+
+  would_block: |
+    Operation would block!
+    The non-blocking operation could not be completed immediately.
+    %{raw_error}
+
+  not_a_directory: |
+    Not a directory!
+    Please check if the path points to a directory.
+    %{raw_error}
+
+  is_a_directory: |
+    Is a directory!
+    Please check if the path points to a file.
+    %{raw_error}
+
+  directory_not_empty: |
+    Directory not empty!
+    Please empty the directory contents first.
+    %{raw_error}
+
+  read_only_filesystem: |
+    Read-only filesystem!
+    Cannot write to a read-only filesystem.
+    %{raw_error}
+
+  stale_network_file_handle: |
+    Stale network file handle!
+    Please re-establish the connection.
+    %{raw_error}
+
+  invalid_input: |
+    Invalid input!
+    Please check if the input parameters are correct.
+    %{raw_error}
+
+  invalid_data: |
+    Invalid data!
+    Please check the data format and content.
+    %{raw_error}
+
+  timed_out: |
+    Operation timed out!
+    Please check your network connection or retry the operation.
+    %{raw_error}
+
+  write_zero: |
+    Write zero bytes!
+    The write operation did not write any data.
+    %{raw_error}
+
+  storage_full: |
+    Storage full!
+    Please free up disk space.
+    %{raw_error}
+
+  not_seekable: |
+    File not seekable!
+    This file does not support seek operations.
+    %{raw_error}
+
+  quota_exceeded: |
+    Quota exceeded!
+    Please check your disk quota settings.
+    %{raw_error}
+
+  file_too_large: |
+    File too large!
+    Please check the file size limit.
+    %{raw_error}
+
+  resource_busy: |
+    Resource busy!
+    Please try again later or release the occupied resource.
+    %{raw_error}
+
+  executable_file_busy: |
+    Executable file busy!
+    Please wait for the program to finish running.
+    %{raw_error}
+
+  deadlock: |
+    Deadlock!
+    Multiple operations are waiting for each other, preventing further execution.
+    %{raw_error}
+
+  crosses_devices: |
+    Cross-device operation!
+    The operation involves multiple devices, which is not supported.
+    %{raw_error}
+
+  too_many_links: |
+    Too many links!
+    The number of filesystem links exceeds the limit.
+    %{raw_error}
+
+  invalid_filename: |
+    Invalid filename!
+    Please check if the filename meets system requirements.
+    %{raw_error}
+
+  argument_list_too_long: |
+    Argument list too long!
+    Please reduce the number or length of arguments.
+    %{raw_error}
+
+  interrupted: |
+    Operation interrupted!
+    The operation was interrupted by a signal. Please retry.
+    %{raw_error}
+
+  unsupported: |
+    Operation not supported!
+    This operation is not supported by the current system or environment.
+    %{raw_error}
+
+  unexpected_eof: |
+    Unexpected end of file!
+    Encountered an unexpected end-of-file marker while reading.
+    %{raw_error}
+
+  out_of_memory: |
+    Out of memory!
+    System memory is insufficient to complete the operation.
+    %{raw_error}
+
+  other: |
+    %{error}
+
+logger:
+  error: |
+    ERROR
+  warn: |
+    WARN
+  info: |
+    INFO
+  debug: |
+    DEBUG
+  trace: |
+    TRACE
+
+verbose:
+  setup_verbose: Starting `Verbose` mode
+  setup_i18n: Setting language to `%{lang}`
+  setup_renderer: Setting renderer to `%{renderer}`
+  no_error_logs: Disabling error output
+  help: Help flag entered, command will not be executed
+  confirmed: Confirmation flag entered, all commands will run without confirmation
+
+  no_arguments: No command entered! Will output help information
+
+  user_input: User input command `%{command}`
+
+  process_success: Command executed successfully!
+  process_fail: Command execution failed!
+
+  print_render_result: Result has been rendered
+
+  cmd_process_start: Starting to search nodes to match command ...
+  cmd_match_no_node: Unable to find any matching command node
+  cmd_match_matched_single: Found matching command node `%{node}`
+  cmd_match_matched_multi: Matched multiple command nodes `%{nodes}`, selecting `${node} (most relevant)`
+
+  cmd_process: Command execution starting!
+  render_with_specific_renderer: Result will be rendered with the default renderer
+  render_with_override_renderer: Result will be rendered with the override renderer (%{renderer})
+
+  cmd_process_parse: Command will be converted to `%{t}`
+  cmd_process_parse_failed: Failed to convert command to `%{t}`!
+
+  cmd_process_prepare: Entering preparation phase, converting to `%{i}` and `%{c}` in parallel
+  cmd_process_prepare_failed: Preparation phase failed!
+
+  cmd_process_exec: Entering execution phase
+  cmd_process_exec_failed: Execution phase failed!
