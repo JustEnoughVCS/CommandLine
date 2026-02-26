@@ -964,6 +964,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
+name = "hex"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+
+[[package]]
 name = "hex_display"
 version = "0.1.0"
 
@@ -2068,6 +2074,14 @@ checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 [[package]]
 name = "storage_system"
 version = "0.1.0"
+dependencies = [
+ "blake3",
+ "hex",
+ "log",
+ "memmap2",
+ "thiserror 1.0.69",
+ "tokio",
+]
 
 [[package]]
 name = "strip-ansi-escapes"
