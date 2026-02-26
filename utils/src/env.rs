@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 /// Returns the current locale string based on environment variables.
 ///
 /// The function checks for locale settings in the following order:
@@ -91,4 +93,15 @@ pub async fn get_default_editor() -> String {
     }
 
     "jvii".to_string()
+}
+
+/// Get temporary file path
+pub fn current_tempfile_path(name: &str) -> Option<PathBuf> {
+    dirs::config_local_dir().map(|path| {
+        if cfg!(target_os = "linux") {
+            path.join("jvcs").join(".temp").join(name)
+        } else {
+            path.join("JustEnoughVCS").join(".temp").join(name)
+        }
+    })
 }

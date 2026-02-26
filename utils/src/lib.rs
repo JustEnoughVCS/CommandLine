@@ -3,6 +3,7 @@ pub mod env;
 pub mod fs;
 pub mod globber;
 pub mod input;
+pub mod lazy_macros;
 pub mod levenshtein_distance;
 pub mod logger;
 pub mod push_version;

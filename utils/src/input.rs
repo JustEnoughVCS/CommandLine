@@ -63,15 +63,27 @@ pub async fn input_with_editor(
     cache_file: impl AsRef<std::path::Path>,
     comment_char: impl AsRef<str>,
 ) -> Result<String, std::io::Error> {
+    input_with_editor_cutsom(
+        default_text,
+        cache_file,
+        comment_char,
+        get_default_editor().await,
+    )
+    .await
+}
+
+pub async fn input_with_editor_cutsom(
+    default_text: impl AsRef<str>,
+    cache_file: impl AsRef<std::path::Path>,
+    comment_char: impl AsRef<str>,
+    editor: String,
+) -> Result<String, std::io::Error> {
     let cache_path = cache_file.as_ref();
     let default_content = default_text.as_ref();
     let comment_prefix = comment_char.as_ref();
 
     // Write default text to cache file
     fs::write(cache_path, default_content).await?;
-
-    // Get editor from environment variable
-    let editor = get_default_editor().await;
 
     // Open editor with cache file
     let status = Command::new(editor).arg(cache_path).status().await?;
