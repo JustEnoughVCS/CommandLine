@@ -6,6 +6,9 @@ use clap::Parser;
 pub struct JVSheetdumpArgument {
     pub sheet_file: PathBuf,
 
-    #[arg(short, long)]
-    pub sort: bool,
+    #[arg(short, long = "no-sort")]
+    pub no_sort: bool,
+
+    #[arg(long = "no-pretty")]
+    pub no_pretty: bool,
 }

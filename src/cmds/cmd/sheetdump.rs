@@ -3,8 +3,10 @@ use std::any::TypeId;
 use crate::{
     cmd_output,
     cmds::{
-        arg::sheetdump::JVSheetdumpArgument, collect::sheetdump::JVSheetdumpCollect,
-        r#in::sheetdump::JVSheetdumpInput, out::mappings::JVMappingsOutput,
+        arg::sheetdump::JVSheetdumpArgument,
+        collect::sheetdump::JVSheetdumpCollect,
+        r#in::sheetdump::JVSheetdumpInput,
+        out::{mappings::JVMappingsOutput, mappings_pretty::JVMappingsPrettyOutput},
     },
     systems::cmd::{
         cmd_system::JVCommandContext,
@@ -28,7 +30,10 @@ fn help_str() -> String {
 }
 
 async fn prepare(args: &Arg, _ctx: &JVCommandContext) -> Result<In, CmdPrepareError> {
-    Ok(In { sort: args.sort })
+    Ok(In {
+        sort: !args.no_sort,
+        pretty: !args.no_pretty,
+    })
 }
 
 async fn collect(args: &Arg, _ctx: &JVCommandContext) -> Result<Collect, CmdPrepareError> {
@@ -55,10 +60,15 @@ async fn exec(
         mappings_vec.sort();
     }
 
-    let result = JVMappingsOutput {
-        mappings: mappings_vec,
-    };
-    cmd_output!(JVMappingsOutput => result)
+    if input.pretty {
+        cmd_output!(JVMappingsPrettyOutput => JVMappingsPrettyOutput {
+            mappings: mappings_vec,
+        })
+    } else {
+        cmd_output!(JVMappingsOutput => JVMappingsOutput {
+            mappings: mappings_vec,
+        })
+    }
 }
 
 crate::command_template!();
