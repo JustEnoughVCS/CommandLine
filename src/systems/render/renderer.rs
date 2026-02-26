@@ -1,5 +1,6 @@
 use std::fmt::{Display, Formatter};
 use std::future::Future;
+use std::ops::Deref;
 
 use crate::systems::cmd::errors::CmdRenderError;
 
@@ -20,6 +21,14 @@ pub struct JVRenderResult {
 impl Display for JVRenderResult {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}\n", self.render_text.trim())
+    }
+}
+
+impl Deref for JVRenderResult {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        &self.render_text
     }
 }
 

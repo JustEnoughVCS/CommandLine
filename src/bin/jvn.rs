@@ -1,4 +1,4 @@
-use std::process::exit;
+use std::{ops::Deref, process::exit};
 
 use cli_utils::{display::md, env::current_locales, levenshtein_distance::levenshtein_distance};
 use just_enough_vcs_cli::{
@@ -145,7 +145,10 @@ async fn main() {
     // Print
     if !quiet {
         info!("{}", t!("verbose.print_render_result"));
-        print!("{}", render_result);
+        let r = render_result.deref();
+        if !r.is_empty() {
+            print!("{}", r);
+        }
     }
 }
 
