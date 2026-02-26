@@ -19,7 +19,6 @@
 ///     systems::cmd::{
 ///         cmd_system::JVCommandContext,
 ///         errors::{CmdExecuteError, CmdPrepareError},
-///         workspace_reader::LocalWorkspaceReader,
 ///     },
 /// };
 ///
@@ -63,7 +62,6 @@
 ///
 /// /// Collect necessary local information for execution
 /// async fn collect(args: &Arg, ctx: &JVCommandContext) -> Result<Collect, CmdPrepareError> {
-///     let reader = LocalWorkspaceReader::default();
 ///     todo!()
 /// }
 ///
@@ -90,7 +88,6 @@
 ///     systems::cmd::{
 ///         cmd_system::JVCommandContext,
 ///         errors::{CmdExecuteError, CmdPrepareError},
-///         workspace_reader::LocalWorkspaceReader,
 ///     },
 /// };
 ///
@@ -109,7 +106,6 @@
 /// }
 ///
 /// async fn collect(args: &Arg, ctx: &JVCommandContext) -> Result<Collect, CmdPrepareError> {
-///     let reader = LocalWorkspaceReader::default();
 ///     todo!()
 /// }
 ///
