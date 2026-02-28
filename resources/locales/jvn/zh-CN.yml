@@ -319,6 +319,7 @@ logger:
     追踪
 
 verbose:
+  setup_progress: 已初始化进度条
   setup_verbose: 启动 `Verbose` 模式
   setup_i18n: 设置语言为 `%{lang}`
   setup_renderer: 设置渲染器为 `%{renderer}`

@@ -321,6 +321,7 @@ logger:
     TRACE
 
 verbose:
+  setup_progress: Progress bar initialized
   setup_verbose: Starting `Verbose` mode
   setup_i18n: Setting language to `%{lang}`
   setup_renderer: Setting renderer to `%{renderer}`

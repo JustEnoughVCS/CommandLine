@@ -13,6 +13,10 @@ use just_enough_vcs_cli::{
         debug::verbose_logger::init_verbose_logger,
     },
 };
+use just_progress::{
+    progress,
+    renderer::{ProgressSimpleRenderer, RendererTheme},
+};
 use log::{LevelFilter, error, info, trace, warn};
 use rust_i18n::{set_locale, t};
 
@@ -30,6 +34,7 @@ async fn main() {
     // Output control flags
     let quiet = special_flag!(args, "--quiet") || special_flag!(args, "-q");
     let verbose = special_flag!(args, "--verbose") || special_flag!(args, "-V");
+    let no_progress = special_flag!(args, "--no-progress");
     let verbose_full = special_flag!(args, "--verbose-full");
 
     // If `--verbose` or `--verbose-full` is enabled and `--quiet` is not enabled, turn on the logger
@@ -45,6 +50,25 @@ async fn main() {
     };
     init_verbose_logger(filter);
     trace!("{}", t!("verbose.setup_verbose"));
+
+    // If `--no-progress` or `--quiet` is enabled, the progress bar will not be initialized
+    let progress_future = if no_progress || quiet {
+        None
+    } else {
+        trace!("{}", t!("verbose.setup_progress"));
+
+        // Build progress future
+        let progress_center = progress::init();
+        let renderer = ProgressSimpleRenderer::new()
+            .with_subprogress(true)
+            .with_theme(RendererTheme {
+                layout: "{name},{progress},{percent},{state}",
+                ..Default::default()
+            });
+        Some(progress::bind(progress_center, move |name, state| {
+            renderer.update(name, state)
+        }))
+    };
 
     // I18n flags
     let lang = special_argument!(args, "--lang").unwrap_or(current_locales());
@@ -82,18 +106,30 @@ async fn main() {
 
     info!("{}", t!("verbose.user_input", command = args.join(" ")));
 
-    // Process commands
-    let render_result = match jv_cmd_process(
-        &args.clone(),
+    // Build process future
+    let args_clone = args.clone();
+    let process_future = jv_cmd_process(
+        &args_clone,
         JVCommandContext {
             help,
             confirmed,
             args: args.clone(),
         },
         renderer_override,
-    )
-    .await
-    {
+    );
+
+    // Process commands
+    let (_, process_result) = tokio::join!(
+        async {
+            if let Some(progress_future) = progress_future {
+                progress_future.await;
+            }
+        },
+        process_future
+    );
+
+    // Match result
+    let render_result = match process_result {
         Ok(result) => {
             info!("{}", t!("verbose.process_success"));
             result

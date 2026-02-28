@@ -1150,6 +1150,7 @@ dependencies = [
  "erased-serde",
  "just_enough_vcs",
  "just_fmt",
+ "just_progress",
  "just_template",
  "log",
  "regex",
@@ -1170,6 +1171,15 @@ name = "just_fmt"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5454cda0d57db59778608d7a47bff5b16c6705598265869fb052b657f66cf05e"
+
+[[package]]
+name = "just_progress"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "46bcfa94a5bc5a8b6ede9ee77bf29c233033eca57c2b7b3b40375426ff872cb2"
+dependencies = [
+ "tokio",
+]
 
 [[package]]
 name = "just_template"

@@ -1,3 +1,4 @@
+use just_progress::progress;
 use log::{error, info, warn};
 use rust_i18n::t;
 
@@ -7,6 +8,20 @@ use crate::systems::cmd::errors::CmdProcessError;
 use crate::systems::render::renderer::JVRenderResult;
 
 pub async fn jv_cmd_process(
+    args: &Vec<String>,
+    ctx: JVCommandContext,
+    renderer_override: String,
+) -> Result<JVRenderResult, CmdProcessError> {
+    let result = process(args, ctx, renderer_override).await;
+
+    // Regardless of the result, the progress bar output should be terminated after the command finishes running.
+    // Otherwise, the program will block on the progress bar output.
+    progress::clear_all();
+    progress::close();
+    result
+}
+
+async fn process(
     args: &Vec<String>,
     ctx: JVCommandContext,
     renderer_override: String,
