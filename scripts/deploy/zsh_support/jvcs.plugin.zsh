@@ -47,10 +47,17 @@ JVCS_UPSTREAM=''
 ###################
 
 jvcs_read_state() {
-  JVCS_WS="$(jv _workspace_dir)"
-  JVCS_ACCOUNT="$(jv _account)"
-  JVCS_SHEET="$(jv _sheet)"
-  JVCS_UPSTREAM="$(jv _upstream)"
+  if command -v jv &>/dev/null; then
+    JVCS_WS="$(jv _workspace_dir 2>/dev/null)"
+    JVCS_ACCOUNT="$(jv _account 2>/dev/null)"
+    JVCS_SHEET="$(jv _sheet 2>/dev/null)"
+    JVCS_UPSTREAM="$(jv _upstream 2>/dev/null)"
+  else
+    JVCS_WS=''
+    JVCS_ACCOUNT=''
+    JVCS_SHEET=''
+    JVCS_UPSTREAM=''
+  fi
 }
 
 ##################
