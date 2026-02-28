@@ -2,6 +2,7 @@
 ///
 /// # Examples
 /// ```
+/// # use cli_utils::string_vec;
 /// let v = string_vec!["hello", "world"];
 /// assert_eq!(v, vec!["hello".to_string(), "world".to_string()]);
 /// ```
