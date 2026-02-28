@@ -27,6 +27,12 @@ check.command = "clippy"
 check.extraArgs = ["--all-features"]
 
 files.watcher = "client"
+files.excludeDirs = [
+    "src/systems/cmd/_commands.rs",
+    "src/systems/render/_override_renderer_dispatcher.rs",
+    "src/systems/render/_override_renderer_entry.rs",
+    "src/systems/render/_specific_renderer_matching.rs"
+]
 
 macroExpansion.mode = "hir"
 macroExpansion.maxDepth = 32

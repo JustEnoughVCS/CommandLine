@@ -12,13 +12,13 @@ pub struct CompileInfo {
 impl Default for CompileInfo {
     fn default() -> Self {
         Self {
-            date: "{date}".to_string(),
-            target: "{target}".to_string(),
-            platform: "{platform}".to_string(),
-            toolchain: "{toolchain}".to_string(),
-            cli_version: "{version}".to_string(),
-            build_branch: "{branch}".to_string(),
-            build_commit: "{commit}".to_string(),
+            date: "<<<date>>>".to_string(),
+            target: "<<<target>>>".to_string(),
+            platform: "<<<platform>>>".to_string(),
+            toolchain: "<<<toolchain>>>".to_string(),
+            cli_version: "<<<version>>>".to_string(),
+            build_branch: "<<<branch>>>".to_string(),
+            build_commit: "<<<commit>>>".to_string(),
         }
     }
 }

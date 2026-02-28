@@ -1,33 +1,32 @@
 use std::path::PathBuf;
 
 use just_fmt::pascal_case;
+use just_template::{Template, tmpl, tmpl_param};
 
-use crate::r#gen::constants::{
-    COMMAND_LIST, COMMAND_LIST_TEMPLATE, COMMANDS_PATH, REGISTRY_TOML, TEMPLATE_END, TEMPLATE_START,
-};
+use crate::r#gen::constants::{COMMAND_LIST, COMMAND_LIST_TEMPLATE, COMMANDS_PATH, REGISTRY_TOML};
 
-/// Generate registry file from Registry.toml configuration
+/// Generate registry file from Registry.toml configuration using just_template
 pub async fn generate_commands_file(repo_root: &PathBuf) {
     let template_path = repo_root.join(COMMAND_LIST_TEMPLATE);
     let output_path = repo_root.join(COMMAND_LIST);
     let config_path = repo_root.join(REGISTRY_TOML);
 
     // Read the template
-    let template = tokio::fs::read_to_string(&template_path).await.unwrap();
+    let template_content = tokio::fs::read_to_string(&template_path).await.unwrap();
 
     // Read and parse the TOML configuration
     let config_content = tokio::fs::read_to_string(&config_path).await.unwrap();
     let config: toml::Value = toml::from_str(&config_content).unwrap();
 
     // Collect all command configurations
-    let mut commands = Vec::new();
-    let mut nodes = Vec::new();
+    let mut all_commands: Vec<(String, String, String)> = Vec::new();
+    let mut all_nodes: Vec<String> = Vec::new();
 
     // Collect commands from registry.toml and COMMANDS_PATH in parallel
     let (registry_collected, auto_collected) = tokio::join!(
         async {
-            let mut commands = Vec::new();
-            let mut nodes = Vec::new();
+            let mut commands: Vec<(String, String, String)> = Vec::new();
+            let mut nodes: Vec<String> = Vec::new();
 
             let Some(table) = config.as_table() else {
                 return (commands, nodes);
@@ -70,8 +69,8 @@ pub async fn generate_commands_file(repo_root: &PathBuf) {
             (commands, nodes)
         },
         async {
-            let mut commands = Vec::new();
-            let mut nodes = Vec::new();
+            let mut commands: Vec<(String, String, String)> = Vec::new();
+            let mut nodes: Vec<String> = Vec::new();
             let commands_dir = repo_root.join(COMMANDS_PATH);
             if commands_dir.exists() && commands_dir.is_dir() {
                 let mut entries = tokio::fs::read_dir(&commands_dir).await.unwrap();
@@ -120,69 +119,43 @@ pub async fn generate_commands_file(repo_root: &PathBuf) {
     let (mut registry_commands, mut registry_nodes) = registry_collected;
     let (mut auto_commands, mut auto_nodes) = auto_collected;
 
-    commands.append(&mut registry_commands);
-    commands.append(&mut auto_commands);
-    nodes.append(&mut registry_nodes);
-    nodes.append(&mut auto_nodes);
+    all_commands.append(&mut registry_commands);
+    all_commands.append(&mut auto_commands);
 
-    // Extract the node_if template from the template content
-    const PROCESS_MARKER: &str = "// PROCESS";
-    const LINE: &str = "<<LINE>>";
-    const NODES: &str = "<<NODES>>";
+    all_nodes.append(&mut registry_nodes);
+    all_nodes.append(&mut auto_nodes);
 
-    let template_start_index = template
-        .find(TEMPLATE_START)
-        .ok_or("Template start marker not found")
-        .unwrap();
-    let template_end_index = template
-        .find(TEMPLATE_END)
-        .ok_or("Template end marker not found")
-        .unwrap();
+    // Create template
+    let mut template = Template::from(template_content);
 
-    let template_slice = &template[template_start_index..template_end_index + TEMPLATE_END.len()];
-    let node_if_template = template_slice
-        .trim_start_matches(TEMPLATE_START)
-        .trim_end_matches(TEMPLATE_END)
-        .trim_matches('\n');
-
-    // Generate the match arms for each command
-    let match_arms: String = commands
-        .iter()
-        .map(|(key, node, cmd_type)| {
-            node_if_template
-                .replace("<<KEY>>", key)
-                .replace("<<NODE_NAME>>", node)
-                .replace("<<COMMAND_TYPE>>", cmd_type)
-                .trim_matches('\n')
-                .to_string()
-        })
-        .collect::<Vec<_>>()
-        .join("\n");
+    for (key, node, cmd_type) in &all_commands {
+        tmpl!(template += {
+            command_match_arms {
+                (key = key, node_name = node, cmd_type = cmd_type)
+            }
+        });
+    }
 
     let nodes_str = format!(
         "[\n        {}\n    ]",
-        nodes
+        all_nodes
             .iter()
             .map(|node| format!("\"{}\".to_string()", node))
             .collect::<Vec<_>>()
             .join(", ")
     );
 
-    // Replace the template section with the generated match arms
-    let final_content = template
-        .replace(node_if_template, "")
-        .replace(TEMPLATE_START, "")
-        .replace(TEMPLATE_END, "")
-        .replace(PROCESS_MARKER, &match_arms)
-        .lines()
-        .filter(|line| !line.trim().is_empty())
-        .collect::<Vec<_>>()
-        .join("\n")
-        .replace(LINE, "")
-        .replace(NODES, nodes_str.as_str());
+    // Use insert_param for the NODES parameter
+    tmpl_param!(template, nodes = nodes_str);
+
+    // Expand the template
+    let final_content = template.expand().unwrap();
 
     // Write the generated code
     tokio::fs::write(output_path, final_content).await.unwrap();
 
-    println!("Generated registry file with {} commands", commands.len());
+    println!(
+        "Generated registry file with {} commands using just_template",
+        all_commands.len()
+    );
 }

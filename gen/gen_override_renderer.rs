@@ -1,13 +1,11 @@
 use std::{collections::HashSet, path::PathBuf};
 
+use just_template::{Template, tmpl};
 use regex::Regex;
 use tokio::fs;
 
 use crate::r#gen::{
-    constants::{
-        COMMANDS_PATH, OVERRIDE_RENDERER_ENTRY, OVERRIDE_RENDERER_ENTRY_TEMPLATE, TEMPLATE_END,
-        TEMPLATE_START,
-    },
+    constants::{COMMANDS_PATH, OVERRIDE_RENDERER_ENTRY, OVERRIDE_RENDERER_ENTRY_TEMPLATE},
     resolve_types::resolve_type_paths,
 };
 
@@ -17,53 +15,30 @@ pub async fn generate_override_renderer(repo_root: &PathBuf) {
     let all_possible_types = collect_all_possible_types(&PathBuf::from(COMMANDS_PATH)).await;
 
     // Read the template
-    let template = tokio::fs::read_to_string(&template_path).await.unwrap();
+    let template_content = tokio::fs::read_to_string(&template_path).await.unwrap();
 
-    // Extract the template section from the template content
-    const MATCH_MARKER: &str = "// MATCHING";
+    // Create template
+    let mut template = Template::from(template_content);
 
-    let template_start_index = template
-        .find(TEMPLATE_START)
-        .ok_or("Template start marker not found")
-        .unwrap();
-    let template_end_index = template
-        .find(TEMPLATE_END)
-        .ok_or("Template end marker not found")
-        .unwrap();
+    for type_name in &all_possible_types {
+        let name = type_name.split("::").last().unwrap_or(type_name);
+        tmpl!(template += {
+            type_match_arms {
+                (jv_output_type_name = name, jv_output_type = type_name)
+            }
+        });
+    }
 
-    let template_slice = &template[template_start_index..template_end_index + TEMPLATE_END.len()];
-    let renderer_template = template_slice
-        .trim_start_matches(TEMPLATE_START)
-        .trim_end_matches(TEMPLATE_END)
-        .trim_matches('\n');
-
-    // Generate the match arms for each renderer
-    let match_arms: String = all_possible_types
-        .iter()
-        .map(|type_name| {
-            let name = type_name.split("::").last().unwrap_or(type_name);
-            renderer_template
-                .replace("JVOutputTypeName", name)
-                .replace("JVOutputType", type_name)
-                .trim_matches('\n')
-                .to_string()
-        })
-        .collect::<Vec<String>>()
-        .join("\n");
-
-    // Replace the template section with the generated match arms
-    let final_content = template
-        .replace(renderer_template, "")
-        .replace(TEMPLATE_START, "")
-        .replace(TEMPLATE_END, "")
-        .replace(MATCH_MARKER, &match_arms)
-        .lines()
-        .filter(|line| !line.trim().is_empty())
-        .collect::<Vec<_>>()
-        .join("\n");
+    // Expand the template
+    let final_content = template.expand().unwrap();
 
     // Write the generated code
     tokio::fs::write(output_path, final_content).await.unwrap();
+
+    println!(
+        "Generated override renderer entry with {} types using just_template",
+        all_possible_types.len()
+    );
 }
 
 pub async fn collect_all_possible_types(dir: &PathBuf) -> HashSet<String> {

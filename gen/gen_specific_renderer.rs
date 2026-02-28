@@ -1,78 +1,50 @@
 use std::{collections::HashMap, path::PathBuf};
 
+use just_template::{Template, tmpl};
 use regex::Regex;
 
 use crate::r#gen::{
-    constants::{
-        RENDERERS_PATH, SPECIFIC_RENDERER_MATCHING, SPECIFIC_RENDERER_MATCHING_TEMPLATE,
-        TEMPLATE_END, TEMPLATE_START,
-    },
+    constants::{RENDERERS_PATH, SPECIFIC_RENDERER_MATCHING, SPECIFIC_RENDERER_MATCHING_TEMPLATE},
     resolve_types::resolve_type_paths,
 };
 
 const RENDERER_TYPE_PREFIX: &str = "crate::";
 
+/// Generate specific renderer matching file using just_template
 pub async fn generate_specific_renderer(repo_root: &PathBuf) {
-    // Matches
-    // HashMap<RendererTypeFullName, OutputTypeFullName>
+    // Matches: HashMap<RendererTypeFullName, OutputTypeFullName>
     let mut renderer_matches: HashMap<String, String> = HashMap::new();
 
     let renderer_path = repo_root.join(RENDERERS_PATH);
-
     collect_renderers(&renderer_path, &mut renderer_matches);
 
     let template_path = repo_root.join(SPECIFIC_RENDERER_MATCHING_TEMPLATE);
     let output_path = repo_root.join(SPECIFIC_RENDERER_MATCHING);
 
     // Read the template
-    let template = tokio::fs::read_to_string(&template_path).await.unwrap();
+    let template_content = tokio::fs::read_to_string(&template_path).await.unwrap();
 
-    // Extract the template section from the template content
-    const MATCH_MARKER: &str = "// MATCHING";
+    // Create template
+    let mut template = Template::from(template_content);
 
-    let template_start_index = template
-        .find(TEMPLATE_START)
-        .ok_or("Template start marker not found")
-        .unwrap();
-    let template_end_index = template
-        .find(TEMPLATE_END)
-        .ok_or("Template end marker not found")
-        .unwrap();
+    for (renderer, output) in &renderer_matches {
+        let output_name = output.split("::").last().unwrap_or(output);
+        tmpl!(template += {
+            renderer_match_arms {
+                (output_type_name = output_name, output_type = output, renderer_type = renderer)
+            }
+        });
+    }
 
-    let template_slice = &template[template_start_index..template_end_index + TEMPLATE_END.len()];
-    let renderer_template = template_slice
-        .trim_start_matches(TEMPLATE_START)
-        .trim_end_matches(TEMPLATE_END)
-        .trim_matches('\n');
-
-    // Generate the match arms for each renderer
-    let match_arms: String = renderer_matches
-        .iter()
-        .map(|(renderer, output)| {
-            let output_name = output.split("::").last().unwrap_or(output);
-            renderer_template
-                .replace("OutputTypeName", output_name)
-                .replace("OutputType", output)
-                .replace("RendererType", renderer)
-                .trim_matches('\n')
-                .to_string()
-        })
-        .collect::<Vec<String>>()
-        .join("\n");
-
-    // Replace the template section with the generated match arms
-    let final_content = template
-        .replace(renderer_template, "")
-        .replace(TEMPLATE_START, "")
-        .replace(TEMPLATE_END, "")
-        .replace(MATCH_MARKER, &match_arms)
-        .lines()
-        .filter(|line| !line.trim().is_empty())
-        .collect::<Vec<_>>()
-        .join("\n");
+    let final_content = template.expand().unwrap();
 
     // Write the generated code
     tokio::fs::write(output_path, final_content).await.unwrap();
+
+    println!(
+        "Generated specific renderer matching with {} renderers using just_template",
+        renderer_matches.len()
+    );
 }
 
 fn collect_renderers(dir_path: &PathBuf, matches: &mut HashMap<String, String>) {

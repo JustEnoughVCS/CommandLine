@@ -1150,6 +1150,7 @@ dependencies = [
  "erased-serde",
  "just_enough_vcs",
  "just_fmt",
+ "just_template",
  "log",
  "regex",
  "render_system_macros",
@@ -1169,6 +1170,15 @@ name = "just_fmt"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5454cda0d57db59778608d7a47bff5b16c6705598265869fb052b657f66cf05e"
+
+[[package]]
+name = "just_template"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "28f77e78b7de1bd14c242241bbd802efd1e4b7a3717ea5f2eb05aba5e069d8b9"
+dependencies = [
+ "just_fmt",
+]
 
 [[package]]
 name = "jvlib"

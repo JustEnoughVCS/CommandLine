@@ -1,7 +1,7 @@
 #define MyAppName "JustEnoughVCS"
-#define MyAppVersion "<<<VERSION>>>"
-#define MyAppPublisher "<<<AUTHOR>>>"
-#define MyAppURL "<<<SITE>>>"
+#define MyAppVersion "<<<version>>>"
+#define MyAppPublisher "<<<author>>>"
+#define MyAppURL "<<<site>>>"
 
 [Setup]
 AppId={{8265DF21-F290-487E-9403-C2730EC31A03}
