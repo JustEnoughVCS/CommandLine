@@ -1,5 +1,7 @@
 pub mod helpdoc_viewer;
 
+pub const DEFAULT_HELPDOC: &str = "Welcome_To_JVCS";
+
 helpdoc_system_macros::generate_helpdoc_mapping!();
 helpdoc_system_macros::generate_helpdoc_list!();
 helpdoc_system_macros::generate_helpdoc_test!();

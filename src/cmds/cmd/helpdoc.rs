@@ -9,7 +9,7 @@ use crate::{
             cmd_system::JVCommandContext,
             errors::{CmdExecuteError, CmdPrepareError},
         },
-        helpdoc::helpdoc_viewer,
+        helpdoc::{DEFAULT_HELPDOC, helpdoc_viewer},
     },
 };
 use cmd_system_macros::exec;
@@ -22,13 +22,13 @@ type In = JVHelpdocInput;
 type Collect = JVEmptyCollect;
 
 async fn help_str() -> String {
-    helpdoc_viewer::display("Welcome_To_JVCS").await;
+    helpdoc_viewer::display(DEFAULT_HELPDOC).await;
     String::new()
 }
 
 async fn prepare(args: &Arg, ctx: &JVCommandContext) -> Result<In, CmdPrepareError> {
     Ok(JVHelpdocInput {
-        name: args.doc_name.clone(),
+        name: args.doc_name.clone().unwrap_or(DEFAULT_HELPDOC.to_string()),
         lang: ctx.lang.clone(),
     })
 }
