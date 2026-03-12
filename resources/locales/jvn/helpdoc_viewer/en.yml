@@ -1,4 +1,5 @@
 helpdoc_viewer:
+  title: JustEnoughVCS Help Documents
   tree_area_hint: |
       _List_ | ↑↓: Page | ←→/Space: Switch view | Q: Quit
   content_area_hint: |

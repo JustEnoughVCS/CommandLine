@@ -1,4 +1,5 @@
 helpdoc_viewer:
+  title: JustEnoughVCS 帮助文档
   tree_area_hint: |
       _列表_ | ↑↓: 翻页 | ←→/Space: 切换视图 | Q: 退出
   content_area_hint: |

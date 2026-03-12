@@ -1,5 +1,3 @@
-# Sheetedit
-
 > Edit `Sheet` files using your system editor
 
 ## Usage

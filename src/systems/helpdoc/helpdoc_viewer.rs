@@ -16,6 +16,8 @@ use std::{
     io::{Write, stdout},
 };
 
+const TREE_WIDTH: u16 = 25;
+
 struct HelpdocViewer {
     /// Current language
     lang: String,
@@ -193,6 +195,49 @@ impl HelpdocViewer {
         formatted.lines().map(|s| s.to_string()).collect()
     }
 
+    /// Truncate a string containing ANSI escape sequences, preserving ANSI sequences
+    fn truncate_with_ansi(text: &str, max_width: usize) -> String {
+        let mut result = String::new();
+        let mut current_width = 0;
+        let mut chars = text.chars().peekable();
+        let mut in_ansi_escape = false;
+        let mut ansi_buffer = String::new();
+
+        while let Some(c) = chars.next() {
+            if c == '\x1b' {
+                ansi_buffer.push(c);
+                while let Some(&next_c) = chars.peek() {
+                    ansi_buffer.push(next_c);
+                    chars.next();
+
+                    if next_c.is_ascii_alphabetic() {
+                        break;
+                    }
+                }
+
+                result.push_str(&ansi_buffer);
+                ansi_buffer.clear();
+                in_ansi_escape = false;
+                continue;
+            }
+
+            if in_ansi_escape {
+                ansi_buffer.push(c);
+                continue;
+            }
+
+            let char_width = if c.is_ascii() { 1 } else { 2 };
+            if current_width + char_width > max_width {
+                break;
+            }
+
+            result.push(c);
+            current_width += char_width;
+        }
+
+        result
+    }
+
     /// Run viewer
     async fn run(&mut self) -> std::io::Result<()> {
         enable_raw_mode()?;
@@ -218,17 +263,14 @@ impl HelpdocViewer {
 
     /// Draw interface
     fn draw(&self) -> std::io::Result<()> {
+        let tree_width = TREE_WIDTH;
         let (width, height) = crossterm::terminal::size()?;
 
-        if height <= 3 {
-            let content = self.current_doc_content();
-            println!("{}", content);
+        if height <= 3 || width <= tree_width {
             return Ok(());
         }
 
         execute!(stdout(), Clear(ClearType::All))?;
-
-        let tree_width = 25;
         let content_width = width - tree_width - 1;
 
         // Draw title
@@ -236,7 +278,7 @@ impl HelpdocViewer {
             stdout(),
             MoveTo(0, 0),
             SetForegroundColor(Color::Cyan),
-            Print(format!("JVCS Help Docs - {}", self.lang)),
+            Print(format!("{} - {}", t!("helpdoc_viewer.title"), self.lang)),
             ResetColor
         )?;
 
@@ -309,7 +351,7 @@ impl HelpdocViewer {
         // If this is the currently selected document, highlight it (white background, black text)
         let is_selected = node.path == self.current_doc;
 
-        if is_selected {
+        if is_selected && self.focus == FocusArea::Tree {
             // Highlight with white background and black text
             execute!(
                 stdout(),
@@ -359,11 +401,18 @@ impl HelpdocViewer {
     /// Draw content area
     fn draw_content(&self, x: u16, y: u16, width: u16, height: u16) -> std::io::Result<()> {
         // Draw content area title
+        let (fg_color, bg_color) = if self.focus == FocusArea::Content {
+            (Color::Black, Color::White)
+        } else {
+            (Color::Yellow, Color::Black)
+        };
+
         execute!(
             stdout(),
             MoveTo(x, y - 1),
-            SetForegroundColor(Color::Yellow),
-            Print(format!("> {}", self.current_doc)),
+            SetForegroundColor(fg_color),
+            SetBackgroundColor(bg_color),
+            Print(format!(" Reading `{}` ", self.current_doc)),
             ResetColor
         )?;
 
@@ -384,26 +433,9 @@ impl HelpdocViewer {
             .skip(start_line)
         {
             let line_y = y + i as u16 - start_line as u16;
-            let display_line = if line.len() > width as usize {
-                let mut end = width as usize;
-                while end > 0 && !line.is_char_boundary(end) {
-                    end -= 1;
-                }
-                if end == 0 {
-                    // If the first character is multi-byte, display at least one character
-                    let mut end = 1;
-                    while end < line.len() && !line.is_char_boundary(end) {
-                        end += 1;
-                    }
-                    &line[..end]
-                } else {
-                    &line[..end]
-                }
-            } else {
-                line
-            };
+            let display_line = Self::truncate_with_ansi(line, width as usize);
 
-            execute!(stdout(), MoveTo(x, line_y), Print(display_line))?;
+            execute!(stdout(), MoveTo(x, line_y), Print(&display_line))?;
         }
 
         // Display scroll position indicator
@@ -445,12 +477,8 @@ impl HelpdocViewer {
         }
         .to_string();
 
-        let truncated_text = if status_text.len() > width as usize {
-            &status_text[..width as usize]
-        } else {
-            &status_text
-        };
-        execute!(stdout(), Print(truncated_text))?;
+        let truncated_text = Self::truncate_with_ansi(&status_text, width as usize);
+        execute!(stdout(), Print(&truncated_text))?;
         execute!(stdout(), ResetColor)?;
 
         Ok(())

@@ -1,5 +1,3 @@
-# Sheetdump
-
 > Visually output the internal structure of a `Sheet`
 
 ## Usage

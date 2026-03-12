@@ -1,5 +1,3 @@
-# Hexdump
-
 > Print binary information
 
 ## Usage
