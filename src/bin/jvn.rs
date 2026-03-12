@@ -1,6 +1,6 @@
 use std::{ops::Deref, process::exit};
 
-use cli_utils::{display::md, env::current_locales, levenshtein_distance::levenshtein_distance};
+use cli_utils::legacy::{display::md, env::current_locales, levenshtein_distance};
 use just_enough_vcs_cli::{
     special_argument, special_flag,
     systems::{
@@ -197,7 +197,7 @@ fn handle_no_matching_command_error(args: Vec<String>) {
             continue;
         }
         let args_str = args[..node_len].join(" ");
-        let distance = levenshtein_distance(args_str.as_str(), node.as_str());
+        let distance = levenshtein_distance::levenshtein_distance(args_str.as_str(), node.as_str());
         if distance <= 2 {
             similar_nodes.push(node);
         }

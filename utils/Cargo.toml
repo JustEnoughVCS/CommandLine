@@ -4,23 +4,15 @@ edition = "2024"
 version.workspace = true
 
 [dependencies]
-# Just Enough VCS
 just_enough_vcs = { path = "../../VersionControl", features = ["all"] }
 
-# Display
-colored = "3.0"
-strip-ansi-escapes = "0.2.1"
-just_fmt = "0.1.2"
+colored.workspace = true
+crossterm.workspace = true
+env_logger.workspace = true
+just_fmt.workspace = true
+log.workspace = true
 
-# Async
-tokio = { version = "1", features = ["full"] }
-
-# Logging
-log = "0.4"
-env_logger = "0.11"
-
-# File & Directory
-dirs = "6.0.0"
-
-# Time
 chrono = "0.4"
+dirs = "6.0.0"
+strip-ansi-escapes = "0.2.1"
+tokio = { version = "1", features = ["fs", "io-std", "net"] }

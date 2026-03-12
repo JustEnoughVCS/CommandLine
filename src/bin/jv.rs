@@ -21,7 +21,6 @@
 // The new implementation is located in `jvn.rs`, please refer to it.
 //
 
-use cli_utils::input::input_with_editor;
 use colored::Colorize;
 use just_enough_vcs::{
     data::compile_info::CoreCompileInfo,
@@ -113,14 +112,13 @@ use std::{
 };
 
 use clap::{Parser, Subcommand};
-use cli_utils::{
+use cli_utils::legacy::{
     display::{SimpleTable, display_width, md, render_share_path_tree, size_str},
     env::{auto_update_outdate, current_locales, enable_auto_update},
     fs::move_across_partitions,
     globber::{GlobItem, Globber},
-    input::{confirm_hint, confirm_hint_or, show_in_pager},
-    push_version::push_version,
-    socket_addr_helper,
+    input::{confirm_hint, confirm_hint_or, input_with_editor, show_in_pager},
+    push_version, socket_addr_helper,
 };
 use just_enough_vcs::utils::tcp_connection::error::TcpTargetError;
 use just_enough_vcs_cli::{
@@ -4035,7 +4033,7 @@ async fn start_update_editor(
     for item in files {
         let path = item.0.display().to_string();
         let base_ver = item.1.to_string();
-        let next_ver = push_version(&base_ver).unwrap_or(" ".to_string());
+        let next_ver = push_version::push_version(&base_ver).unwrap_or(" ".to_string());
         table.push_item(vec![
             path,
             base_ver,

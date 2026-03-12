@@ -5,9 +5,9 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use clap::Parser;
-use cli_utils::display::display_width;
-use cli_utils::display::md;
-use cli_utils::env::current_locales;
+use cli_utils::legacy::display::display_width;
+use cli_utils::legacy::display::md;
+use cli_utils::legacy::env::current_locales;
 use crossterm::{
     QueueableCommand,
     cursor::MoveTo,

@@ -10,7 +10,9 @@ use crate::{
     },
 };
 use cli_utils::{
-    display::SimpleTable, env::get_default_editor, input::input_with_editor_cutsom, string_vec,
+    display::table::Table,
+    legacy::{env::get_default_editor, input::input_with_editor_cutsom},
+    string_vec,
 };
 use cmd_system_macros::exec;
 use just_enough_vcs::system::sheet_system::{mapping::LocalMapping, sheet::SheetData};
@@ -96,7 +98,7 @@ fn render_pretty_mappings(mappings: &Vec<LocalMapping>) -> String {
         t!("sheetedit.forward")
     ];
 
-    let mut simple_table = SimpleTable::new(header);
+    let mut table = Table::new(header);
 
     for mapping in mappings {
         let mapping_str = mapping
@@ -105,7 +107,7 @@ fn render_pretty_mappings(mappings: &Vec<LocalMapping>) -> String {
             .into_iter()
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
-        simple_table.push_item(vec![
+        table.push_item(vec![
             format!(
                 "    {}      ",
                 mapping_str.get(0).unwrap_or(&String::default())
@@ -116,7 +118,7 @@ fn render_pretty_mappings(mappings: &Vec<LocalMapping>) -> String {
             format!("{}      ", mapping_str.get(4).unwrap_or(&String::default())), // Forward
         ]);
     }
-    simple_table.to_string()
+    table.to_string()
 }
 
 crate::command_template!();

@@ -2,7 +2,7 @@ use std::{io::Error, path::PathBuf, str::FromStr};
 
 use just_fmt::fmt_path::fmt_path_str;
 
-use crate::globber::constants::{SPLIT_STR, get_base_dir_current};
+use crate::legacy::globber::constants::{SPLIT_STR, get_base_dir_current};
 
 pub struct Globber {
     pattern: String,

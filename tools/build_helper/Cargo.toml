@@ -4,10 +4,7 @@ edition = "2024"
 version = "0.0.1"
 
 [dependencies]
+colored.workspace = true
+serde.workspace = true
 
-# Serialization
-serde = { version = "1.0.226", features = ["derive"] }
-toml = { version = "0.9.7", features = ["serde"] }
-
-# Colored
-colored = "3.0.0"
+toml = { version = "0.9", features = ["serde"] }

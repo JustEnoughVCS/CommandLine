@@ -22,7 +22,7 @@
 //
 
 use clap::{Parser, Subcommand};
-use cli_utils::{
+use cli_utils::legacy::{
     display::{md, size_str},
     env::current_locales,
     logger::build_env_logger,

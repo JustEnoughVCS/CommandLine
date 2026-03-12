@@ -10,7 +10,7 @@ members = [
     "utils/",
     "tools/build_helper",
     "macros/render_system_macros",
-    "macros/cmd_system_macros"
+    "macros/cmd_system_macros",
 ]
 
 [workspace.package]
@@ -44,56 +44,39 @@ toml = "0.9"
 regex = "1.12"
 just_template = "0.1.0"
 
-[dependencies]
-# Just Enough VCS
-just_enough_vcs = { path = "../VersionControl", features = ["all"] }
-
-# RenderSystem Macros
-render_system_macros = { path = "macros/render_system_macros" }
-
-# CommandSystem Macros
-cmd_system_macros = { path = "macros/cmd_system_macros" }
-
-# CommandLine Utilities
-cli_utils = { path = "utils" }
-
-# Error
-thiserror = "2.0.17"
-
-# Serialize
-# What the heck, why does this crate use kebab-case instead of snake_case ????
-erased_serde = { package = "erased-serde", version = "0.4" }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-serde_yaml = "0.9"
-ron = "0.11.0"
-toml = "0.9"
-
-# Command Line
-clap = { version = "4.5", features = ["derive"] }
-
-# Time
-chrono = "0.4"
-
-# Logging
+[workspace.dependencies]
+proc-macro2 = "1.0"
+quote = "1.0"
+syn = { version = "2.0", features = ["full", "extra-traits"] }
+just_fmt = "0.1.2"
+crossterm = "0.29"
+colored = "3.1"
 log = "0.4"
 env_logger = "0.11"
+thiserror = "2"
+serde = { version = "1", features = ["derive"] }
 
-# Async
-tokio = { version = "1", features = ["full"] }
+[dependencies]
+cli_utils = { path = "utils" }
+cmd_system_macros = { path = "macros/cmd_system_macros" }
+just_enough_vcs = { path = "../VersionControl", features = ["all"] }
+render_system_macros = { path = "macros/render_system_macros" }
 
-# Display
-colored = "3.0"
+crossterm.workspace = true
+env_logger.workspace = true
+just_fmt.workspace = true
+log.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+
+chrono = "0.4"
+clap = { version = "4.5", features = ["derive"] }
+colored.workspace = true
 just_progress = "0.1.1"
-
-# Terminal
-crossterm = "0.27"
-
-# i18n
+ron = "0.11.0"
 rust-i18n = "3"
-
-# File & Directory
+serde_json = "1"
+serde_yaml = "0.9"
+tokio = { version = "1", features = ["full"] }
+toml = "0.9"
 walkdir = "2.5.0"
-
-# String format
-just_fmt = "0.1.2"
