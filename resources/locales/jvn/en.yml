@@ -1,28 +1,25 @@
-help: |
-  NO
-
 process_error:
   no_matching_command: |
     No matching command found!
-    Use `jv -h` to get help
+    Use `jvn -h` to get help
 
   no_matching_command_but_similar: |
     No matching command found, but similar commands were found:
-      jv %{similars}
+      jvn %{similars}
 
-    Use `jv -h` to get help
+    Use `jvn -h` to get help
 
   no_node_found: |
     Unable to find command `%{node}`
 
     This is usually a compilation-phase issue, not a user input error.
-    Please use `jv -v -C` to get detailed version traceback and contact the developers.
+    Please use `jvn -v -C` to get detailed version traceback and contact the developers.
 
     github: https://github.com/JustEnoughVCS/CommandLine/
 
   parse_error: |
     An error occurred while parsing your command arguments!
-    Please use `jv <command> --help` to view help
+    Please use `jvn <command> --help` to view help
 
   renderer_override_but_request_help: |
     Renderer override mode is enabled, but help output was requested.
@@ -38,7 +35,7 @@ process_error:
     Type conversion failed!
 
     This is usually a compilation-phase issue, not a user input error.
-    Please use `jv -v -C` to get detailed version traceback and contact the developers.
+    Please use `jvn -v -C` to get detailed version traceback and contact the developers.
 
     github: https://github.com/JustEnoughVCS/CommandLine/
 
@@ -57,19 +54,19 @@ prepare_error:
 
   local_config_not_found: |
     Failed to read workspace config. File may not exist or format mismatch.
-    Use `jv update` and try again.
+    Use `jvn update` and try again.
 
   latest_info_not_found: |
     Unable to read latest upstream info!
-    Use `jv update` and try again.
+    Use `jvn update` and try again.
 
   latest_file_data_not_exist: |
     Unable to read latest file info for member `%{member_id}`!
-    Use `jv update` and try again.
+    Use `jvn update` and try again.
 
   cached_sheet_not_found: |
     Unable to read cached upstream sheet `%{sheet_name}`!
-    Use `jv update` and try again.
+    Use `jvn update` and try again.
 
   local_sheet_not_found: |
     Unable to read local sheet `%{sheet_name}` for member `%{member_id}`.
@@ -80,7 +77,7 @@ prepare_error:
     Also, verify that a structure sheet is in use.
 
   no_sheet_in_use: |
-    No sheet in use. Use `jv use <structure_sheet_name>`.
+    No sheet in use. Use `jvn use <structure_sheet_name>`.
 
 execute_error:
   io: |
@@ -110,7 +107,7 @@ render_error:
   type_mismatch: |
     Render type mismatch!
     This is usually a compilation-phase issue, not a user input error.
-    Please use `jv -v -C` to get detailed version traceback and contact the developers.
+    Please use `jvn -v -C` to get detailed version traceback and contact the developers.
 
     github: https://github.com/JustEnoughVCS/CommandLine/
 

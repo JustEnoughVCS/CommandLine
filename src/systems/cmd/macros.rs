@@ -51,7 +51,7 @@
 /// type Collect = JVCustomCollect;
 ///
 /// /// Return a string, rendered when the user needs help (command specifies `--help` or syntax error)
-/// fn help_str() -> String {
+/// async fn help_str() -> String {
 ///     todo!()
 /// }
 ///
@@ -97,7 +97,7 @@
 /// type In = JVCustomInput;
 /// type Collect = JVCustomCollect;
 ///
-/// fn help_str() -> String {
+/// async fn help_str() -> String {
 ///     todo!()
 /// }
 ///
@@ -121,8 +121,8 @@
 macro_rules! command_template {
     () => {
         impl $crate::systems::cmd::cmd_system::JVCommand<Arg, In, Collect> for Cmd {
-            fn get_help_str() -> String {
-                help_str()
+            async fn get_help_str() -> String {
+                help_str().await
             }
 
             async fn prepare(

@@ -8,9 +8,12 @@ use crate::{
         r#in::sheetdump::JVSheetdumpInput,
         out::{mappings::JVMappingsOutput, mappings_pretty::JVMappingsPrettyOutput},
     },
-    systems::cmd::{
-        cmd_system::JVCommandContext,
-        errors::{CmdExecuteError, CmdPrepareError},
+    systems::{
+        cmd::{
+            cmd_system::JVCommandContext,
+            errors::{CmdExecuteError, CmdPrepareError},
+        },
+        helpdoc::helpdoc_viewer,
     },
 };
 use cmd_system_macros::exec;
@@ -25,8 +28,9 @@ type Arg = JVSheetdumpArgument;
 type In = JVSheetdumpInput;
 type Collect = JVSheetdumpCollect;
 
-fn help_str() -> String {
-    todo!()
+async fn help_str() -> String {
+    helpdoc_viewer::display("commands/sheetdump").await;
+    String::new()
 }
 
 async fn prepare(args: &Arg, _ctx: &JVCommandContext) -> Result<In, CmdPrepareError> {

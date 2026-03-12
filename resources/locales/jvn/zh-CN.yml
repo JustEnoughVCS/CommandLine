@@ -1,27 +1,24 @@
-help: |
-  NO
-
 process_error:
   no_matching_command: |
-    无法匹配该命令，使用 `jv -h` 查看帮助
+    无法匹配该命令，使用 `jvn -h` 查看帮助
 
   no_matching_command_but_similar: |
     无法找到匹配的命令，但找到相似命令：
-      jv %{similars}
+      jvn %{similars}
 
-    使用 `jv -h` 查看帮助
+    使用 `jvn -h` 查看帮助
 
   no_node_found: |
     无法找到命令 `%{node}`
 
     这通常是编译期造成的问题，而非用户的错误输入
-    请使用 `jv -v -C` 获得详细的版本追溯，并联系开发人员
+    请使用 `jvn -v -C` 获得详细的版本追溯，并联系开发人员
 
     github: https://github.com/JustEnoughVCS/CommandLine/
 
   parse_error: |
     在将您的命令参数进行解析时出现错误！
-    请使用 `jv <命令> --help` 查看帮助
+    请使用 `jvn <命令> --help` 查看帮助
 
   renderer_override_but_request_help: |
     启用渲染器覆盖模式，但请求输出帮助信息
@@ -37,7 +34,7 @@ process_error:
     类型转换失败！
 
     这通常是编译期造成的问题，而非用户的错误输入
-    请使用 `jv -v -C` 获得详细的版本追溯，并联系开发人员
+    请使用 `jvn -v -C` 获得详细的版本追溯，并联系开发人员
 
     github: https://github.com/JustEnoughVCS/CommandLine/
 
@@ -56,19 +53,19 @@ prepare_error:
 
   local_config_not_found: |
     读取本地工作区配置文件失败，它可能不存在或格式不匹配
-    请使用 `jv update` 更新工作区信息后再尝试
+    请使用 `jvn update` 更新工作区信息后再尝试
 
   latest_info_not_found: |
     无法找到或读取最新上游信息！
-    请使用 `jv update` 更新工作区信息后再尝试
+    请使用 `jvn update` 更新工作区信息后再尝试
 
   latest_file_data_not_exist: |
     无法找到或读取成员 `%{member_id}` 的最新文件信息！
-    请使用 `jv update` 更新工作区信息后再尝试
+    请使用 `jvn update` 更新工作区信息后再尝试
 
   cached_sheet_not_found: |
     无法找到或读取上游结构表 `%{sheet_name}` 的缓存信息！
-    请使用 `jv update` 更新工作区信息后再尝试
+    请使用 `jvn update` 更新工作区信息后再尝试
 
   local_sheet_not_found: |
     无法找到或读取成员 `%{member_id}` 的本地结构表 `%{sheet_name}`
@@ -78,7 +75,7 @@ prepare_error:
     请检查当前工作区是否正确设置上游，并正在使用结构表
 
   no_sheet_in_use: |
-    当前没有在使用表，请使用 `jv use <结构表名称>` 使用一张结构表
+    当前没有在使用表，请使用 `jvn use <结构表名称>` 使用一张结构表
 
 execute_error:
   io: |
@@ -108,7 +105,7 @@ render_error:
   type_mismatch: |
     渲染类型不匹配！
     这通常是编译期造成的问题，而非用户的错误输入
-    请使用 `jv -v -C` 获得详细的版本追溯，并联系开发人员
+    请使用 `jvn -v -C` 获得详细的版本追溯，并联系开发人员
 
     github: https://github.com/JustEnoughVCS/CommandLine/
 

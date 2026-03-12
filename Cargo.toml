@@ -9,8 +9,9 @@ homepage = "https://github.com/JustEnoughVCS/CommandLine/"
 members = [
     "utils/",
     "tools/build_helper",
-    "macros/render_system_macros",
     "macros/cmd_system_macros",
+    "macros/helpdoc_system_macros",
+    "macros/render_system_macros",
 ]
 
 [workspace.package]
@@ -58,8 +59,9 @@ serde = { version = "1", features = ["derive"] }
 
 [dependencies]
 cli_utils = { path = "utils" }
-cmd_system_macros = { path = "macros/cmd_system_macros" }
 just_enough_vcs = { path = "../VersionControl", features = ["all"] }
+cmd_system_macros = { path = "macros/cmd_system_macros" }
+helpdoc_system_macros = { path = "macros/helpdoc_system_macros" }
 render_system_macros = { path = "macros/render_system_macros" }
 
 crossterm.workspace = true
@@ -77,6 +79,7 @@ ron = "0.11.0"
 rust-i18n = "3"
 serde_json = "1"
 serde_yaml = "0.9"
+strip_ansi_escapes = { version = "0.2", package = "strip-ansi-escapes" }
 tokio = { version = "1", features = ["full"] }
 toml = "0.9"
 walkdir = "2.5.0"

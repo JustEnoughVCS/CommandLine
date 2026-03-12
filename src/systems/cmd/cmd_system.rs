@@ -28,7 +28,7 @@ where
     Collect: Send,
 {
     /// Get help string for the command
-    fn get_help_str() -> String;
+    fn get_help_str() -> impl Future<Output = String> + Send;
 
     /// Run the command and convert the result into type-agnostic serialized information,
     /// then hand it over to the universal renderer for rendering.
@@ -72,7 +72,10 @@ where
             // skip execution and directly render help information
             if ctx.help {
                 let mut r = JVRenderResult::default();
-                r_println!(r, "{}", Self::get_help_str());
+                let help_str = Self::get_help_str().await;
+                if !help_str.is_empty() {
+                    r_println!(r, "{}", help_str);
+                }
                 return Ok(r);
             }
 
@@ -112,7 +115,7 @@ where
                             t = type_name::<Argument>()
                         )
                     );
-                    return Err(CmdProcessError::ParseError(Self::get_help_str()));
+                    return Err(CmdProcessError::ParseError(Self::get_help_str().await));
                 }
             };
 

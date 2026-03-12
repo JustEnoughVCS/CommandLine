@@ -6,9 +6,12 @@ use crate::{
         arg::single_file::JVSingleFileArgument, collect::single_file::JVSingleFileCollect,
         r#in::empty::JVEmptyInput, out::hex::JVHexOutput,
     },
-    systems::cmd::{
-        cmd_system::JVCommandContext,
-        errors::{CmdExecuteError, CmdPrepareError},
+    systems::{
+        cmd::{
+            cmd_system::JVCommandContext,
+            errors::{CmdExecuteError, CmdPrepareError},
+        },
+        helpdoc::helpdoc_viewer,
     },
 };
 use cmd_system_macros::exec;
@@ -20,8 +23,9 @@ type Arg = JVSingleFileArgument;
 type In = JVEmptyInput;
 type Collect = JVSingleFileCollect;
 
-fn help_str() -> String {
-    "Hello".to_string()
+async fn help_str() -> String {
+    helpdoc_viewer::display("commands/hexdump").await;
+    String::new()
 }
 
 async fn prepare(_args: &Arg, _ctx: &JVCommandContext) -> Result<In, CmdPrepareError> {

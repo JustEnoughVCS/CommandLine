@@ -11,6 +11,7 @@ use just_enough_vcs_cli::{
             processer::jv_cmd_process,
         },
         debug::verbose_logger::init_verbose_logger,
+        helpdoc::helpdoc_viewer,
     },
 };
 use just_progress::{
@@ -100,7 +101,7 @@ async fn main() {
     // Handle help when no arguments provided
     if args.len() < 1 && help {
         warn!("{}", t!("verbose.no_arguments"));
-        eprintln!("{}", md(t!("help")));
+        helpdoc_viewer::display_with_lang("Welcome_To_JVCS", &lang).await;
         exit(1);
     }
 

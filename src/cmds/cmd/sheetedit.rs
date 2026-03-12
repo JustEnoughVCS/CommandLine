@@ -4,9 +4,12 @@ use crate::{
         arg::sheetedit::JVSheeteditArgument, collect::single_file::JVSingleFileCollect,
         r#in::sheetedit::JVSheeteditInput, out::none::JVNoneOutput,
     },
-    systems::cmd::{
-        cmd_system::JVCommandContext,
-        errors::{CmdExecuteError, CmdPrepareError},
+    systems::{
+        cmd::{
+            cmd_system::JVCommandContext,
+            errors::{CmdExecuteError, CmdPrepareError},
+        },
+        helpdoc::helpdoc_viewer,
     },
 };
 use cli_utils::{
@@ -26,8 +29,9 @@ type Arg = JVSheeteditArgument;
 type In = JVSheeteditInput;
 type Collect = JVSingleFileCollect;
 
-fn help_str() -> String {
-    todo!()
+async fn help_str() -> String {
+    helpdoc_viewer::display("commands/sheetedit").await;
+    String::new()
 }
 
 async fn prepare(args: &Arg, _ctx: &JVCommandContext) -> Result<In, CmdPrepareError> {
