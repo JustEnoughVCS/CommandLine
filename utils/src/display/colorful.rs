@@ -3,19 +3,19 @@ use std::collections::VecDeque;
 use crossterm::style::Stylize;
 
 /// Trait for adding markdown formatting to strings
-pub trait Colorful {
-    fn colorful(&self) -> String;
+pub trait Markdown {
+    fn markdown(&self) -> String;
 }
 
-impl Colorful for &str {
-    fn colorful(&self) -> String {
-        colorful(self)
+impl Markdown for &str {
+    fn markdown(&self) -> String {
+        markdown(self)
     }
 }
 
-impl Colorful for String {
-    fn colorful(&self) -> String {
-        colorful(self)
+impl Markdown for String {
+    fn markdown(&self) -> String {
+        markdown(self)
     }
 }
 
@@ -29,6 +29,8 @@ impl Colorful for String {
 /// - Inline code: `` `text` `` (displayed as green)
 /// - Color tags: `[[color_name]]` and `[[/]]` to close color
 /// - Escape characters: `\*`, `\<`, `\>`, `` \` ``, `\_` for literal characters
+/// - Headings: `# Heading 1`, `## Heading 2`, up to `###### Heading 6`
+/// - Blockquote: `> text` (displays a gray background marker at the beginning of the line)
 ///
 /// Color tags support the following color names:
 /// Color tags support the following color names:
@@ -66,23 +68,139 @@ impl Colorful for String {
 ///
 /// # Examples
 /// ```
-/// use testing::fmt::colorful;
-///
-/// let formatted = colorful("Hello **world**!");
+/// # use cli_utils::display::colorful::markdown;
+/// let formatted = markdown("Hello **world**!");
 /// println!("{}", formatted);
 ///
-/// let colored = colorful("[[red]]Red text[[/]] and normal text");
+/// let colored = markdown("[[red]]Red text[[/]] and normal text");
 /// println!("{}", colored);
 ///
-/// let nested = colorful("[[blue]]Blue [[green]]Green[[/]] Blue[[/]] normal");
+/// let nested = markdown("[[blue]]Blue [[green]]Green[[/]] Blue[[/]] normal");
 /// println!("{}", nested);
 /// ```
-pub fn colorful(text: impl AsRef<str>) -> String {
-    let text = text.as_ref().trim();
+pub fn markdown(text: impl AsRef<str>) -> String {
+    let text = text.as_ref();
+    let lines: Vec<&str> = text.lines().collect();
+    let mut result = String::new();
+    let mut content_indent = 0;
+
+    for line in lines {
+        // Don't trim the line initially, we need to check if it starts with #
+        let trimmed_line = line.trim();
+        let mut line_result = String::new();
+
+        // Check if line starts with # for heading
+        // Check if the original line (not trimmed) starts with #
+        if line.trim_start().starts_with('#') {
+            let chars: Vec<char> = line.trim_start().chars().collect();
+            let mut level = 0;
+
+            // Count # characters at the beginning
+            while level < chars.len() && level < 7 && chars[level] == '#' {
+                level += 1;
+            }
+
+            // Cap level at 6
+            let effective_level = if level > 6 { 6 } else { level };
+
+            // Skip # characters and any whitespace after them
+            let mut content_start = level;
+            while content_start < chars.len() && chars[content_start].is_whitespace() {
+                content_start += 1;
+            }
+
+            // Extract heading content
+            let heading_content: String = if content_start < chars.len() {
+                chars[content_start..].iter().collect()
+            } else {
+                String::new()
+            };
+
+            // Process the heading content with formatting
+            let processed_content = process_line(&heading_content);
+
+            // Format heading as white background, black text, bold
+            // ANSI codes: \x1b[1m for bold, \x1b[47m for white background, \x1b[30m for black text
+            let formatted_heading =
+                format!("\x1b[1m\x1b[47m\x1b[30m {} \x1b[0m", processed_content);
+
+            // Add indentation to the heading line itself
+            // Heading indentation = level - 1
+            let heading_indent = if effective_level > 0 {
+                effective_level - 1
+            } else {
+                0
+            };
+            let indent = " ".repeat(heading_indent);
+            line_result.push_str(&indent);
+            line_result.push_str(&formatted_heading);
+
+            // Update content indent level for subsequent content
+            // Content after heading should be indented by effective_level
+            content_indent = effective_level;
+        } else if !trimmed_line.is_empty() {
+            // Process regular line with existing formatting
+            let processed_line = process_line_with_quote(trimmed_line);
+
+            // Add indentation based on content_indent
+            let indent = " ".repeat(content_indent);
+            line_result.push_str(&indent);
+            line_result.push_str(&processed_line);
+        } else {
+            line_result.push_str(" ");
+        }
+
+        if !line_result.is_empty() {
+            result.push_str(&line_result);
+            result.push('\n');
+        }
+    }
+
+    // Remove trailing newline
+    if result.ends_with('\n') {
+        result.pop();
+    }
+
+    result
+}
+
+// Helper function to process a single line with existing formatting and handle > quotes
+fn process_line_with_quote(line: &str) -> String {
+    let chars: Vec<char> = line.chars().collect();
+
+    // Check if line starts with '>' and not escaped
+    if !chars.is_empty() && chars[0] == '>' {
+        // Check if it's escaped
+        if chars.len() > 1 && chars[1] == '\\' {
+            // It's \>, so treat as normal text starting from position 0
+            return process_line(line);
+        }
+
+        // It's a regular > at the beginning, replace with gray background gray text space
+        let gray_bg_space = "\x1b[48;5;242m\x1b[38;5;242m \x1b[0m";
+        let rest_of_line = if chars.len() > 1 {
+            chars[1..].iter().collect::<String>()
+        } else {
+            String::new()
+        };
+
+        // Process the rest of the line normally
+        let processed_rest = process_line(&rest_of_line);
+
+        // Combine the gray background space with the processed rest
+        format!("{}{}", gray_bg_space, processed_rest)
+    } else {
+        // No > at the beginning, process normally
+        process_line(line)
+    }
+}
+
+// Helper function to process a single line with existing formatting
+fn process_line(line: &str) -> String {
     let mut result = String::new();
     let mut color_stack: VecDeque<String> = VecDeque::new();
 
-    let chars: Vec<char> = text.chars().collect();
+    let chars: Vec<char> = line.chars().collect();
     let mut i = 0;
 
     while i < chars.len() {

@@ -114,6 +114,7 @@ async fn main() {
             help,
             confirmed,
             args: args.clone(),
+            lang,
         },
         renderer_override,
     );

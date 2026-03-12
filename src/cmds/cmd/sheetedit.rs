@@ -10,9 +10,8 @@ use crate::{
     },
 };
 use cli_utils::{
-    display::table::Table,
-    legacy::{env::get_default_editor, input::input_with_editor_cutsom},
-    string_vec,
+    display::table::Table, env::editor::get_default_editor,
+    input::editor::input_with_editor_cutsom, string_vec,
 };
 use cmd_system_macros::exec;
 use just_enough_vcs::system::sheet_system::{mapping::LocalMapping, sheet::SheetData};

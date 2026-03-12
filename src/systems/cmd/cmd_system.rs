@@ -18,6 +18,7 @@ pub struct JVCommandContext {
     pub help: bool,
     pub confirmed: bool,
     pub args: Vec<String>,
+    pub lang: String,
 }
 
 pub trait JVCommand<Argument, Input, Collect>
