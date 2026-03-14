@@ -321,6 +321,7 @@ verbose:
   disable_helpdoc: 帮助文档查看器已禁用
   setup_i18n: 设置语言为 `%{lang}`
   setup_renderer: 设置渲染器为 `%{renderer}`
+  redirect_to_version_command: 重定向至 `version` 命令
   no_error_logs: 禁用错误输出
   help: 帮助符号已输入，将不会执行命令
   confirmed: 确认符号已输入，所有命令将无需确认即可运行

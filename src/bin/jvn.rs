@@ -89,8 +89,13 @@ async fn main() {
     // Other flags
     let no_error_logs = special_flag!(args, "--no-error-logs");
     let help = special_flag!(args, "--help") || special_flag!(args, "-h");
+    let version = special_flag!(args, "--version") || special_flag!(args, "-v");
     let confirmed = special_flag!(args, "--confirm") || special_flag!(args, "-C");
 
+    if version {
+        args.insert(0, "version".to_string());
+        trace!("{}", t!("verbose.redirect_to_version_command"));
+    }
     if no_error_logs {
         trace!("{}", t!("verbose.no_error_logs"));
     }

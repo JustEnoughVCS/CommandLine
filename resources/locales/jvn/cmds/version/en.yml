@@ -1,0 +1,20 @@
+version:
+  banner_title_line: JustEnoughVCS
+  banner_cmd_version: |
+    CORE: %{cli_version} (%{build_time})
+  banner_core_version: |
+     CLI: %{core_version}
+  no_banner_output: |
+    %{version}
+  no_banner_output_with_compile_info: |
+    VERSION: %{version}
+
+  compile_info:
+    info: |
+      COMPILE_INFO:
+      __      Date: [[cyan]]%{build_time}[[/]]
+      __    Target: [[cyan]]%{target}[[/]]
+      __  Platform：[[cyan]]%{platform} - %{toolchain}[[/]]
+
+      __      CORE：[[cyan]]%{core_branch}[[/]] (Commit: %{core_commit})
+      __       CLI：[[cyan]]%{cli_branch}[[/]] (Commit: %{cli_commit})

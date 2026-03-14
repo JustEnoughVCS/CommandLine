@@ -21,6 +21,13 @@ Show command help.
 > Or use `jvn helpdoc <DOCUMENT>` 
 > for full docs.
 
+### Version
+**Flag**: `--version` or `-v`
+Redirects the current command to the `version` command
+to display version information.
+> For usage of the version command,
+> see `commands/version`
+
 ### Renderer Override
 **Flag**: `--renderer <RENDERER>`
 Override output format.

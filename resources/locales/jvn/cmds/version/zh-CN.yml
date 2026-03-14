@@ -1,0 +1,20 @@
+version:
+  banner_title_line: JustEnoughVCS
+  banner_cmd_version: |
+    命令行版本: %{cli_version} (%{build_time})
+  banner_core_version: |
+    核心库版本: %{core_version}
+  no_banner_output: |
+    %{version}
+  no_banner_output_with_compile_info: |
+    版本: %{version}
+
+  compile_info:
+    info: |
+      编译信息:
+      __  时间: [[cyan]]%{build_time}[[/]]
+      __  目标: [[cyan]]%{target}[[/]]
+      __  平台：[[cyan]]%{platform} - %{toolchain}[[/]]
+
+      __  核心库：[[cyan]]%{core_branch}[[/]] (Commit: %{core_commit})
+      __  命令行：[[cyan]]%{cli_branch}[[/]] (Commit: %{cli_commit})
