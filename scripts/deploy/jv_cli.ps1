@@ -47,10 +47,10 @@ Set-Alias jmv jmv
 ### COMPLETION ###
 ##################
 
-if (Test-Path "$SCRIPT_DIR\comp\jv.ps1") {
+if (Test-Path "$SCRIPT_DIR\_legacy\comp\jv.ps1") {
     . "$SCRIPT_DIR\comp\jv.ps1"
 }
-if (Test-Path "$SCRIPT_DIR\comp\jvv.ps1") {
+if (Test-Path "$SCRIPT_DIR\_legacy\comp\jvv.ps1") {
     . "$SCRIPT_DIR\comp\jvv.ps1"
 }
 

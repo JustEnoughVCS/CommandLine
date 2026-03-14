@@ -4,40 +4,63 @@ target-dir = "./.temp/target/"
 [publish]
 target-dir = "./.temp/deploy/"
 binaries = [
+    "jvii",
+    "jvii.exe",
+
+    "jvn",
+    "jvn.exe",
+
+    "jvn_comp",
+    "jvn_comp.exe",
+
     # The legacy command line
     "jv",
     "jv.exe",
 
     "jvv",
     "jvv.exe",
-
-    "jvii",
-    "jvii.exe",
-
-    # The new command line
-    "jvn",
-    "jvn.exe"
 ]
 
-############
-### Bash ###
-############
+#####################
+### Bash/Zsh/Fish ###
+#####################
 
 # Completions
+[copies.completion_jvn_bash]
+from = "scripts/deploy/completions/bash.sh"
+to = "comp/jvn_bash.sh"
+platform = [ "linux", "macos" ]
+
+[copies.completion_jvn_zsh]
+from = "scripts/deploy/completions/zsh.sh"
+to = "comp/jvn_zsh.sh"
+platform = [ "linux", "macos" ]
+
+[copies.completion_jvn_fish]
+from = "scripts/deploy/completions/fish.fish"
+to = "comp/jvn_fish.fish"
+platform = [ "linux", "macos" ]
+
+# Legacy Completions
 [copies.completion_jv_bash]
-from = "scripts/deploy/completions/bash/completion_jv.sh"
-to = "comp/jv.sh"
+from = "scripts/deploy/legacy_completions/bash/completion_jv.sh"
+to = "_legacy/comp/jv.sh"
 platform = [ "linux", "macos" ]
 
 [copies.completion_jvv_bash]
-from = "scripts/deploy/completions/bash/completion_jvv.sh"
-to = "comp/jvv.sh"
+from = "scripts/deploy/legacy_completions/bash/completion_jvv.sh"
+to = "_legacy/comp/jvv.sh"
 platform = [ "linux", "macos" ]
 
 # Entries
-[copies.entry_bash]
+[copies.entry_legacy_bash]
 from = "scripts/deploy/jv_cli.sh"
 to = "jv_cli.sh"
+platform = [ "linux", "macos" ]
+
+[copies.entry_bash]
+from = "scripts/deploy/jvn.sh"
+to = "jvn.sh"
 platform = [ "linux", "macos" ]
 
 ##################
@@ -45,20 +68,32 @@ platform = [ "linux", "macos" ]
 ##################
 
 # Completions
+[copies.completion_jvn_powershell]
+from = "scripts/deploy/completions/powershell.ps1"
+to = "comp/jvn_pwsl.ps1"
+platform = [ "windows" ]
+
+# Legacy Completions
 [copies.completion_jv_powershell]
-from = "scripts/deploy/completions/powershell/completion_jv.ps1"
-to = "comp/jv.ps1"
+from = "scripts/deploy/legacy_completions/powershell/completion_jv.ps1"
+to = "_legacy/comp/jv.ps1"
 platform = [ "windows" ]
 
 [copies.completion_jvv_powershell]
-from = "scripts/deploy/completions/powershell/completion_jvv.ps1"
-to = "comp/jvv.ps1"
+from = "scripts/deploy/legacy_completions/powershell/completion_jvv.ps1"
+to = "_legacy/comp/jvv.ps1"
 platform = [ "windows" ]
 
+
 # Entries
-[copies.entry_powershell]
+[copies.entry_legacy_powershell]
 from = "scripts/deploy/jv_cli.ps1"
 to = "jv_cli.ps1"
+platform = [ "windows" ]
+
+[copies.entry_powershell]
+from = "scripts/deploy/jvn.ps1"
+to = "jvn.ps1"
 platform = [ "windows" ]
 
 ##################
@@ -66,11 +101,11 @@ platform = [ "windows" ]
 ##################
 
 [copies.zsh_plugin]
-from = "scripts/deploy/zsh_support/jvcs.plugin.zsh"
-to = "zsh_support/jvcs.plugin.zsh"
+from = "scripts/deploy/legacy_zsh_support/jvcs.plugin.zsh"
+to = "_legacy/zsh_support/jvcs.plugin.zsh"
 platform = [ "linux", "macos" ]
 
 [copies.zsh_plugin_installation]
-from = "scripts/deploy/zsh_support/how_to_install.md"
-to = "zsh_support/how_to_install.md"
+from = "scripts/deploy/legacy_zsh_support/how_to_install.md"
+to = "_legacy/zsh_support/how_to_install.md"
 platform = [ "linux", "macos" ]
