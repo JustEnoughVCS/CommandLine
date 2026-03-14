@@ -9,6 +9,7 @@ src/cmds/
 ├── arg/          # 命令行参数定义
 ├── cmd/          # 命令实现
 ├── collect/      # 资源收集信息
+├── comp/         # 命令补全脚本
 ├── converter/    # 数据转换器
 ├── in/           # 输入数据结构
 ├── out/          # 输出数据结构
@@ -83,6 +84,35 @@ pub struct JVSumOutput {
     pub result: i32,
 }
 ```
+
+### 5. 补全脚本
+- 实现命令的自动补全功能
+- 命名规范：与命令同名
+- 位置：`src/cmds/comp/{command_name}.rs`
+- 函数签名必须为 `pub fn comp(ctx: CompletionContext) -> Option<Vec<String>>`
+
+示例：helpdoc 命令的补全脚本
+```rust
+// src/cmds/comp/helpdoc.rs
+use crate::systems::{comp::context::CompletionContext, helpdoc};
+
+pub fn comp(ctx: CompletionContext) -> Option<Vec<String>> {
+    if ctx.previous_word == "helpdoc" {
+        return Some(
+            helpdoc::get_helpdoc_list()
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
+        );
+    }
+    None
+}
+```
+
+**补全脚本返回值说明：**
+- 返回 `None`：系统会建议文件列表
+- 返回 `Some(Vec::new())`：不进行任何建议
+- 返回 `Some(vec!["suggestion1", "suggestion2"])`：建议具体内容
 
 ## 命令执行阶段
 
@@ -198,7 +228,11 @@ pub async fn render(data: &JVSumOutput) -> Result<JVRenderResult, CmdRenderError
    - 在 `renderer/` 目录创建渲染器文件
    - 使用 `#[result_renderer]` 宏
 
-5. **测试命令**
+5. **实现补全脚本 (可选)**
+   - 在 `comp/` 目录创建补全脚本文件
+   - 实现 `comp` 函数，签名必须为 `pub fn comp(ctx: CompletionContext) -> Option<Vec<String>>`
+
+6. **测试命令**
    - 使用 `cargo build` 检查编译错误
    - 运行命令测试功能
 
@@ -241,6 +275,11 @@ pub async fn render(data: &JVSumOutput) -> Result<JVRenderResult, CmdRenderError
    - 输出结构应包含足够的信息供渲染器使用
    - 考虑不同输出格式的需求
 
+5. **补全脚本**
+   - 为常用参数提供智能补全建议
+   - 根据上下文动态生成补全选项
+   - 合理使用返回值控制补全行为
+
 ## 示例命令参考
 
 查看现有命令实现以获取更多灵感：
@@ -264,3 +303,4 @@ pub async fn render(data: &JVSumOutput) -> Result<JVRenderResult, CmdRenderError
    .\scripts\dev\dev_deploy.ps1
    
    jvn sum 1 2
+   ```

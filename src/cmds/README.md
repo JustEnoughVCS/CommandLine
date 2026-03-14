@@ -9,6 +9,7 @@ src/cmds/
 ├── arg/          # CLI arg definitions
 ├── cmd/          # Command impl
 ├── collect/      # Resource collection
+├── comp/         # Command completion scripts
 ├── converter/    # Data converters
 ├── in/           # Input data structs
 ├── out/          # Output data structs
@@ -83,6 +84,35 @@ pub struct JVSumOutput {
     pub result: i32,
 }
 ```
+
+### 5. Completion Script
+- Implements command auto-completion
+- Naming: Same as command name
+- Location: `src/cmds/comp/{command_name}.rs`
+- Function signature must be `pub fn comp(ctx: CompletionContext) -> Option<Vec<String>>`
+
+Example: helpdoc command completion script
+```rust
+// src/cmds/comp/helpdoc.rs
+use crate::systems::{comp::context::CompletionContext, helpdoc};
+
+pub fn comp(ctx: CompletionContext) -> Option<Vec<String>> {
+    if ctx.previous_word == "helpdoc" {
+        return Some(
+            helpdoc::get_helpdoc_list()
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
+        );
+    }
+    None
+}
+```
+
+**Completion Script Return Value Explanation:**
+- Return `None`: System will suggest file list
+- Return `Some(Vec::new())`: No suggestions
+- Return `Some(vec!["suggestion1", "suggestion2"])`: Suggest specific content
 
 ## Command Execution Phases
 
@@ -198,7 +228,11 @@ pub async fn render(data: &JVSumOutput) -> Result<JVRenderResult, CmdRenderError
    - Create renderer file in `renderer/` dir
    - Use `#[result_renderer]` macro
 
-5. **Test Command**
+5. **Implement Completion Script (Optional)**
+   - Create completion script file in `comp/` dir
+   - Implement `comp` function with signature `pub fn comp(ctx: CompletionContext) -> Option<Vec<String>>`
+
+6. **Test Command**
    - Use `cargo build` to check compile errors
    - Run cmd to test functionality
 
@@ -241,6 +275,11 @@ Use `log` for debugging during cmd dev:
    - Output struct should have enough info for renderer
    - Consider needs of different output formats
 
+5. **Completion Scripts**
+   - Provide intelligent completion suggestions for common parameters
+   - Generate completion options dynamically based on context
+   - Use return values appropriately to control completion behavior
+
 ## Example Commands
 
 Check existing cmd impls for inspiration:
@@ -264,3 +303,4 @@ Check existing cmd impls for inspiration:
    .\scripts\dev\dev_deploy.ps1
 
    jvn sum 1 2
+   ```
