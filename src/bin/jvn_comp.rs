@@ -145,29 +145,74 @@ fn try_comp_cmd_nodes(ctx: &CompletionContext) -> Option<Vec<String>> {
     // Filter command nodes that match the input path
     let mut suggestions = Vec::new();
 
-    for node in cmd_nodes {
-        let node_parts: Vec<&str> = node.split(' ').collect();
-
-        #[cfg(debug_assertions)]
-        debug!("Checking node: '{}', parts: {:?}", node, node_parts);
-
-        // If input path is longer than node parts, skip
-        if input_path.len() > node_parts.len() {
-            continue;
+    // Special case: if input_path is empty, return all first-level commands
+    if input_path.is_empty() {
+        for node in cmd_nodes {
+            let node_parts: Vec<&str> = node.split(' ').collect();
+            if !node_parts.is_empty() && !suggestions.contains(&node_parts[0].to_string()) {
+                suggestions.push(node_parts[0].to_string());
+            }
         }
+    } else {
+        // Get the current word
+        let current_word = input_path.last().unwrap();
 
-        // Check if input path matches the beginning of node parts
-        let mut matches = true;
-        for i in 0..input_path.len() {
-            if i >= node_parts.len() || input_path[i] != node_parts[i] {
-                matches = false;
-                break;
+        // First, handle partial match completion for the current word
+        // Only perform current word completion when current_word is not empty
+        if input_path.len() == 1 && !ctx.current_word.is_empty() {
+            for node in &cmd_nodes {
+                let node_parts: Vec<&str> = node.split(' ').collect();
+                if !node_parts.is_empty() && node_parts[0].starts_with(current_word) {
+                    if !suggestions.contains(&node_parts[0].to_string()) {
+                        suggestions.push(node_parts[0].to_string());
+                    }
+                }
+            }
+
+            // If suggestions for the current word are found, return directly
+            if !suggestions.is_empty() {
+                suggestions.sort();
+                suggestions.dedup();
+                #[cfg(debug_assertions)]
+                debug!(
+                    "try_comp_cmd_nodes: current word suggestions = {:?}",
+                    suggestions
+                );
+                return Some(suggestions);
             }
         }
 
-        if matches && input_path.len() < node_parts.len() {
-            // Add the next part as suggestion
-            suggestions.push(node_parts[input_path.len()].to_string());
+        // Handle next-level command suggestions
+        for node in cmd_nodes {
+            let node_parts: Vec<&str> = node.split(' ').collect();
+
+            #[cfg(debug_assertions)]
+            debug!("Checking node: '{}', parts: {:?}", node, node_parts);
+
+            // If input path is longer than node parts, skip
+            if input_path.len() > node_parts.len() {
+                continue;
+            }
+
+            // Check if input path matches the beginning of node parts
+            let mut matches = true;
+            for i in 0..input_path.len() {
+                if i >= node_parts.len() {
+                    matches = false;
+                    break;
+                }
+
+                // For next-level suggestions, all parts must match exactly
+                if input_path[i] != node_parts[i] {
+                    matches = false;
+                    break;
+                }
+            }
+
+            if matches && input_path.len() < node_parts.len() {
+                // Add the next part as suggestion
+                suggestions.push(node_parts[input_path.len()].to_string());
+            }
         }
     }
 
