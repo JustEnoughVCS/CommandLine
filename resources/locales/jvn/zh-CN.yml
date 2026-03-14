@@ -318,6 +318,7 @@ logger:
 verbose:
   setup_progress: 已初始化进度条
   setup_verbose: 启动 `Verbose` 模式
+  disable_helpdoc: 帮助文档查看器已禁用
   setup_i18n: 设置语言为 `%{lang}`
   setup_renderer: 设置渲染器为 `%{renderer}`
   no_error_logs: 禁用错误输出

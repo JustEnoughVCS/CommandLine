@@ -29,6 +29,7 @@ _*.rs
 /src/cmds/arg.rs
 /src/cmds/cmd.rs
 /src/cmds/collect.rs
+/src/cmds/converter.rs
 /src/cmds/in.rs
 /src/cmds/out.rs
 /src/cmds/renderer.rs

@@ -54,6 +54,9 @@ path = "src/cmds/cmd.rs"
 [collect.collects]
 path = "src/cmds/collect.rs"
 
+[collect.converters]
+path = "src/cmds/converter.rs"
+
 [collect.inputs]
 path = "src/cmds/in.rs"
 

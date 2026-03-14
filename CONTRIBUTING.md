@@ -1,12 +1,12 @@
 # Contribution Guide
 
-Welcome to contributing to the JustEnoughVCS command-line tool! This guide is designed to help you quickly get started with the development process and understand the project's code standards. Please read the following content to ensure your contributions can be accepted smoothly.
+Thank you for contributing to the JustEnoughVCS command-line tool! This guide is designed to help you quickly get started with the development process and understand the project's code standards.
 
 
 
-## Local Development
+## Process
 
-### Environment Setup
+### Deployment
 1. Clone the core library ([VersionControl](https://github.com/JustEnoughVCS/VersionControl)) and your forked command-line library, arranging them in the following directory structure:
 
 ```
@@ -14,11 +14,12 @@ Welcome to contributing to the JustEnoughVCS command-line tool! This guide is de
 │      Cargo.lock
 │      Cargo.toml
 └─ VersionControl
-       Cargo.lock
-       Cargo.toml
+			 Cargo.lock
+			 Cargo.toml
 ```
 
-2. In the core library directory, execute `setup.sh` (Linux/macOS) or `setup.ps1` (Windows) based on your operating system.
+2. Switch the core library to the `dev` branch.
+3. In the core library directory, execute `setup.sh` (Linux/macOS) or `setup.ps1` (Windows) based on your operating system.
 
 ```bash
 cd VersionControl
@@ -29,14 +30,10 @@ cd VersionControl
 
 
 
-### Development Workflow
+### Development
 
-1.  Create a new feature branch from the `dev` branch, using the naming format `feat/xxxx`.
-2.  It is recommended to add the original repository as a remote upstream to pull updates regularly:
-```bash
-git remote add upstream https://github.com/JustEnoughVCS/CommandLine
-git pull upstream dev
-```
+1.  Create a new feature branch from the `dev` branch, using the naming format `feat/xxxx`, `fix/xxxx`, or `doc/xxxx`.
+2.  Write your code, fixes, or documentation.
 
 
 
@@ -48,9 +45,9 @@ Use `scripts/dev/dev_deploy.sh` (or `.ps1`) for test builds. The build artifacts
 
 ```
 # ...
-	
+
 . C:\...\JustEnoughVCS\CommandLine\.temp\deploy\jv_cli.ps1
-	
+
 # ...
 ```
 <center>C:\Users\YourName\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1</center>
@@ -76,7 +73,7 @@ source ~/.../JustEnoughVCS/CommandLine/.temp/deploy/jv_cli.sh
 
 
 
-### Submitting and Merging
+### Submission
 -   Before pushing code, be sure to execute `scripts/dev/deploy.sh` for a formal local deployment to check for potential issues.
 -   When creating a Pull Request (PR), please set the target branch to the command-line repository's `dev`. **PRs submitted to the `main` or `deploy/` branches will not be processed.**
 
@@ -85,11 +82,11 @@ source ~/.../JustEnoughVCS/CommandLine/.temp/deploy/jv_cli.sh
 ### Important Notes
 -   **Rust Version**: It is recommended to use `rustc 1.92.0 (ded5c06cf 2025-12-08) (stable)`.
 -   **File Size**: **Strictly prohibit** committing binary files larger than 1MB to the repository. If necessary, please discuss it first in an [Issue](https://github.com/JustEnoughVCS/CommandLine/issues).
--   **Core Library Modifications**: If you need to modify the core library, please refer to the `CONTRIBUTE.md` document in the [VersionControl](https://github.com/JustEnoughVCS/VersionControl) repository.
+-   **Core Library Modifications**: If you need to modify the core library, please refer to the `CONTRIBUTING.md` document in the [VersionControl](https://github.com/JustEnoughVCS/VersionControl) repository.
 
 
 
-## Development Standards
+## Standards
 
 ### Code Structure
 
@@ -101,22 +98,25 @@ A complete command consists of the following components, organized by module:
 | **Argument Definition** | `src/cmds/arg/` | Defines command-line inputs using `clap`. |
 | **Input Data** | `src/cmds/in/` | User input data during command execution. |
 | **Collected Data** | `src/cmds/collect/` | Data collected locally during command execution. |
+| **Converter** | `src/cmds/converter/` | Converter between core library types and command-line types. |
 | **Output Data** | `src/cmds/out/` | The command's output data. |
 | **Renderer** | `src/cmds/renderer/` | The default presentation method for data. |
+| **Override Renderer** | `src/cmds/override/renderer/` | Customizable data presentation methods. |
 
 
 
 ### Naming Conventions
 
-- **File Naming**: Follow the format of `src/cmds/cmd/status.rs`, i.e., use the command name as the filename.
+- **File Naming**: Refer to the implementation of `src/cmds/cmd/sheetdump.rs`, i.e., use the command name as the filename.
 - **Multi-level Subcommands**: In the `cmds` directory, use the `sub_subsub.rs` format for filenames (e.g., `sheet_drop.rs`).
 - **Struct Naming**:
-				- Command Struct: `JV{Subcommand}{Subsubcommand}Command` (e.g., `JVSheetDropCommand`).
+				- Command Struct: `JV{Subcmd}{Subsubcmd}Command` (e.g., `JVSheetDropCommand`).
 				- Other component structs follow the same pattern:
 								- `JV{XXX}Argument`
 								- `JV{XXX}Input`
 								- `JV{XXX}Output`
 								- `JV{XXX}Collect`
+								- `JV{XXX}Converter`
 								- `JV{XXX}Renderer`
 
 

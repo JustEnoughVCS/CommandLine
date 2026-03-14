@@ -11,7 +11,10 @@ use just_enough_vcs_cli::{
             processer::jv_cmd_process,
         },
         debug::verbose_logger::init_verbose_logger,
-        helpdoc::{DEFAULT_HELPDOC, helpdoc_viewer},
+        helpdoc::{
+            DEFAULT_HELPDOC,
+            helpdoc_viewer::{self},
+        },
     },
 };
 use just_progress::{

@@ -320,6 +320,7 @@ logger:
 verbose:
   setup_progress: Progress bar initialized
   setup_verbose: Starting `Verbose` mode
+  disable_helpdoc: Helpdoc Viewer disabled
   setup_i18n: Setting language to `%{lang}`
   setup_renderer: Setting renderer to `%{renderer}`
   no_error_logs: Disabling error output

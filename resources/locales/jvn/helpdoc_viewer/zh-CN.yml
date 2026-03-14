@@ -4,3 +4,7 @@ helpdoc_viewer:
       _列表_ | ↑↓: 翻页 | ←→/Space: 切换视图 | Q: 退出
   content_area_hint: |
       _阅读_ | ↑↓: 浏览 | ←→/Space: 切换视图 | Q: 退出
+
+  verbose:
+    no_helpdoc_output: 将直接渲染输出文章 `%{doc}`
+    helpdoc_output: 将使用帮助文档查看器查看文章 `%{doc}`

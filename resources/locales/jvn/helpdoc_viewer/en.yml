@@ -4,3 +4,7 @@ helpdoc_viewer:
       _List_ | ↑↓: Page | ←→/Space: Switch view | Q: Quit
   content_area_hint: |
       _Read_ | ↑↓: Page | ←→/Space: Switch view | Q: Quit
+
+  verbose:
+    no_helpdoc_output: will directly render the output document `%{doc}`
+    helpdoc_output: will use the help document viewer to view the document `%{doc}`

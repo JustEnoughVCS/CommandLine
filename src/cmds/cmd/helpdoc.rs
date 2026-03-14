@@ -22,7 +22,7 @@ type In = JVHelpdocInput;
 type Collect = JVEmptyCollect;
 
 async fn help_str() -> String {
-    helpdoc_viewer::display(DEFAULT_HELPDOC).await;
+    helpdoc_viewer::display("commands/helpdoc").await;
     String::new()
 }
 

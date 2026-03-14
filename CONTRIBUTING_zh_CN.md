@@ -1,12 +1,12 @@
 # 贡献指南
 
-欢迎您愿意为 JustEnoughVCS 命令行工具贡献代码！本指南旨在帮助您快速上手开发流程，并了解项目的代码规范。请先阅读以下内容，以确保您的贡献能够顺利被接受。
+非常感谢您为 `JustEnoughVCS` 命令行工具贡献代码！本指南旨在帮助您快速上手开发流程，并了解项目的代码规范。
 
 
 
-## 本地开发流程
+## 流程
 
-### 环境准备
+### 部署
 1. 克隆核心库（[VersionControl](https://github.com/JustEnoughVCS/VersionControl)）以及您分叉的命令行库，按照如下文件格式放置
 
 ```
@@ -18,6 +18,7 @@
        Cargo.toml
 ```
 
+2. 将核心库切换到 `dev` 分支
 2. 在核心库目录下，根据您的操作系统执行 `setup.sh` (Linux/macOS) 或 `setup.ps1` (Windows)。
 
 
@@ -30,18 +31,14 @@ cd VersionControl
 
 
 
-### 开发流程
+### 开发
 
-1.  从 `dev` 分支创建新的功能分支，命名格式为 `feat/xxxx`。
-2.  建议将原始仓库添加为远程上游仓库，以便定期拉取更新：
-    ```bash
-    git remote add upstream https://github.com/JustEnoughVCS/CommandLine
-    git pull upstream dev
-    ```
+1.  从 `dev` 分支创建新的功能分支，命名格式为 `feat/xxxx`、`fix/xxxx`、`doc/xxxx`
+1.  编写您的代码、修复、或文档。
 
 
 
-### 构建与测试
+### 构建&测试
 
 使用 `scripts/dev/dev_deploy.sh` (或 `.ps1`) 进行测试构建。构建产物位于 `.temp/deploy/` 目录。
 
@@ -77,7 +74,7 @@ sources ~/.../JustEnoughVCS/CommandLine/.temp/deploy/jv_cli.sh
 
 
 
-### 提交与合并
+### 提交
 -   在推送代码前，请务必执行 `scripts/dev/deploy.sh` 进行一次正式的本地部署，以检查潜在问题
 -   创建 Pull Request (PR) 时，请将目标分支设置为命令行仓库的 `dev`。**提交至 `main` 或 `deploy/` 分支的 PR 将不予处理**
 
@@ -86,11 +83,11 @@ sources ~/.../JustEnoughVCS/CommandLine/.temp/deploy/jv_cli.sh
 ### 注意事项
 -   **Rust 版本**: 推荐使用 `rustc 1.92.0 (ded5c06cf 2025-12-08) (stable)`
 -   **文件大小**: **严禁** 向仓库提交超过 1MB 的二进制文件，如有必要，请先在 [Issue](https://github.com/JustEnoughVCS/CommandLine/issues) 中讨论
--   **核心库修改**: 如需修改核心库，请参考 [VersionControl](https://github.com/JustEnoughVCS/VersionControl) 仓库中的 `CONTRIBUTE.md` 文档
+-   **核心库修改**: 如需修改核心库，请参考 [VersionControl](https://github.com/JustEnoughVCS/VersionControl) 仓库中的 `CONTRIBUTING.md` 文档
 
 
 
-## 开发规范
+## 规范
 
 ### 代码结构
 
@@ -102,22 +99,25 @@ sources ~/.../JustEnoughVCS/CommandLine/.temp/deploy/jv_cli.sh
 | **参数定义** | `src/cmds/arg/` | 使用 `clap` 定义命令行输入。 |
 | **输入数据** | `src/cmds/in/` | 命令运行阶段的用户输入数据。 |
 | **收集数据** | `src/cmds/collect/` | 命令运行阶段从本地收集的数据。 |
+| **转换器** | `src/cmds/converter/` | 核心库类型和命令行类型的转换器。 |
 | **输出数据** | `src/cmds/out/` | 命令的输出数据。 |
 | **渲染器** | `src/cmds/renderer/` | 数据的默认呈现方式。 |
+| **覆盖渲染器** | `src/cmds/override/renderer/` | 可自定义的数据呈现方式。 |
 
 
 
 ### 命名规范
 
-- **文件命名**: 请遵循 `src/cmds/cmd/status.rs` 的格式，即使用命令名称作为文件名
+- **文件命名**: 请参考 `src/cmds/cmd/sheetdump.rs` 的实现，使用命令名称作为文件名
 - **多级子命令**: 在 `cmds` 目录下，使用 `sub_subsub.rs` 格式命名文件（例如：`sheet_drop.rs`）
 - **结构体命名**:
-    - 命令结构体: `JV{Subcommand}{Subsubcommand}Command` (例如：`JVSheetDropCommand`)
+    - 命令结构体: `JV{Subcmd}{Subsubcmd}Command` (例如：`JVSheetDropCommand`)
     - 其他组件结构体遵循相同模式：
         - `JV{XXX}Argument`
         - `JV{XXX}Input`
         - `JV{XXX}Output`
         - `JV{XXX}Collect`
+        - `JV{XXX}Converter`
         - `JV{XXX}Renderer`
         
         
