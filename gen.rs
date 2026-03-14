@@ -2,6 +2,7 @@ pub mod constants;
 pub mod env;
 pub mod gen_commands_file;
 pub mod gen_compile_info;
+pub mod gen_completions_entries;
 pub mod gen_iscc_script;
 pub mod gen_mod_files;
 pub mod gen_override_renderer;

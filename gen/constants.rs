@@ -1,4 +1,5 @@
 pub const COMMANDS_PATH: &str = "./src/cmds/cmd/";
+pub const COMPLETIONS_PATH: &str = "./src/cmds/comp/";
 pub const RENDERERS_PATH: &str = "./src/cmds/renderer/";
 
 pub const COMPILE_INFO_RS_TEMPLATE: &str = "./templates/compile_info.rs.template";
@@ -10,6 +11,9 @@ pub const SETUP_JV_CLI_ISS: &str = "./scripts/setup/windows/setup_jv_cli.iss";
 pub const COMMAND_LIST_TEMPLATE: &str = "./templates/_commands.rs.template";
 pub const COMMAND_LIST: &str = "./src/systems/cmd/_commands.rs";
 
+pub const COMPLETIONS_TEMPLATE: &str = "./templates/_comps.rs.template";
+pub const COMPLETIONS: &str = "./src/systems/comp/_comps.rs";
+
 pub const OVERRIDE_RENDERER_DISPATCHER_TEMPLATE: &str =
     "./templates/_override_renderer_dispatcher.rs.template";
 pub const OVERRIDE_RENDERER_DISPATCHER: &str =
@@ -18,6 +22,9 @@ pub const OVERRIDE_RENDERER_DISPATCHER: &str =
 pub const OVERRIDE_RENDERER_ENTRY_TEMPLATE: &str =
     "./templates/_override_renderer_entry.rs.template";
 pub const OVERRIDE_RENDERER_ENTRY: &str = "./src/systems/render/_override_renderer_entry.rs";
+
+pub const OVERRIDE_RENDERERS_TEMPLATE: &str = "./templates/_override_renderers.rs.template";
+pub const OVERRIDE_RENDERERS: &str = "./src/systems/render/_override_renderers.rs";
 
 pub const SPECIFIC_RENDERER_MATCHING_TEMPLATE: &str =
     "./templates/_specific_renderer_matching.rs.template";

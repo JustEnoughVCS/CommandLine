@@ -15,13 +15,13 @@ _jvn_completion() {
     fi
 
     args=(
-        -f "$buffer"
+        -f "${buffer//-/^}"
         -C "$cursor"
-        -w "$current_word"
-        -p "$previous_word"
+        -w "${current_word//-/^}"
+        -p "${previous_word//-/^}"
         -c "$command_name"
         -i "$word_index"
-        -a "${words[@]}"
+        -a "${(@)words//-/^}"
     )
 
     suggestions=$(jvn_comp "${args[@]}" 2>/dev/null)

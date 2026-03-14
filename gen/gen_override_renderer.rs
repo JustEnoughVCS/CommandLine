@@ -5,7 +5,10 @@ use regex::Regex;
 use tokio::fs;
 
 use crate::r#gen::{
-    constants::{COMMANDS_PATH, OVERRIDE_RENDERER_ENTRY, OVERRIDE_RENDERER_ENTRY_TEMPLATE},
+    constants::{
+        COMMANDS_PATH, OVERRIDE_RENDERER_ENTRY, OVERRIDE_RENDERER_ENTRY_TEMPLATE,
+        OVERRIDE_RENDERERS, OVERRIDE_RENDERERS_TEMPLATE, REGISTRY_TOML,
+    },
     resolve_types::resolve_type_paths,
 };
 
@@ -38,6 +41,65 @@ pub async fn generate_override_renderer(repo_root: &PathBuf) {
     println!(
         "Generated override renderer entry with {} types using just_template",
         all_possible_types.len()
+    );
+}
+
+/// Generate override renderers list file from Registry.toml configuration using just_template
+pub async fn generate_override_renderers_list(repo_root: &PathBuf) {
+    let template_path = repo_root.join(OVERRIDE_RENDERERS_TEMPLATE);
+    let output_path = repo_root.join(OVERRIDE_RENDERERS);
+    let config_path = repo_root.join(REGISTRY_TOML);
+
+    // Read the template
+    let template_content = tokio::fs::read_to_string(&template_path).await.unwrap();
+
+    // Read and parse the TOML configuration
+    let config_content = tokio::fs::read_to_string(&config_path).await.unwrap();
+    let config: toml::Value = toml::from_str(&config_content).unwrap();
+
+    // Collect all renderer names
+    let mut renderer_names = Vec::new();
+
+    let Some(table) = config.as_table() else {
+        return;
+    };
+    let Some(renderer_table) = table.get("renderer") else {
+        return;
+    };
+    let Some(renderer_table) = renderer_table.as_table() else {
+        return;
+    };
+
+    for (_, renderer_value) in renderer_table {
+        let Some(renderer_config) = renderer_value.as_table() else {
+            continue;
+        };
+        let Some(name) = renderer_config.get("name").and_then(|v| v.as_str()) else {
+            continue;
+        };
+
+        renderer_names.push(name.to_string());
+    }
+
+    // Create template
+    let mut template = Template::from(template_content);
+
+    for renderer_name in &renderer_names {
+        tmpl!(template += {
+            renderer {
+                (renderer_name = renderer_name)
+            }
+        });
+    }
+
+    let final_content = template.expand().unwrap();
+
+    // Write the generated code
+    tokio::fs::write(output_path, final_content).await.unwrap();
+
+    println!(
+        "Generated override renderers list with {} renderers using just_template",
+        renderer_names.len()
     );
 }
 

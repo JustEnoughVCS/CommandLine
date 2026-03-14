@@ -18,13 +18,13 @@ Register-ArgumentCompleter -CommandName jvn -ScriptBlock {
     }
 
     $args = @(
-        "-f", $line
+        "-f", ($line -replace '-', '^')
         "-C", $cursorPosition.ToString()
-        "-w", $wordToComplete
-        "-p", if ($words.Count -gt 1) { $words[-2] } else { "" }
+        "-w", ($wordToComplete -replace '-', '^')
+        "-p", (if ($words.Count -gt 1) { $words[-2] } else { "" }) -replace '-', '^'
         "-c", $commandName
         "-i", ($words.Count - 1).ToString()
-        "-a", $words
+        "-a", ($words | ForEach-Object { $_ -replace '-', '^' })
     )
 
     $suggestions = jvn_comp $args 2>$null

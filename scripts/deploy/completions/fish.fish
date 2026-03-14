@@ -24,13 +24,13 @@ function __jvn_fish_complete
     end
 
     set -l args \
-        -f "$buffer" \
+        -f (string replace -a - ^ -- "$buffer") \
         -C "$cursor" \
-        -w "$current_word" \
-        -p "$previous_word" \
+        -w (string replace -a - ^ -- "$current_word") \
+        -p (string replace -a - ^ -- "$previous_word") \
         -c "$cmdline[1]" \
         -i "$word_index" \
-        -a $cmdline
+        -a (string replace -a - ^ -- "$cmdline")
 
     set -l output (jvn_comp $args 2>/dev/null)
     if test "$output" = "_file_"

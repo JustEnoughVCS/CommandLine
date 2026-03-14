@@ -2,9 +2,13 @@ use std::env;
 use std::path::PathBuf;
 
 use crate::r#gen::{
-    gen_commands_file::generate_commands_file, gen_compile_info::generate_compile_info,
-    gen_iscc_script::generate_installer_script, gen_mod_files::generate_collect_files,
-    gen_override_renderer::generate_override_renderer, gen_renderers_file::generate_renderers_file,
+    gen_commands_file::generate_commands_file,
+    gen_compile_info::generate_compile_info,
+    gen_completions_entries::generate_completions_file,
+    gen_iscc_script::generate_installer_script,
+    gen_mod_files::generate_collect_files,
+    gen_override_renderer::{generate_override_renderer, generate_override_renderers_list},
+    gen_renderers_file::generate_renderers_file,
     gen_specific_renderer::generate_specific_renderer,
 };
 
@@ -31,11 +35,19 @@ async fn main() {
         }),
         tokio::spawn({
             let repo_root = repo_root.clone();
+            async move { generate_completions_file(&repo_root).await }
+        }),
+        tokio::spawn({
+            let repo_root = repo_root.clone();
             async move { generate_collect_files(&repo_root).await }
         }),
         tokio::spawn({
             let repo_root = repo_root.clone();
             async move { generate_override_renderer(&repo_root).await }
+        }),
+        tokio::spawn({
+            let repo_root = repo_root.clone();
+            async move { generate_override_renderers_list(&repo_root).await }
         }),
         tokio::spawn({
             let repo_root = repo_root.clone();

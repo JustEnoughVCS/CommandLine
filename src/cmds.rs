@@ -1,6 +1,7 @@
 pub mod arg;
 pub mod cmd;
 pub mod collect;
+pub mod comp;
 pub mod converter;
 pub mod r#in;
 pub mod out;

@@ -40,13 +40,13 @@ _jvn_bash_completion() {
     fi
 
     local args=(
-        -f "$COMP_LINE"
+        -f "${COMP_LINE//-/^}"
         -C "$COMP_POINT"
-        -w "$cur"
-        -p "$prev"
+        -w "${cur//-/^}"
+        -p "${prev//-/^}"
         -c "${words[0]}"
         -i "$cword"
-        -a "${words[@]}"
+        -a "${words[@]//-/^}"
     )
 
     local suggestions
