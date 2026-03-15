@@ -17,6 +17,14 @@ pub mod r#gen;
 #[tokio::main]
 async fn main() {
     println!("cargo:rerun-if-env-changed=FORCE_BUILD");
+    println!("cargo:rerun-if-changed=src/cmds/arg");
+    println!("cargo:rerun-if-changed=src/cmds/cmd");
+    println!("cargo:rerun-if-changed=src/cmds/collect");
+    println!("cargo:rerun-if-changed=src/cmds/comp");
+    println!("cargo:rerun-if-changed=src/cmds/converter");
+    println!("cargo:rerun-if-changed=src/cmds/in");
+    println!("cargo:rerun-if-changed=src/cmds/out");
+    println!("cargo:rerun-if-changed=src/cmds/renderer");
 
     let repo_root = std::sync::Arc::new(PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()));
 

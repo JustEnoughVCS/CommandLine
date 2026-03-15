@@ -12,15 +12,21 @@
 /// Then paste the following content into your code
 ///
 /// ```ignore
-/// use std::any::TypeId;
-/// use cmd_system_macros::exec;
 /// use crate::{
 ///     cmd_output,
-///     systems::cmd::{
-///         cmd_system::JVCommandContext,
-///         errors::{CmdExecuteError, CmdPrepareError},
+///     cmds::{
+///         arg::empty::JVEmptyArgument, collect::empty::JVEmptyCollect, r#in::empty::JVEmptyInput,
+///         out::none::JVNoneOutput,
+///     },
+///     systems::{
+///         cmd::{
+///             cmd_system::{AnyOutput, JVCommandContext},
+///             errors::{CmdExecuteError, CmdPrepareError},
+///         },
+///         helpdoc::helpdoc_viewer,
 ///     },
 /// };
+/// use cmd_system_macros::exec;
 ///
 /// /// Define command type
 /// /// Names should match the file name in the following format:
@@ -36,86 +42,86 @@
 /// /// #[derive(Parser, Debug)]
 /// /// pub struct JVCustomArgument;
 /// /// ```
-/// type Arg = JVCustomArgument;
+/// type Arg = JVEmptyArgument;
 ///
 /// /// Specify InputData
 /// /// ```ignore
 /// /// pub struct JVCustomInput;
 /// /// ```
-/// type In = JVCustomInput;
+/// type In = JVEmptyInput;
 ///
 /// /// Specify CollectData
 /// /// ```ignore
 /// /// pub struct JVCustomCollect;
 /// /// ```
-/// type Collect = JVCustomCollect;
+/// type Collect = JVEmptyCollect;
 ///
 /// /// Return a string, rendered when the user needs help (command specifies `--help` or syntax error)
 /// async fn help_str() -> String {
-///     todo!()
+///     // Write your documentation in `./resources/helpdoc`
+///     // Use the format `title.lang.md`
+///     helpdoc_viewer::display("commands/custom_command").await;
+///     String::new()
 /// }
 ///
 /// /// Preparation phase, preprocess user input and convert to a data format friendly for the execution phase
-/// async fn prepare(args: &Arg, ctx: &JVCommandContext) -> Result<In, CmdPrepareError> {
-///     todo!()
+/// async fn prepare(_args: &Arg, _ctx: &JVCommandContext) -> Result<In, CmdPrepareError> {
+///     Ok(JVEmptyInput)
 /// }
 ///
 /// /// Collect necessary local information for execution
-/// async fn collect(args: &Arg, ctx: &JVCommandContext) -> Result<Collect, CmdPrepareError> {
-///     todo!()
+/// async fn collect(_args: &Arg, _ctx: &JVCommandContext) -> Result<Collect, CmdPrepareError> {
+///     Ok(JVEmptyCollect)
 /// }
 ///
 /// /// Execution phase, call core layer or other custom logic
 /// #[exec]
-/// async fn exec(
-///     input: In,
-///     collect: Collect,
-/// ) -> Result<(Box<dyn std::any::Any + Send + 'static>, TypeId), CmdExecuteError> {
-///     todo!();
-///
-///     // Use the following method to return results
-///     cmd_output!(JVCustomOutput => output)
+/// async fn exec(_input: In, _collect: Collect) -> Result<AnyOutput, CmdExecuteError> {
+///     cmd_output!(JVNoneOutput => JVNoneOutput)
 /// }
 /// ```
 ///
 /// Of course, you can also use the comment-free version
 ///
 /// ```ignore
-/// use std::any::TypeId;
-/// use cmd_system_macros::exec;
 /// use crate::{
 ///     cmd_output,
-///     systems::cmd::{
-///         cmd_system::JVCommandContext,
-///         errors::{CmdExecuteError, CmdPrepareError},
+///     cmds::{
+///         arg::empty::JVEmptyArgument, collect::empty::JVEmptyCollect, r#in::empty::JVEmptyInput,
+///         out::none::JVNoneOutput,
+///     },
+///     systems::{
+///         cmd::{
+///             cmd_system::{AnyOutput, JVCommandContext},
+///             errors::{CmdExecuteError, CmdPrepareError},
+///         },
+///         helpdoc::helpdoc_viewer,
 ///     },
 /// };
+/// use cmd_system_macros::exec;
 ///
 /// pub struct JVCustomCommand;
 /// type Cmd = JVCustomCommand;
-/// type Arg = JVCustomArgument;
-/// type In = JVCustomInput;
-/// type Collect = JVCustomCollect;
+/// type Arg = JVEmptyArgument;
+/// type In = JVEmptyInput;
+/// type Collect = JVEmptyCollect;
 ///
 /// async fn help_str() -> String {
-///     todo!()
+///     helpdoc_viewer::display("commands/custom_command").await;
+///     String::new()
 /// }
 ///
-/// async fn prepare(args: &Arg, ctx: &JVCommandContext) -> Result<In, CmdPrepareError> {
-///     todo!()
+/// async fn prepare(_args: &Arg, _ctx: &JVCommandContext) -> Result<In, CmdPrepareError> {
+///     Ok(JVEmptyInput)
 /// }
 ///
-/// async fn collect(args: &Arg, ctx: &JVCommandContext) -> Result<Collect, CmdPrepareError> {
-///     todo!()
+/// async fn collect(_args: &Arg, _ctx: &JVCommandContext) -> Result<Collect, CmdPrepareError> {
+///     Ok(JVEmptyCollect)
 /// }
 ///
 /// #[exec]
-/// async fn exec(
-///     input: In,
-///     collect: Collect,
-/// ) -> Result<(Box<dyn std::any::Any + Send + 'static>, TypeId), CmdExecuteError> {
-///     todo!();
-///     cmd_output!(JVCustomOutput => output)
+/// async fn exec(_input: In, _collect: Collect) -> Result<AnyOutput, CmdExecuteError> {
+///     cmd_output!(JVNoneOutput => JVNoneOutput)
 /// }
 /// ```
 macro_rules! command_template {
@@ -143,7 +149,7 @@ macro_rules! command_template {
                 input: In,
                 collect: Collect,
             ) -> Result<
-                (Box<dyn std::any::Any + Send + 'static>, std::any::TypeId),
+                crate::systems::cmd::cmd_system::AnyOutput,
                 $crate::systems::cmd::errors::CmdExecuteError,
             > {
                 exec(input, collect).await

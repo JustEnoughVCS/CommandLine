@@ -26,6 +26,9 @@ impl JVWorkspaceOperationErrorConverter {
             WorkspaceOperationError::DataApply(data_apply_error) => {
                 CmdExecuteError::Error(format!("Data apply error: {}", data_apply_error))
             }
+            WorkspaceOperationError::IDAliasError(id_alias_error) => {
+                CmdExecuteError::Error(format!("ID alias error: {}", id_alias_error))
+            }
         }
     }
 }

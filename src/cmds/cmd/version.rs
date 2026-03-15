@@ -8,7 +8,7 @@ use crate::{
     data::compile_info::CompileInfo,
     systems::{
         cmd::{
-            cmd_system::JVCommandContext,
+            cmd_system::{AnyOutput, JVCommandContext},
             errors::{CmdExecuteError, CmdPrepareError},
         },
         helpdoc::helpdoc_viewer,
@@ -16,7 +16,6 @@ use crate::{
 };
 use cmd_system_macros::exec;
 use just_enough_vcs::data::compile_info::CoreCompileInfo;
-use std::any::TypeId;
 
 pub struct JVVersionCommand;
 type Cmd = JVVersionCommand;
@@ -44,10 +43,7 @@ async fn collect(_args: &Arg, _ctx: &JVCommandContext) -> Result<Collect, CmdPre
 }
 
 #[exec]
-async fn exec(
-    input: In,
-    collect: Collect,
-) -> Result<(Box<dyn std::any::Any + Send + 'static>, TypeId), CmdExecuteError> {
+async fn exec(input: In, collect: Collect) -> Result<AnyOutput, CmdExecuteError> {
     let output = JVVersionInputOutputConverter::merge_to_output(input, collect);
     cmd_output!(JVVersionOutput => output)
 }

@@ -1,5 +1,3 @@
-use std::any::TypeId;
-
 use crate::{
     cmd_output,
     cmds::{
@@ -10,7 +8,7 @@ use crate::{
     },
     systems::{
         cmd::{
-            cmd_system::JVCommandContext,
+            cmd_system::{AnyOutput, JVCommandContext},
             errors::{CmdExecuteError, CmdPrepareError},
         },
         helpdoc::helpdoc_viewer,
@@ -54,10 +52,7 @@ async fn collect(args: &Arg, _ctx: &JVCommandContext) -> Result<Collect, CmdPrep
 }
 
 #[exec]
-async fn exec(
-    input: In,
-    collect: Collect,
-) -> Result<(Box<dyn std::any::Any + Send + 'static>, TypeId), CmdExecuteError> {
+async fn exec(input: In, collect: Collect) -> Result<AnyOutput, CmdExecuteError> {
     let mappings = collect.sheet.mappings();
     let mut mappings_vec = mappings.iter().cloned().collect::<Vec<LocalMapping>>();
     if input.sort {

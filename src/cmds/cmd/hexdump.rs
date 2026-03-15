@@ -1,5 +1,3 @@
-use std::any::TypeId;
-
 use crate::{
     cmd_output,
     cmds::{
@@ -8,7 +6,7 @@ use crate::{
     },
     systems::{
         cmd::{
-            cmd_system::JVCommandContext,
+            cmd_system::{AnyOutput, JVCommandContext},
             errors::{CmdExecuteError, CmdPrepareError},
         },
         helpdoc::helpdoc_viewer,
@@ -39,10 +37,7 @@ async fn collect(args: &Arg, _ctx: &JVCommandContext) -> Result<Collect, CmdPrep
 }
 
 #[exec]
-async fn exec(
-    _input: In,
-    collect: Collect,
-) -> Result<(Box<dyn std::any::Any + Send + 'static>, TypeId), CmdExecuteError> {
+async fn exec(_input: In, collect: Collect) -> Result<AnyOutput, CmdExecuteError> {
     let output = JVHexOutput { data: collect.data };
     cmd_output!(JVHexOutput => output)
 }

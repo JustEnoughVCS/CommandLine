@@ -7,7 +7,7 @@ use crate::{
     },
     systems::{
         cmd::{
-            cmd_system::JVCommandContext,
+            cmd_system::{AnyOutput, JVCommandContext},
             errors::{CmdExecuteError, CmdPrepareError},
         },
         helpdoc::helpdoc_viewer,
@@ -15,7 +15,6 @@ use crate::{
 };
 use cmd_system_macros::exec;
 use just_enough_vcs::system::workspace::func::create_workspace_here;
-use std::any::TypeId;
 
 pub struct JVWorkspaceInitCommand;
 type Cmd = JVWorkspaceInitCommand;
@@ -37,10 +36,7 @@ async fn collect(_args: &Arg, _ctx: &JVCommandContext) -> Result<Collect, CmdPre
 }
 
 #[exec]
-async fn exec(
-    _input: In,
-    _collect: Collect,
-) -> Result<(Box<dyn std::any::Any + Send + 'static>, TypeId), CmdExecuteError> {
+async fn exec(_input: In, _collect: Collect) -> Result<AnyOutput, CmdExecuteError> {
     create_workspace_here()
         .await
         .map_err(JVWorkspaceOperationErrorConverter::to_exec_error)?;

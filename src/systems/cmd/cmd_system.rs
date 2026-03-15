@@ -9,10 +9,12 @@ use crate::{
     },
 };
 use std::{
-    any::{Any, TypeId, type_name},
+    any::{TypeId, type_name},
     collections::HashMap,
     future::Future,
 };
+
+pub type AnyOutput = (Box<dyn std::any::Any + Send + 'static>, TypeId);
 
 pub struct JVCommandContext {
     pub help: bool,
@@ -93,8 +95,7 @@ where
     fn process(
         args: Vec<String>,
         ctx: JVCommandContext,
-    ) -> impl Future<Output = Result<(Box<dyn Any + Send + 'static>, TypeId), CmdProcessError>> + Send
-    {
+    ) -> impl Future<Output = Result<AnyOutput, CmdProcessError>> + Send {
         async move {
             let mut full_args = vec!["jv".to_string()];
 
@@ -173,7 +174,7 @@ where
     fn exec(
         input: Input,
         collect: Collect,
-    ) -> impl Future<Output = Result<(Box<dyn Any + Send + 'static>, TypeId), CmdExecuteError>> + Send;
+    ) -> impl Future<Output = Result<AnyOutput, CmdExecuteError>> + Send;
 
     /// Get output type mapping
     fn get_output_type_mapping() -> HashMap<String, TypeId>;

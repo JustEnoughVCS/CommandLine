@@ -6,7 +6,7 @@ use crate::{
     },
     systems::{
         cmd::{
-            cmd_system::JVCommandContext,
+            cmd_system::{AnyOutput, JVCommandContext},
             errors::{CmdExecuteError, CmdPrepareError},
         },
         helpdoc::helpdoc_viewer,
@@ -20,7 +20,7 @@ use cmd_system_macros::exec;
 use just_enough_vcs::system::sheet_system::{mapping::LocalMapping, sheet::SheetData};
 use just_fmt::fmt_path::{PathFormatError, fmt_path};
 use rust_i18n::t;
-use std::{any::TypeId, borrow::Cow, path::PathBuf};
+use std::{borrow::Cow, path::PathBuf};
 use tokio::fs::create_dir_all;
 
 pub struct JVSheeteditCommand;
@@ -52,10 +52,7 @@ async fn collect(args: &Arg, _ctx: &JVCommandContext) -> Result<Collect, CmdPrep
 }
 
 #[exec]
-async fn exec(
-    input: In,
-    collect: Collect,
-) -> Result<(Box<dyn std::any::Any + Send + 'static>, TypeId), CmdExecuteError> {
+async fn exec(input: In, collect: Collect) -> Result<AnyOutput, CmdExecuteError> {
     let sheet = SheetData::try_from(collect.data).unwrap_or(SheetData::empty());
 
     let mappings = sheet.mappings();
