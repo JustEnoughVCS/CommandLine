@@ -163,6 +163,11 @@ macro_rules! command_template {
 }
 
 #[macro_export]
+/// `cmd_output!` 宏应在命令的 `exec` 函数中使用。
+/// 它负责将执行结果包装成能被指定渲染器匹配的格式。
+///
+/// 注意：该宏不仅是简化输出的工具，更是 JvcsCLI 代码生成流程的必要组成部分。
+/// 因此，所有命令的输出都必须通过此宏返回。
 macro_rules! cmd_output {
     ($t:ty => $v:expr) => {{
         let checked_value: $t = $v;
@@ -170,5 +175,21 @@ macro_rules! cmd_output {
             Box::new(checked_value) as Box<dyn std::any::Any + Send + 'static>,
             std::any::TypeId::of::<$t>(),
         ))
+    }};
+}
+
+#[macro_export]
+/// `early_cmd_output!` 宏应在命令的 `prepare` 或 `collect` 函数中使用。
+/// 它负责将执行结果包装成能返回到核心
+///
+/// 注意：该宏不仅是简化输出的工具，更是 JvcsCLI 代码生成流程的必要组成部分。
+/// 因此，所有命令的输出都必须通过此宏返回。
+macro_rules! early_cmd_output {
+    ($t:ty => $v:expr) => {{
+        let checked_value: $t = $v;
+        Err(crate::systems::cmd::errors::CmdPrepareError::EarlyOutput((
+            Box::new(checked_value) as Box<dyn std::any::Any + Send + 'static>,
+            std::any::TypeId::of::<$t>(),
+        )))
     }};
 }

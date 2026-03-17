@@ -279,6 +279,12 @@ fn handle_prepare_error(cmd_prepare_error: CmdPrepareError) {
         CmdPrepareError::NoSheetInUse => {
             eprintln!("{}", md(t!("prepare_error.no_sheet_in_use")));
         }
+        CmdPrepareError::EarlyOutput(_) => {
+            // Early output is not an error
+            // No additional handling needed,
+            //   this result has already been captured in `crate::systems::cmd::cmd_system.rs`
+            exit(0)
+        }
     }
 }
 

@@ -1,5 +1,7 @@
 use just_enough_vcs::lib::data::{member::MemberId, sheet::SheetName};
 
+use crate::systems::cmd::cmd_system::AnyOutput;
+
 #[derive(thiserror::Error, Debug)]
 pub enum CmdPrepareError {
     #[error("IO error: {0}")]
@@ -32,6 +34,9 @@ pub enum CmdPrepareError {
 
     #[error("No sheet in use")]
     NoSheetInUse,
+
+    #[error("Error occurred and returned early")]
+    EarlyOutput(AnyOutput),
 }
 
 impl CmdPrepareError {

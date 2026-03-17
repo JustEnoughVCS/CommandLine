@@ -134,10 +134,18 @@ where
                 Self::collect(&parsed_args, &ctx)
             ) {
                 Ok((input, collect)) => (input, collect),
-                Err(e) => {
-                    error!("{}", t!("verbose.cmd_process_prepare_failed"));
-                    return Err(CmdProcessError::from(e));
-                }
+                Err(e) => match e {
+                    CmdPrepareError::EarlyOutput(any_output) => {
+                        // Early output is not an "error"
+                        // It's just that when the result can be determined early,
+                        // there's no need to wait until the execution phase to inform the user
+                        return Ok(any_output);
+                    }
+                    _ => {
+                        error!("{}", t!("verbose.cmd_process_prepare_failed"));
+                        return Err(CmdProcessError::from(e));
+                    }
+                },
             };
 
             info!("{}", t!("verbose.cmd_process_exec"));
