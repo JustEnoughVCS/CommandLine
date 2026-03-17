@@ -3,7 +3,7 @@ use std::{collections::HashMap, path::PathBuf};
 use just_template::{Template, tmpl};
 use regex::Regex;
 
-use crate::r#gen::{
+use crate::{
     constants::{RENDERERS_PATH, SPECIFIC_RENDERER_MATCHING, SPECIFIC_RENDERER_MATCHING_TEMPLATE},
     resolve_types::resolve_type_paths,
 };

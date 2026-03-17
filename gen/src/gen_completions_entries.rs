@@ -1,7 +1,7 @@
 use just_template::{Template, tmpl};
 use std::path::PathBuf;
 
-use crate::r#gen::constants::{COMPLETIONS, COMPLETIONS_PATH, COMPLETIONS_TEMPLATE};
+use crate::constants::{COMPLETIONS, COMPLETIONS_PATH, COMPLETIONS_TEMPLATE};
 
 /// Generate completions file from comp directory using just_template
 pub async fn generate_completions_file(repo_root: &PathBuf) {

@@ -1,18 +1,16 @@
 use std::env;
 use std::path::PathBuf;
 
-use crate::r#gen::{
-    gen_commands_file::generate_commands_file,
-    gen_compile_info::generate_compile_info,
-    gen_completions_entries::generate_completions_file,
-    gen_iscc_script::generate_installer_script,
-    gen_mod_files::generate_collect_files,
-    gen_override_renderer::{generate_override_renderer, generate_override_renderers_list},
-    gen_renderers_file::generate_renderers_file,
-    gen_specific_renderer::generate_specific_renderer,
+use jv_cli_gen::gen_commands_file::generate_commands_file;
+use jv_cli_gen::gen_compile_info::generate_compile_info;
+use jv_cli_gen::gen_completions_entries::generate_completions_file;
+use jv_cli_gen::gen_iscc_script::generate_installer_script;
+use jv_cli_gen::gen_mod_files::generate_collect_files;
+use jv_cli_gen::gen_override_renderer::{
+    generate_override_renderer, generate_override_renderers_list,
 };
-
-pub mod r#gen;
+use jv_cli_gen::gen_renderers_file::generate_renderers_file;
+use jv_cli_gen::gen_specific_renderer::generate_specific_renderer;
 
 #[tokio::main]
 async fn main() {

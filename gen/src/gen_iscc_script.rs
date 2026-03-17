@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use just_template::{Template, tmpl_param};
 
-use crate::r#gen::{
+use crate::{
     constants::{SETUP_JV_CLI_ISS, SETUP_JV_CLI_ISS_TEMPLATE},
     env::{get_author, get_site, get_version},
 };

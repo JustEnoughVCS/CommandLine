@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::r#gen::constants::REGISTRY_TOML;
+use crate::constants::REGISTRY_TOML;
 
 /// Generate collect files from directory structure
 pub async fn generate_collect_files(repo_root: &PathBuf) {

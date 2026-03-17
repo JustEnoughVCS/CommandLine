@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use just_template::{Template, tmpl_param};
 
-use crate::r#gen::{
+use crate::{
     constants::{COMPILE_INFO_RS, COMPILE_INFO_RS_TEMPLATE},
     env::{get_git_branch, get_git_commit, get_platform, get_toolchain, get_version},
 };

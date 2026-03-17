@@ -4,7 +4,7 @@ use just_template::{Template, tmpl};
 use regex::Regex;
 use tokio::fs;
 
-use crate::r#gen::{
+use crate::{
     constants::{
         COMMANDS_PATH, OVERRIDE_RENDERER_ENTRY, OVERRIDE_RENDERER_ENTRY_TEMPLATE,
         OVERRIDE_RENDERERS, OVERRIDE_RENDERERS_TEMPLATE, REGISTRY_TOML,
@@ -169,6 +169,14 @@ pub fn get_output_types(code: &String) -> Option<Vec<String>> {
         output_types.push(type_name.to_string());
     }
 
+    // Find all early_cmd_output! macros
+    let early_cmd_output_re =
+        Regex::new(r"early_cmd_output!\s*\(\s*([^,]+)\s*=>\s*[^)]+\s*\)").ok()?;
+    for cap in early_cmd_output_re.captures_iter(code) {
+        let type_name = cap[1].trim();
+        output_types.push(type_name.to_string());
+    }
+
     Some(output_types)
 }
 
@@ -194,10 +202,15 @@ mod tests {
         use other::cmds::output::JVCustomOutputOutside;
 
         async fn exec() -> Result<(), CmdExecuteError> {
-            cmd_output!(output, JVCustomOutput)
-            cmd_output!(output, JVCustomOutput2)
-            cmd_output!(output, JVCustomOutputNotExist)
-            cmd_output!(output, JVCustomOutputOutside)
+            early_cmd_output!(JVCustomOutput => output)
+            early_cmd_output!(JVCustomOutput2 => {
+                output
+            })
+            cmd_output!(JVCustomOutputNotExist => output)
+            cmd_output!(JVCustomOutputOutside
+            => {
+                output
+            })
         }
         ";
 

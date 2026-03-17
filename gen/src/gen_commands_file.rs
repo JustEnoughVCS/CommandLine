@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use just_fmt::pascal_case;
 use just_template::{Template, tmpl, tmpl_param};
 
-use crate::r#gen::constants::{COMMAND_LIST, COMMAND_LIST_TEMPLATE, COMMANDS_PATH, REGISTRY_TOML};
+use crate::constants::{COMMAND_LIST, COMMAND_LIST_TEMPLATE, COMMANDS_PATH, REGISTRY_TOML};
 
 /// Generate registry file from Registry.toml configuration using just_template
 pub async fn generate_commands_file(repo_root: &PathBuf) {

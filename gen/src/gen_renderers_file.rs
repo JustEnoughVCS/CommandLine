@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use just_template::{Template, tmpl};
 
-use crate::r#gen::constants::{
+use crate::constants::{
     OVERRIDE_RENDERER_DISPATCHER, OVERRIDE_RENDERER_DISPATCHER_TEMPLATE, REGISTRY_TOML,
 };
 
