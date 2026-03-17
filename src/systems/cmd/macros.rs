@@ -163,11 +163,11 @@ macro_rules! command_template {
 }
 
 #[macro_export]
-/// `cmd_output!` 宏应在命令的 `exec` 函数中使用。
-/// 它负责将执行结果包装成能被指定渲染器匹配的格式。
+/// The `cmd_output!` macro should be used in the `exec` function of a command.
+/// It is responsible for wrapping the execution result into a format that can be matched by the specified renderer.
 ///
-/// 注意：该宏不仅是简化输出的工具，更是 JvcsCLI 代码生成流程的必要组成部分。
-/// 因此，所有命令的输出都必须通过此宏返回。
+/// Note: This macro is not only a tool for simplifying output but also a necessary component of the JvcsCLI code generation process.
+/// Therefore, all command outputs must be returned through this macro.
 macro_rules! cmd_output {
     ($t:ty => $v:expr) => {{
         let checked_value: $t = $v;
@@ -179,11 +179,12 @@ macro_rules! cmd_output {
 }
 
 #[macro_export]
-/// `early_cmd_output!` 宏应在命令的 `prepare` 或 `collect` 函数中使用。
-/// 它负责将执行结果包装成能返回到核心
+/// The `early_cmd_output!` macro should be used in the `prepare` or `collect` function of a command.
+/// It allows returning a valid output result early during the preparation or collection phase, instead of continuing to the `exec` phase.
+/// This is suitable for situations where certain commands can determine the final output in the early stages.
 ///
-/// 注意：该宏不仅是简化输出的工具，更是 JvcsCLI 代码生成流程的必要组成部分。
-/// 因此，所有命令的输出都必须通过此宏返回。
+/// Note: This macro is used for early return of successful output and should not replace error handling.
+/// All command outputs must be returned through this macro or the `cmd_output!` macro.
 macro_rules! early_cmd_output {
     ($t:ty => $v:expr) => {{
         let checked_value: $t = $v;
