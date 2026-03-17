@@ -163,7 +163,7 @@ pub fn get_output_types(code: &String) -> Option<Vec<String>> {
     let mut output_types = Vec::new();
 
     // Find all cmd_output! macros
-    let cmd_output_re = Regex::new(r"cmd_output!\s*\(\s*([^,]+)\s*=>\s*[^)]+\s*\)").ok()?;
+    let cmd_output_re = Regex::new(r"cmd_output!\s*\(\s*([A-Za-z_][A-Za-z0-9_:]*)\s*=>").ok()?;
     for cap in cmd_output_re.captures_iter(code) {
         let type_name = cap[1].trim();
         output_types.push(type_name.to_string());
@@ -171,11 +171,14 @@ pub fn get_output_types(code: &String) -> Option<Vec<String>> {
 
     // Find all early_cmd_output! macros
     let early_cmd_output_re =
-        Regex::new(r"early_cmd_output!\s*\(\s*([^,]+)\s*=>\s*[^)]+\s*\)").ok()?;
+        Regex::new(r"early_cmd_output!\s*\(\s*([A-Za-z_][A-Za-z0-9_:]*)\s*=>").ok()?;
     for cap in early_cmd_output_re.captures_iter(code) {
         let type_name = cap[1].trim();
         output_types.push(type_name.to_string());
     }
+
+    output_types.sort();
+    output_types.dedup();
 
     Some(output_types)
 }
