@@ -65,7 +65,7 @@ prepare_error:
 
   error: |
     Unknown error in preparation phase!
-    Error: %{error}
+    %{error}
 
   local_workspace_not_found: |
     Local workspace not found!
@@ -105,7 +105,7 @@ execute_error:
 
   error: |
     Error in execution phase!
-    Error: %{error}
+    %{error}
 
 render_error:
   io: |
@@ -114,11 +114,11 @@ render_error:
 
   error: |
     Error in rendering phase!
-    Error: %{error}
+    %{error}
 
   serialize_failed: |
     Data serialization error!
-    Error: %{error}
+    %{error}
 
   renderer_not_found: |
     Renderer `%{renderer_name}` not found!

@@ -1,9 +1,12 @@
 use crate::{
     cmd_output,
     cmds::{
-        arg::single_file::JVSingleFileArgument, collect::single_file::JVSingleFileCollect,
-        r#in::empty::JVEmptyInput, out::hex::JVHexOutput,
+        arg::single_file::JVSingleFileArgument,
+        collect::single_file::JVSingleFileCollect,
+        r#in::empty::JVEmptyInput,
+        out::{hex::JVHexOutput, none::JVNoneOutput},
     },
+    early_cmd_output,
     systems::{
         cmd::{
             cmd_system::{AnyOutput, JVCommandContext},
@@ -30,9 +33,17 @@ async fn prepare(_args: &Arg, _ctx: &JVCommandContext) -> Result<In, CmdPrepareE
     Ok(In {})
 }
 
-async fn collect(args: &Arg, _ctx: &JVCommandContext) -> Result<Collect, CmdPrepareError> {
-    let file = &args.file;
-    let data = fs::read(file).await?;
+async fn collect(args: &Arg, ctx: &JVCommandContext) -> Result<Collect, CmdPrepareError> {
+    let data = if let Some(ref stdin_path) = ctx.stdin_path {
+        fs::read(stdin_path).await?
+    } else if let Some(ref stdin_data) = ctx.stdin_data {
+        stdin_data.clone()
+    } else if let Some(path) = &args.file {
+        fs::read(&path).await?
+    } else {
+        // No path input, exit early
+        return early_cmd_output!(JVNoneOutput => JVNoneOutput);
+    };
     Ok(Collect { data })
 }
 

@@ -4,5 +4,5 @@ use clap::Parser;
 
 #[derive(Parser, Debug)]
 pub struct JVSingleFileArgument {
-    pub file: PathBuf,
+    pub file: Option<PathBuf>,
 }

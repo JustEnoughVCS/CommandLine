@@ -12,6 +12,7 @@ use std::{
     any::{TypeId, type_name},
     collections::HashMap,
     future::Future,
+    path::PathBuf,
 };
 
 pub type AnyOutput = (Box<dyn std::any::Any + Send + 'static>, TypeId);
@@ -21,6 +22,8 @@ pub struct JVCommandContext {
     pub confirmed: bool,
     pub args: Vec<String>,
     pub lang: String,
+    pub stdin_path: Option<PathBuf>,
+    pub stdin_data: Option<Vec<u8>>,
 }
 
 pub trait JVCommand<Argument, Input, Collect>

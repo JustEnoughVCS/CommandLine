@@ -1,4 +1,8 @@
-use std::{ops::Deref, process::exit};
+use std::{
+    ops::Deref,
+    path::{Path, PathBuf},
+    process::exit,
+};
 
 use cli_utils::legacy::{display::md, env::current_locales, levenshtein_distance};
 use just_enough_vcs_cli::{
@@ -23,6 +27,7 @@ use just_progress::{
 };
 use log::{LevelFilter, error, info, trace, warn};
 use rust_i18n::{set_locale, t};
+use tokio::io::AsyncReadExt;
 
 rust_i18n::i18n!("resources/locales/jvn", fallback = "en");
 
@@ -115,6 +120,18 @@ async fn main() {
 
     info!("{}", t!("verbose.user_input", command = args.join(" ")));
 
+    // Read pipe inpuit
+    let (stdin_path, stdin_data) = match read_all_from_stdin().await {
+        Ok((path, data)) => {
+            if data.is_empty() {
+                (None, None)
+            } else {
+                (path, Some(data))
+            }
+        }
+        Err(_) => (None, None),
+    };
+
     // Build process future
     let args_clone = args.clone();
     let process_future = jv_cmd_process(
@@ -124,6 +141,8 @@ async fn main() {
             confirmed,
             args: args.clone(),
             lang,
+            stdin_path,
+            stdin_data,
         },
         renderer_override,
     );
@@ -196,6 +215,35 @@ async fn main() {
             print!("{}", r);
         }
     }
+}
+
+/// Read path or raw information from standard input
+async fn read_all_from_stdin() -> tokio::io::Result<(Option<PathBuf>, Vec<u8>)> {
+    if atty::is(atty::Stream::Stdin) {
+        return Ok((None, Vec::new()));
+    }
+
+    let mut stdin = tokio::io::stdin();
+    let mut buffer = Vec::new();
+
+    stdin.read_to_end(&mut buffer).await?;
+
+    if buffer.is_empty() {
+        return Ok((None, Vec::new()));
+    }
+
+    let path = if let Ok(input_str) = String::from_utf8(buffer.clone()) {
+        let trimmed = input_str.trim();
+        if !trimmed.is_empty() && Path::new(trimmed).exists() {
+            Some(PathBuf::from(trimmed))
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
+    Ok((path, buffer))
 }
 
 fn handle_no_matching_command_error(args: Vec<String>) {

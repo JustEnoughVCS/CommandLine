@@ -44,8 +44,8 @@ prepare_error:
     %{error}
 
   error: |
-    命令在准备阶段发生未知错误！
-    错误信息：%{error}
+    命令在准备阶段发生错误！
+    %{error}
 
   local_workspace_not_found: |
     无法找到本地工作区！
@@ -84,7 +84,7 @@ execute_error:
 
   error: |
     命令在运行阶段发生错误！
-    错误信息：%{error}
+    %{error}
 
 render_error:
   io: |
@@ -93,11 +93,11 @@ render_error:
 
   error: |
     命令在渲染阶段发生错误！
-    错误信息：%{error}
+    %{error}
 
   serialize_failed: |
     数据在序列化时发生了错误！
-    错误信息：%{error}
+    %{error}
 
   renderer_not_found: |
     无法找到渲染器 `%{renderer_name}`！
