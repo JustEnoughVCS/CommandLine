@@ -1,0 +1,11 @@
+workspace_sheet:
+  error:
+    sheet_name_required_for_new: |
+        对于符号 `--new`，需要显式指定 `结构表` 名称
+    sheet_name_required_for_delete: |
+        对于符号 `--delete`，需要显式指定 `结构表` 名称
+    sheet_name_required_for_print_path: |
+        对于符号 `--print-path`，需要显式指定 `结构表` 名称
+    exactly_one_required: |
+        需要指定 `--new`、`--delete`、`--list-all` 或 `--print-path` 中的任意符号
+        您可以使用 `jvn helpdoc commands/workspace/sheet` 来查看使用方式

@@ -1,0 +1,4 @@
+make_sheet_error:
+  sheet_already_exists: "无法创建，结构表已存在"
+  sheet_not_found: "未找到指定结构表"
+  other: "其他错误：%{error}"

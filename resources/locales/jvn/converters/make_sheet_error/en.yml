@@ -1,0 +1,4 @@
+make_sheet_error:
+  sheet_already_exists: "Sheet already exists"
+  sheet_not_found: "Sheet not found"
+  other: "Other error: %{error}"

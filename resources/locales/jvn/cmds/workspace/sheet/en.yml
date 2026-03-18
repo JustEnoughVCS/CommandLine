@@ -1,0 +1,11 @@
+workspace_sheet:
+  error:
+    sheet_name_required_for_new: |
+        Sheet name is required for `--new`
+    sheet_name_required_for_delete: |
+        Sheet name is required for `--delete`
+    sheet_name_required_for_print_path: |
+        Sheet name is required for `--print-path`
+    exactly_one_required: |
+        Exactly one of `--new`, `--delete`, `--list-all`, or `--print-path` is required.
+        You can use `jvn helpdoc commands/workspace/sheet` to view usage.

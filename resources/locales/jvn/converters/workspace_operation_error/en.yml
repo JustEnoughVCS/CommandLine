@@ -1,0 +1,9 @@
+workspace_operation_error:
+  other: "Other error"
+  config_not_found: "Config not found"
+  workspace_not_found: "Workspace not found"
+  handle_lock: "Handle lock error: %{error}"
+  data_read: "Data read error: %{error}"
+  data_write: "Data write error: %{error}"
+  data_apply: "Data apply error: %{error}"
+  id_alias_error: "ID alias error: %{error}"

@@ -1,0 +1,9 @@
+workspace_operation_error:
+  other: "其他错误"
+  config_not_found: "配置未找到"
+  workspace_not_found: "工作空间未找到"
+  handle_lock: "处理锁错误: %{error}"
+  data_read: "数据读取错误: %{error}"
+  data_write: "数据写入错误: %{error}"
+  data_apply: "数据应用错误: %{error}"
+  id_alias_error: "ID别名错误: %{error}"

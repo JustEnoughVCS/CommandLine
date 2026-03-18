@@ -1,5 +1,6 @@
 use crate::systems::cmd::errors::CmdExecuteError;
 use just_enough_vcs::system::workspace::workspace::error::WorkspaceOperationError;
+use rust_i18n::t;
 
 pub struct JVWorkspaceOperationErrorConverter;
 
@@ -9,26 +10,46 @@ impl JVWorkspaceOperationErrorConverter {
             WorkspaceOperationError::Io(error) => CmdExecuteError::Io(error),
             WorkspaceOperationError::Other(msg) => CmdExecuteError::Error(msg),
             WorkspaceOperationError::ConfigNotFound => {
-                CmdExecuteError::Error("Config not found".to_string())
+                CmdExecuteError::Error(t!("workspace_operation_error.config_not_found").to_string())
             }
-            WorkspaceOperationError::WorkspaceNotFound => {
-                CmdExecuteError::Error("Workspace not found".to_string())
-            }
-            WorkspaceOperationError::HandleLock(handle_lock_error) => {
-                CmdExecuteError::Error(format!("Handle lock error: {}", handle_lock_error))
-            }
-            WorkspaceOperationError::DataRead(data_read_error) => {
-                CmdExecuteError::Error(format!("Data read error: {}", data_read_error))
-            }
-            WorkspaceOperationError::DataWrite(data_write_error) => {
-                CmdExecuteError::Error(format!("Data write error: {}", data_write_error))
-            }
-            WorkspaceOperationError::DataApply(data_apply_error) => {
-                CmdExecuteError::Error(format!("Data apply error: {}", data_apply_error))
-            }
-            WorkspaceOperationError::IDAliasError(id_alias_error) => {
-                CmdExecuteError::Error(format!("ID alias error: {}", id_alias_error))
-            }
+            WorkspaceOperationError::WorkspaceNotFound => CmdExecuteError::Error(
+                t!("workspace_operation_error.workspace_not_found").to_string(),
+            ),
+            WorkspaceOperationError::HandleLock(handle_lock_error) => CmdExecuteError::Error(
+                t!(
+                    "workspace_operation_error.handle_lock",
+                    error = handle_lock_error
+                )
+                .to_string(),
+            ),
+            WorkspaceOperationError::DataRead(data_read_error) => CmdExecuteError::Error(
+                t!(
+                    "workspace_operation_error.data_read",
+                    error = data_read_error
+                )
+                .to_string(),
+            ),
+            WorkspaceOperationError::DataWrite(data_write_error) => CmdExecuteError::Error(
+                t!(
+                    "workspace_operation_error.data_write",
+                    error = data_write_error
+                )
+                .to_string(),
+            ),
+            WorkspaceOperationError::DataApply(data_apply_error) => CmdExecuteError::Error(
+                t!(
+                    "workspace_operation_error.data_apply",
+                    error = data_apply_error
+                )
+                .to_string(),
+            ),
+            WorkspaceOperationError::IDAliasError(id_alias_error) => CmdExecuteError::Error(
+                t!(
+                    "workspace_operation_error.id_alias_error",
+                    error = id_alias_error
+                )
+                .to_string(),
+            ),
         }
     }
 }
