@@ -202,16 +202,25 @@ fn try_comp_cmd_nodes(ctx: &CompletionContext) -> Option<Vec<String>> {
                     break;
                 }
 
-                // For next-level suggestions, all parts must match exactly
-                if input_path[i] != node_parts[i] {
-                    matches = false;
-                    break;
+                if i == input_path.len() - 1 {
+                    if !node_parts[i].starts_with(input_path[i]) {
+                        matches = false;
+                        break;
+                    }
+                } else {
+                    if input_path[i] != node_parts[i] {
+                        matches = false;
+                        break;
+                    }
                 }
             }
 
-            if matches && input_path.len() < node_parts.len() {
-                // Add the next part as suggestion
-                suggestions.push(node_parts[input_path.len()].to_string());
+            if matches && input_path.len() <= node_parts.len() {
+                if input_path.len() == node_parts.len() && !ctx.current_word.is_empty() {
+                    suggestions.push(node_parts[input_path.len() - 1].to_string());
+                } else if input_path.len() < node_parts.len() {
+                    suggestions.push(node_parts[input_path.len()].to_string());
+                }
             }
         }
     }
