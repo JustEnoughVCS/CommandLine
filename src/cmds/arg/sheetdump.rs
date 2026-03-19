@@ -4,7 +4,7 @@ use clap::Parser;
 
 #[derive(Parser, Debug)]
 pub struct JVSheetdumpArgument {
-    pub sheet_file: PathBuf,
+    pub sheet_file: Option<PathBuf>,
 
     #[arg(short, long = "no-sort")]
     pub no_sort: bool,

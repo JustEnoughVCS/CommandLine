@@ -19,3 +19,8 @@ sheetedit:
   mapping: 映射地址
   index_source: 索引源
   forward: 前方
+
+  error:
+    no_file_input: |
+      没有指定需要解析的文件
+      使用 `jvn sheetedit <文件>` 来编辑

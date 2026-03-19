@@ -4,7 +4,7 @@ use clap::Parser;
 
 #[derive(Parser, Debug)]
 pub struct JVSheeteditArgument {
-    pub file: PathBuf,
+    pub file: Option<PathBuf>,
 
     #[arg(short, long)]
     pub editor: Option<String>,

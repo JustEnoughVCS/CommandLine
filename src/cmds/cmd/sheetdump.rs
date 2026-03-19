@@ -4,8 +4,11 @@ use crate::{
         arg::sheetdump::JVSheetdumpArgument,
         collect::sheetdump::JVSheetdumpCollect,
         r#in::sheetdump::JVSheetdumpInput,
-        out::{mappings::JVMappingsOutput, mappings_pretty::JVMappingsPrettyOutput},
+        out::{
+            mappings::JVMappingsOutput, mappings_pretty::JVMappingsPrettyOutput, none::JVNoneOutput,
+        },
     },
+    early_cmd_output,
     systems::{
         cmd::{
             cmd_system::{AnyOutput, JVCommandContext},
@@ -38,15 +41,21 @@ async fn prepare(args: &Arg, _ctx: &JVCommandContext) -> Result<In, CmdPrepareEr
     })
 }
 
-async fn collect(args: &Arg, _ctx: &JVCommandContext) -> Result<Collect, CmdPrepareError> {
+async fn collect(args: &Arg, ctx: &JVCommandContext) -> Result<Collect, CmdPrepareError> {
     let mut sheet = SheetData::empty();
 
-    sheet
-        .full_read(&args.sheet_file)
-        .await
-        .map_err(|e| match e {
-            ReadSheetDataError::IOErr(error) => CmdPrepareError::Io(error),
-        })?;
+    let path = match (&args.sheet_file, &ctx.stdin_path) {
+        (Some(_), Some(stdin)) => stdin,
+        (Some(file), None) => file,
+        (None, Some(stdin)) => stdin,
+        (None, None) => {
+            return early_cmd_output!(JVNoneOutput => JVNoneOutput);
+        }
+    };
+
+    sheet.full_read(path).await.map_err(|e| match e {
+        ReadSheetDataError::IOErr(error) => CmdPrepareError::Io(error),
+    })?;
 
     Ok(Collect { sheet: sheet })
 }

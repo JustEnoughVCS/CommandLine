@@ -2,8 +2,10 @@ use crate::{
     cmd_output,
     cmds::{
         arg::sheetedit::JVSheeteditArgument, collect::single_file::JVSingleFileCollect,
+        converter::read_sheet_data_error::ReadSheetDataErrorConverter,
         r#in::sheetedit::JVSheeteditInput, out::none::JVNoneOutput,
     },
+    early_cmd_output,
     systems::{
         cmd::{
             cmd_system::{AnyOutput, JVCommandContext},
@@ -34,26 +36,41 @@ async fn help_str() -> String {
     String::new()
 }
 
-async fn prepare(args: &Arg, _ctx: &JVCommandContext) -> Result<In, CmdPrepareError> {
-    let file = fmt_path(args.file.clone()).map_err(|e| match e {
+async fn prepare(args: &Arg, ctx: &JVCommandContext) -> Result<In, CmdPrepareError> {
+    let file_path = args
+        .file
+        .as_ref()
+        .or(ctx.stdin_path.as_ref())
+        .ok_or_else(|| {
+            CmdPrepareError::Error(t!("sheetedit.error.no_file_input").trim().to_string())
+        })?;
+
+    let file = fmt_path(file_path.clone()).map_err(|e| match e {
         PathFormatError::InvalidUtf8(e) => CmdPrepareError::Error(e.to_string()),
     })?;
+
     let editor = args.editor.clone().unwrap_or(get_default_editor().await);
 
     Ok(In { file, editor })
 }
 
-async fn collect(args: &Arg, _ctx: &JVCommandContext) -> Result<Collect, CmdPrepareError> {
-    let data = match tokio::fs::read(&args.file).await {
-        Ok(d) => d,
-        Err(_) => Vec::new(),
+async fn collect(args: &Arg, ctx: &JVCommandContext) -> Result<Collect, CmdPrepareError> {
+    let data = match (&args.file, &ctx.stdin_path) {
+        (_, Some(stdin_path)) => tokio::fs::read(stdin_path)
+            .await
+            .map_err(|e| CmdPrepareError::Io(e))?,
+        (Some(file_path), None) => tokio::fs::read(file_path)
+            .await
+            .map_err(|e| CmdPrepareError::Io(e))?,
+        (None, None) => return early_cmd_output!(JVNoneOutput => JVNoneOutput),
     };
     Ok(Collect { data })
 }
 
 #[exec]
 async fn exec(input: In, collect: Collect) -> Result<AnyOutput, CmdExecuteError> {
-    let sheet = SheetData::try_from(collect.data).unwrap_or(SheetData::empty());
+    let sheet =
+        SheetData::try_from(collect.data).map_err(ReadSheetDataErrorConverter::to_exec_error)?;
 
     let mappings = sheet.mappings();
     let mut mappings_vec = mappings.iter().cloned().collect::<Vec<LocalMapping>>();

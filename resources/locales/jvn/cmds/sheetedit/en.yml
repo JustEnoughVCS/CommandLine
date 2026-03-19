@@ -20,3 +20,8 @@ sheetedit:
   mapping: Mapping
   index_source: Index
   forward: Forward
+
+  error:
+    no_file_input: |
+      No file specified for parsing
+      Use `jvn sheetedit <sheet_file>` to edit
