@@ -121,7 +121,7 @@ use cli_utils::legacy::{
     push_version, socket_addr_helper,
 };
 use just_enough_vcs::utils::tcp_connection::error::TcpTargetError;
-use just_enough_vcs_cli::{
+use jvcli::{
     data::{
         compile_info::CompileInfo,
         ipaddress_history::{get_recent_ip_address, insert_recent_ip_address},

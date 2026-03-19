@@ -5,6 +5,10 @@ build = "build.rs"
 authors = ["JustEnoughVCS Team"]
 homepage = "https://github.com/JustEnoughVCS/CommandLine/"
 
+[lib]
+name = "jvcli"
+crate-type = ["cdylib", "rlib"]
+
 [workspace]
 members = [
     "gen",

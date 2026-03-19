@@ -2,7 +2,7 @@ use std::{fs::OpenOptions, process::exit};
 
 use clap::Parser;
 use env_logger::Target;
-use just_enough_vcs_cli::systems::{
+use jvcli::systems::{
     cmd::_commands::jv_cmd_nodes,
     comp::{
         _comps::{jv_cmd_comp_nodes, match_comp},

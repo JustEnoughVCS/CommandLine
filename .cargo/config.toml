@@ -13,6 +13,10 @@ binaries = [
     "jvn_comp",
     "jvn_comp.exe",
 
+    # Dynamic Lib
+    "libjvcli.so",
+    "libjvcli.dll",
+
     # The legacy command line
     "jv",
     "jv.exe",

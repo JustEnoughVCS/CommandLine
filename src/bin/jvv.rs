@@ -40,8 +40,8 @@ use just_enough_vcs::{
     },
     utils::cfg_file::config::ConfigFile,
 };
-use just_enough_vcs_cli::data::compile_info::CompileInfo;
 use just_fmt::pascal_case;
+use jvcli::data::compile_info::CompileInfo;
 use log::{error, info};
 use rust_i18n::{set_locale, t};
 use tokio::fs::{self};

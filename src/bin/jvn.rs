@@ -5,7 +5,11 @@ use std::{
 };
 
 use cli_utils::legacy::{display::md, env::current_locales, levenshtein_distance};
-use just_enough_vcs_cli::{
+use just_progress::{
+    progress,
+    renderer::{ProgressSimpleRenderer, RendererTheme},
+};
+use jvcli::{
     special_argument, special_flag,
     systems::{
         cmd::{
@@ -20,10 +24,6 @@ use just_enough_vcs_cli::{
             helpdoc_viewer::{self},
         },
     },
-};
-use just_progress::{
-    progress,
-    renderer::{ProgressSimpleRenderer, RendererTheme},
 };
 use log::{LevelFilter, error, info, trace, warn};
 use rust_i18n::{set_locale, t};
