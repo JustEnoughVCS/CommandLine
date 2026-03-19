@@ -49,7 +49,7 @@ async fn prepare(args: &Arg, ctx: &JVCommandContext) -> Result<In, CmdPrepareErr
         PathFormatError::InvalidUtf8(e) => CmdPrepareError::Error(e.to_string()),
     })?;
 
-    let editor = args.editor.clone().unwrap_or(get_default_editor().await);
+    let editor = args.editor.clone().unwrap_or(get_default_editor());
 
     Ok(In { file, editor })
 }

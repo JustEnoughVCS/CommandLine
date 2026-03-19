@@ -6,7 +6,7 @@
 ///
 /// # Returns
 /// A String containing the default text editor
-pub async fn get_default_editor() -> String {
+pub fn get_default_editor() -> String {
     if let Ok(editor) = std::env::var("JV_TEXT_EDITOR") {
         return editor;
     }

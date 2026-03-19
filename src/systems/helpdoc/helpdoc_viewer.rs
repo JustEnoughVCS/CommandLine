@@ -1,5 +1,8 @@
 use crate::systems::helpdoc::{get_helpdoc, get_helpdoc_list};
-use cli_utils::{display::markdown::Markdown, env::locales::current_locales};
+use cli_utils::{
+    display::markdown::Markdown,
+    env::{helpdoc::get_helpdoc_enabled, locales::current_locales},
+};
 use crossterm::{
     cursor::{Hide, MoveTo, Show},
     event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
@@ -651,10 +654,15 @@ impl DocTree {
 
 /// Display help document viewer
 pub async fn display_with_lang(default_focus_doc: &str, lang: &str) {
-    let mut viewer = HelpdocViewer::new(default_focus_doc, lang);
+    if get_helpdoc_enabled() {
+        let mut viewer = HelpdocViewer::new(default_focus_doc, lang);
 
-    if let Err(e) = viewer.run().await {
-        eprintln!("Error running helpdoc viewer: {}", e);
+        if let Err(e) = viewer.run().await {
+            eprintln!("Error running helpdoc viewer: {}", e);
+        }
+    } else {
+        let content = get_helpdoc(default_focus_doc, lang).markdown();
+        println!("{}", content)
     }
 }
 

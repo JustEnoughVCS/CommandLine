@@ -6,7 +6,7 @@
 ///
 /// # Returns
 /// A String containing the default pager
-pub async fn get_default_pager() -> String {
+pub fn get_default_pager() -> String {
     if let Ok(pager) = std::env::var("JV_PAGER") {
         return pager;
     }

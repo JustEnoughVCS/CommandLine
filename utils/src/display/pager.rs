@@ -15,7 +15,7 @@ pub async fn pager(
     fs::write(cache_path, content_str).await?;
 
     // Get the default pager
-    let pager_cmd = get_default_pager().await;
+    let pager_cmd = get_default_pager();
 
     // Try to use the pager
     let status = Command::new(&pager_cmd).arg(cache_path).status().await;
