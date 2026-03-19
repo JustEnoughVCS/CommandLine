@@ -14,6 +14,25 @@ use just_enough_vcs_cli::systems::{
 use log::debug;
 use log::{LevelFilter, error, trace};
 
+const GLOBAL_FLAGS: &[&'static str] = &[
+    "--confirm",
+    "-C",
+    "--help",
+    "-h",
+    "--lang",
+    "--no-error-logs",
+    "--no-progress",
+    "--quiet",
+    "-q",
+    "--renderer",
+    "--verbose",
+    "-V",
+    "--version",
+    "-v",
+];
+
+const LANGUAGES: [&'static str; 2] = ["en", "zh-CN"];
+
 fn main() {
     // If not in release mode, initialize env_logger to capture logs
     #[cfg(debug_assertions)]
@@ -46,28 +65,35 @@ fn main() {
     #[cfg(debug_assertions)]
     trace_ctx(&ctx);
 
-    // Perform pre-completion for common flags;
-    // if completion fails, start matching command nodes for completion
-    let result = pre_comp(&ctx);
+    trace!("Try using specific completion");
+    let result = comp(&ctx);
     if let Some(suggestions) = result {
         handle_comp_result(&Some(suggestions));
     } else {
-        trace!("Using specific completion");
-        let result = comp(ctx);
+        trace!("Using default completion");
+        let result = default_comp(&ctx);
         handle_comp_result(&result);
     }
 }
 
-fn pre_comp(ctx: &CompletionContext) -> Option<Vec<String>> {
+fn default_comp(ctx: &CompletionContext) -> Option<Vec<String>> {
+    if ctx.current_word.starts_with('-') {
+        return Some(GLOBAL_FLAGS.iter().map(|s| s.to_string()).collect());
+    }
+
     // Match and comp Override Renderers
     if ctx.previous_word == "--renderer" {
         return Some(jv_override_renderers());
     }
 
+    if ctx.previous_word == "--lang" {
+        return Some(LANGUAGES.iter().map(|s| s.to_string()).collect());
+    }
+
     None
 }
 
-fn comp(ctx: CompletionContext) -> Option<Vec<String>> {
+fn comp(ctx: &CompletionContext) -> Option<Vec<String>> {
     let args: Vec<String> = ctx.all_words.iter().skip(1).cloned().collect();
     let nodes = jv_cmd_comp_nodes();
     let command = format!("{} ", args.join(" "));
@@ -88,7 +114,7 @@ fn comp(ctx: CompletionContext) -> Option<Vec<String>> {
 
     let match_node: Option<String> = match matching_nodes.len() {
         0 => {
-            if let Some(result) = try_comp_cmd_nodes(&ctx) {
+            if let Some(result) = try_comp_cmd_nodes(ctx) {
                 return Some(result);
             }
             // No matching node found
@@ -111,14 +137,14 @@ fn comp(ctx: CompletionContext) -> Option<Vec<String>> {
     #[cfg(debug_assertions)]
     match &match_node {
         Some(node) => trace!("Matched `{}`", node),
-        None => trace!("No competions matched."),
+        None => trace!("No completions matched."),
     }
 
     let Some(match_node) = match_node else {
         return None;
     };
 
-    match_comp(match_node, ctx)
+    match_comp(match_node, ctx.clone())
 }
 
 fn try_comp_cmd_nodes(ctx: &CompletionContext) -> Option<Vec<String>> {

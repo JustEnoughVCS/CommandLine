@@ -1,6 +1,6 @@
 use clap::{Parser, command};
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about = None)]
 pub struct CompletionContext {
     /// The full command line
