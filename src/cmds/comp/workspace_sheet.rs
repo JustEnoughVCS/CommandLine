@@ -1,4 +1,5 @@
 use crate::systems::comp::context::CompletionContext;
+use cli_utils::string_vec;
 use just_enough_vcs::system::workspace::workspace::manager::WorkspaceManager;
 
 pub fn comp(ctx: CompletionContext) -> Option<Vec<String>> {
@@ -15,11 +16,15 @@ pub fn comp(ctx: CompletionContext) -> Option<Vec<String>> {
     }
 
     if ctx.current_word.starts_with('-') {
-        return Some(vec![
-            "--list-all".to_string(),
-            "--print-path".to_string(),
-            "--new".to_string(),
-            "--delete".to_string(),
+        return Some(string_vec![
+            "-A",
+            "--list-all",
+            "-p",
+            "--print-path",
+            "-n",
+            "--new",
+            "-d",
+            "--delete",
         ]);
     }
 
