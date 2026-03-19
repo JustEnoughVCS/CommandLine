@@ -1,0 +1,11 @@
+workspace_alias:
+  error:
+    undeclared_input: |
+      Unclear input!
+      Use `jvn helpdoc commands/workspace/alias` to look up the usage
+
+  render:
+    map: |
+      Local index `~%{local}` is mapped to `%{remote}`
+    no_map: |
+      Local index `~%{local}` has no mapping

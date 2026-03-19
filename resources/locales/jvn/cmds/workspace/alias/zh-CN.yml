@@ -1,0 +1,11 @@
+workspace_alias:
+  error:
+    undeclared_input: |
+      不明确的输入！
+      使用 `jvn helpdoc commands/workspace/alias` 查询使用方式
+
+  render:
+    map: |
+      本地索引 `~%{local}` 被指向 `%{remote}`
+    no_map: |
+      本地索引 `~%{local}` 不存在指向
