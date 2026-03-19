@@ -8,7 +8,7 @@ __  --print-path <sheet_name> # Print the sheet path
 __  --list-all                # List all sheets
 
 ## Aliases
-__  --n <sheet_name>
+__   -n <sheet_name>
 __   -d <sheet_name>
 __   -p <sheet_name>
 __   -A
