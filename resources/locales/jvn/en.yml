@@ -350,6 +350,10 @@ verbose:
   no_arguments: No command entered! Will output help information
 
   user_input: User input command `%{command}`
+  stdin_path: |
+    Standard input source file: %{path}
+  stdin_data: |
+    Standard input data length: %{len}
 
   process_success: Command executed successfully!
   process_fail: Command execution failed!

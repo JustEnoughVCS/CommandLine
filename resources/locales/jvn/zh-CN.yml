@@ -329,6 +329,8 @@ verbose:
   no_arguments: 无命令输入！将输出帮助信息
 
   user_input: 用户输入命令：%{command}
+  stdin_path: 标准输入源文件：%{path}
+  stdin_data: 标准输入数据长度：%{len}
 
   process_success: 命令执行成功！
   process_fail: 命令执行失败！

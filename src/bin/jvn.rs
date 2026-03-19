@@ -132,6 +132,14 @@ async fn main() {
         Err(_) => (None, None),
     };
 
+    // Trace stdin result
+    if let Some(ref path) = stdin_path {
+        trace!("{}", t!("verbose.stdin_path", path = path.display()).trim());
+    }
+    if let Some(ref data) = stdin_data {
+        trace!("{}", t!("verbose.stdin_data", len = data.len()).trim());
+    }
+
     // Build process future
     let args_clone = args.clone();
     let process_future = jv_cmd_process(
