@@ -27,7 +27,7 @@ use just_progress::{
 };
 use log::{LevelFilter, error, info, trace, warn};
 use rust_i18n::{set_locale, t};
-use tokio::io::AsyncReadExt;
+use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 
 rust_i18n::i18n!("resources/locales/jvn", fallback = "en");
 
@@ -221,6 +221,11 @@ async fn main() {
         let r = render_result.deref();
         if !r.is_empty() {
             print!("{}", r);
+            if let Err(e) = io::stdout().flush().await {
+                if !no_error_logs {
+                    display_io_error(e);
+                }
+            }
         }
     }
 }
