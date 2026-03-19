@@ -10,13 +10,7 @@ pub async fn input_with_editor(
     cache_file: impl AsRef<std::path::Path>,
     comment_char: impl AsRef<str>,
 ) -> Result<String, std::io::Error> {
-    input_with_editor_cutsom(
-        default_text,
-        cache_file,
-        comment_char,
-        get_default_editor().await,
-    )
-    .await
+    input_with_editor_cutsom(default_text, cache_file, comment_char, get_default_editor()).await
 }
 
 pub async fn input_with_editor_cutsom(
