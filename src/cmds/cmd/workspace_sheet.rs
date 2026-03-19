@@ -1,9 +1,11 @@
 use crate::{
     cmd_output,
     cmds::{
-        arg::workspace_sheet::JVWorkspaceSheetArgument, collect::workspace::JVWorkspaceCollect,
+        arg::workspace_sheet::JVWorkspaceSheetArgument,
+        collect::workspace::JVWorkspaceCollect,
         converter::make_sheet_error::MakeSheetErrorConverter,
-        r#in::workspace_sheet::JVWorkspaceSheetInput, out::none::JVNoneOutput,
+        r#in::workspace_sheet::JVWorkspaceSheetInput,
+        out::{none::JVNoneOutput, path::JVPathOutput, string_vcs::JVStringVecOutput},
     },
     systems::{
         cmd::{
@@ -92,15 +94,15 @@ async fn exec(input: In, collect: Collect) -> Result<AnyOutput, CmdExecuteError>
             }
         }
         JVWorkspaceSheetInput::ListAll => {
-            collect
+            return cmd_output!(JVStringVecOutput => collect
                 .manager
-                .list_sheet_names()
-                .await
-                .iter()
-                .for_each(|name| println!("{}", name));
+                .list_sheet_names().await.into());
         }
         JVWorkspaceSheetInput::PrintPath(sheet_name) => {
-            println!("{}", collect.manager.get_sheet_path(sheet_name).display())
+            return cmd_output!(JVPathOutput => collect
+                .manager
+                .get_sheet_path(sheet_name)
+                .into());
         }
     }
     cmd_output!(JVNoneOutput => JVNoneOutput)
