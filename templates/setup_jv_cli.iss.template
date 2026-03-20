@@ -27,14 +27,14 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
 Source: "..\..\..\.temp\deploy\*"; Excludes: "setup"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "inst.ps1"; DestDir: "{app}\scripts\"; Flags: ignoreversion
-Source: "uninst.ps1"; DestDir: "{app}\scripts\"; Flags: ignoreversion
+Source: "post_inst.ps1"; DestDir: "{app}\scripts\"; Flags: ignoreversion
+Source: "post_uninst.ps1"; DestDir: "{app}\scripts\"; Flags: ignoreversion
 
 [Run]
-Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -File ""{app}\scripts\inst.ps1"""; Flags: runhidden; Description: "Running post-installation script..."; StatusMsg: "Running post-installation script..."; AfterInstall: RunPostInstall
+Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -File ""{app}\scripts\post_inst.ps1"""; Flags: runhidden; Description: "Running post-installation script..."; StatusMsg: "Running post-installation script..."; AfterInstall: RunPostInstall
 
 [UninstallRun]
-Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -File ""{app}\scripts\uninst.ps1"""; Flags: runhidden; RunOnceId: "UninstallScript"
+Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -File ""{app}\scripts\post_uninst.ps1"""; Flags: runhidden; RunOnceId: "UninstallScript"
 
 [Code]
 procedure RunPostInstall;

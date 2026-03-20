@@ -16,13 +16,6 @@ binaries = [
     # Dynamic Lib
     "libjvcli.so",
     "libjvcli.dll",
-
-    # The legacy command line
-    "jv",
-    "jv.exe",
-
-    "jvv",
-    "jvv.exe",
 ]
 
 #####################
@@ -45,23 +38,7 @@ from = "scripts/deploy/completions/fish.fish"
 to = "comp/jvn_fish.fish"
 platform = [ "linux", "macos" ]
 
-# Legacy Completions
-[copies.completion_jv_bash]
-from = "scripts/deploy/legacy_completions/bash/completion_jv.sh"
-to = "_legacy/comp/jv.sh"
-platform = [ "linux", "macos" ]
-
-[copies.completion_jvv_bash]
-from = "scripts/deploy/legacy_completions/bash/completion_jvv.sh"
-to = "_legacy/comp/jvv.sh"
-platform = [ "linux", "macos" ]
-
 # Entries
-[copies.entry_legacy_bash]
-from = "scripts/deploy/jv_cli.sh"
-to = "jv_cli.sh"
-platform = [ "linux", "macos" ]
-
 [copies.entry_bash]
 from = "scripts/deploy/jvn.sh"
 to = "jvn.sh"
@@ -77,24 +54,7 @@ from = "scripts/deploy/completions/powershell.ps1"
 to = "comp/jvn_pwsl.ps1"
 platform = [ "windows" ]
 
-# Legacy Completions
-[copies.completion_jv_powershell]
-from = "scripts/deploy/legacy_completions/powershell/completion_jv.ps1"
-to = "_legacy/comp/jv.ps1"
-platform = [ "windows" ]
-
-[copies.completion_jvv_powershell]
-from = "scripts/deploy/legacy_completions/powershell/completion_jvv.ps1"
-to = "_legacy/comp/jvv.ps1"
-platform = [ "windows" ]
-
-
 # Entries
-[copies.entry_legacy_powershell]
-from = "scripts/deploy/jv_cli.ps1"
-to = "jv_cli.ps1"
-platform = [ "windows" ]
-
 [copies.entry_powershell]
 from = "scripts/deploy/jvn.ps1"
 to = "jvn.ps1"
@@ -104,12 +64,4 @@ platform = [ "windows" ]
 ### Zsh Plugin ###
 ##################
 
-[copies.zsh_plugin]
-from = "scripts/deploy/legacy_zsh_support/jvcs.plugin.zsh"
-to = "_legacy/zsh_support/jvcs.plugin.zsh"
-platform = [ "linux", "macos" ]
-
-[copies.zsh_plugin_installation]
-from = "scripts/deploy/legacy_zsh_support/how_to_install.md"
-to = "_legacy/zsh_support/how_to_install.md"
-platform = [ "linux", "macos" ]
+# Not yet :(
