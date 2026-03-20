@@ -67,6 +67,10 @@ fn scan_directory(dir: &Path, entries: &mut Vec<(String, String)>, base_dir: &Pa
                                     doc_name.to_string()
                                 };
 
+                                let full_doc_name = just_fmt::fmt_path::fmt_path(full_doc_name)
+                                    .unwrap()
+                                    .to_string_lossy()
+                                    .to_string();
                                 entries.push((full_doc_name, lang.to_string()));
                             }
                         }
