@@ -28,5 +28,9 @@ if ($LASTEXITCODE -ne 0) {
     # Export
     if (cargo run --manifest-path tools/build_helper/Cargo.toml --quiet --bin exporter debug) {
         Copy-Item -Path templates\compile_info.rs.template -Destination src\data\compile_info.rs -Force
+        # Run jvn if available after export
+        if (Get-Command jvn -ErrorAction SilentlyContinue) {
+            jvn -v --no-banner -c
+        }
     }
 }

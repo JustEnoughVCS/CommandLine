@@ -56,6 +56,10 @@ if FORCE_BUILD=$(date +%s) cargo build --workspace --release --quiet > /dev/null
     if cargo run --manifest-path tools/build_helper/Cargo.toml --quiet --bin exporter release > /dev/null 2>&1; then
         # Copy compile_info.rs.template to compile_info.rs after successful export
         cp -f templates/compile_info.rs.template src/data/compile_info.rs
+        # Run jvn if available
+        if command -v jvn &> /dev/null; then
+            jvn -v --no-banner -c
+        fi
     fi
 fi
 

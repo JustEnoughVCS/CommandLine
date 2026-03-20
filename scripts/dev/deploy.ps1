@@ -79,6 +79,10 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host "Deploying Command Line `".\.cargo\config.toml`""
     if (cargo run --manifest-path tools/build_helper/Cargo.toml --quiet --bin exporter release > $null 2>&1) {
         Copy-Item -Path templates\compile_info.rs.template -Destination src\data\compile_info.rs -Force
+        # After export, if jvn program exists, run jvn -v --no-banner -c
+        if (Get-Command jvn -ErrorAction SilentlyContinue) {
+            jvn -v --no-banner -c
+        }
         Write-Host "Packing Installer `".\setup\windows\setup_jv_cli.iss`""
         ISCC /Q .\scripts\setup\windows\setup_jv_cli.iss
     }
