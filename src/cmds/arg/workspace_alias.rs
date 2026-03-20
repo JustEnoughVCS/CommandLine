@@ -8,7 +8,7 @@ pub struct JVWorkspaceAliasArgument {
     #[arg(short = 'i', long = "insert")]
     pub insert: bool,
 
-    #[arg(short = 'q', long = "query")]
+    #[arg(short = 'Q', long = "query")]
     pub query: bool,
 
     #[arg(short = 'e', long = "erase")]
