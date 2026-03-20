@@ -112,7 +112,7 @@ async fn main() {
     }
 
     // Handle help when no arguments provided
-    if args.len() < 1 && help {
+    if args.is_empty() && help {
         warn!("{}", t!("verbose.no_arguments"));
         helpdoc_viewer::display_with_lang(DEFAULT_HELPDOC, &lang).await;
         exit(1);
@@ -194,7 +194,7 @@ async fn main() {
                         handle_no_matching_command_error(args);
                     }
                     CmdProcessError::ParseError(help) => {
-                        if help.trim().len() < 1 {
+                        if help.trim().is_empty() {
                             eprintln!("{}", md(t!("process_error.parse_error")));
                         } else {
                             eprintln!("{}", help)
@@ -221,11 +221,10 @@ async fn main() {
         let r = render_result.deref();
         if !r.is_empty() {
             print!("{}", r);
-            if let Err(e) = io::stdout().flush().await {
-                if !no_error_logs {
+            if let Err(e) = io::stdout().flush().await
+                && !no_error_logs {
                     display_io_error(e);
                 }
-            }
         }
     }
 }
@@ -273,7 +272,7 @@ fn handle_no_matching_command_error(args: Vec<String>) {
             similar_nodes.push(node);
         }
     }
-    if similar_nodes.len() < 1 {
+    if similar_nodes.is_empty() {
         eprintln!("{}", md(t!("process_error.no_matching_command")));
     } else {
         eprintln!(

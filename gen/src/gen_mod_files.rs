@@ -1,9 +1,9 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use crate::constants::REGISTRY_TOML;
 
 /// Generate collect files from directory structure
-pub async fn generate_collect_files(repo_root: &PathBuf) {
+pub async fn generate_collect_files(repo_root: &Path) {
     // Read and parse the TOML configuration
     let config_path = repo_root.join(REGISTRY_TOML);
     let config_content = tokio::fs::read_to_string(&config_path).await.unwrap();
@@ -38,7 +38,7 @@ pub async fn generate_collect_files(repo_root: &PathBuf) {
 
         // Get the directory path for this collect type
         // e.g., for "src/renderers.rs", we want "src/renderers/"
-        let output_parent = output_path.parent().unwrap_or_else(|| repo_root.as_path());
+        let output_parent = output_path.parent().unwrap_or(repo_root);
         let dir_path = output_parent.join(&dir_name);
 
         // Collect all .rs files in the directory (excluding the output file itself)

@@ -1,4 +1,7 @@
-use std::{collections::HashSet, path::PathBuf};
+use std::{
+    collections::HashSet,
+    path::{Path, PathBuf},
+};
 
 use just_template::{Template, tmpl};
 use regex::Regex;
@@ -12,7 +15,7 @@ use crate::{
     resolve_types::resolve_type_paths,
 };
 
-pub async fn generate_override_renderer(repo_root: &PathBuf) {
+pub async fn generate_override_renderer(repo_root: &Path) {
     let template_path = repo_root.join(OVERRIDE_RENDERER_ENTRY_TEMPLATE);
     let output_path = repo_root.join(OVERRIDE_RENDERER_ENTRY);
     let all_possible_types = collect_all_possible_types(&PathBuf::from(COMMANDS_PATH)).await;
@@ -45,7 +48,7 @@ pub async fn generate_override_renderer(repo_root: &PathBuf) {
 }
 
 /// Generate override renderers list file from Registry.toml configuration using just_template
-pub async fn generate_override_renderers_list(repo_root: &PathBuf) {
+pub async fn generate_override_renderers_list(repo_root: &Path) {
     let template_path = repo_root.join(OVERRIDE_RENDERERS_TEMPLATE);
     let output_path = repo_root.join(OVERRIDE_RENDERERS);
     let config_path = repo_root.join(REGISTRY_TOML);
@@ -103,9 +106,9 @@ pub async fn generate_override_renderers_list(repo_root: &PathBuf) {
     );
 }
 
-pub async fn collect_all_possible_types(dir: &PathBuf) -> HashSet<String> {
+pub async fn collect_all_possible_types(dir: &Path) -> HashSet<String> {
     let mut all_types = HashSet::new();
-    let mut dirs_to_visit = vec![dir.clone()];
+    let mut dirs_to_visit = vec![dir.to_path_buf()];
 
     while let Some(current_dir) = dirs_to_visit.pop() {
         let entries_result = fs::read_dir(&current_dir).await;
@@ -130,7 +133,7 @@ pub async fn collect_all_possible_types(dir: &PathBuf) -> HashSet<String> {
             let path = entry.path();
 
             if path.is_dir() {
-                dirs_to_visit.push(path);
+                dirs_to_visit.push(path.to_path_buf());
                 continue;
             }
 
@@ -159,7 +162,7 @@ pub async fn collect_all_possible_types(dir: &PathBuf) -> HashSet<String> {
     all_types
 }
 
-pub fn get_output_types(code: &String) -> Option<Vec<String>> {
+pub fn get_output_types(code: &str) -> Option<Vec<String>> {
     let mut output_types = Vec::new();
 
     // Find all cmd_output! macros

@@ -14,7 +14,7 @@ use jvcli::systems::{
 use log::debug;
 use log::{LevelFilter, error, trace};
 
-const GLOBAL_FLAGS: &[&'static str] = &[
+const GLOBAL_FLAGS: &[&str] = &[
     "--confirm",
     "-C",
     "--help",
@@ -31,7 +31,7 @@ const GLOBAL_FLAGS: &[&'static str] = &[
     "-v",
 ];
 
-const LANGUAGES: [&'static str; 2] = ["en", "zh-CN"];
+const LANGUAGES: [&str; 2] = ["en", "zh-CN"];
 
 fn main() {
     // If not in release mode, initialize env_logger to capture logs
@@ -140,9 +140,7 @@ fn comp(ctx: &CompletionContext) -> Option<Vec<String>> {
         None => trace!("No completions matched."),
     }
 
-    let Some(match_node) = match_node else {
-        return None;
-    };
+    let match_node = match_node?;
 
     match_comp(match_node, ctx.clone())
 }
@@ -188,10 +186,11 @@ fn try_comp_cmd_nodes(ctx: &CompletionContext) -> Option<Vec<String>> {
         if input_path.len() == 1 && !ctx.current_word.is_empty() {
             for node in &cmd_nodes {
                 let node_parts: Vec<&str> = node.split(' ').collect();
-                if !node_parts.is_empty() && node_parts[0].starts_with(current_word) {
-                    if !suggestions.contains(&node_parts[0].to_string()) {
-                        suggestions.push(node_parts[0].to_string());
-                    }
+                if !node_parts.is_empty()
+                    && node_parts[0].starts_with(current_word)
+                    && !suggestions.contains(&node_parts[0].to_string())
+                {
+                    suggestions.push(node_parts[0].to_string());
                 }
             }
 
@@ -233,11 +232,9 @@ fn try_comp_cmd_nodes(ctx: &CompletionContext) -> Option<Vec<String>> {
                         matches = false;
                         break;
                     }
-                } else {
-                    if input_path[i] != node_parts[i] {
-                        matches = false;
-                        break;
-                    }
+                } else if input_path[i] != node_parts[i] {
+                    matches = false;
+                    break;
                 }
             }
 

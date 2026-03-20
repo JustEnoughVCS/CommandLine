@@ -213,8 +213,8 @@ fn copy_configs() -> Result<Vec<CopyConfig>, std::io::Error> {
 
     let mut copy_configs = Vec::new();
 
-    if let Some(copies) = config.get("copies") {
-        if let Some(tables) = copies.as_table() {
+    if let Some(copies) = config.get("copies")
+        && let Some(tables) = copies.as_table() {
             for (_, table) in tables {
                 if let Some(from) = table.get("from").and_then(|v| v.as_str()) {
                     let to = table.get("to").and_then(|v| v.as_str()).unwrap_or("");
@@ -238,7 +238,6 @@ fn copy_configs() -> Result<Vec<CopyConfig>, std::io::Error> {
                 }
             }
         }
-    }
 
     Ok(copy_configs)
 }

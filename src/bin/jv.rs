@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 //
 //
 //  ████████                ████████
@@ -896,33 +898,30 @@ async fn main() {
     // but required time > 0 (not in disabled or always-update state)
     if enable_auto_update && outdate_update_enabled && required_outdated_minutes > 0 {
         // Read the last update time and calculate the duration
-        if let Some(local_cfg) = LocalConfig::read().await.ok() {
-            if let Some(local_dir) = current_local_path() {
-                if let Ok(latest_info) = LatestInfo::read_from(LatestInfo::latest_info_path(
-                    &local_dir,
-                    &local_cfg.current_account(),
-                ))
-                .await
-                {
-                    if let Some(update_instant) = latest_info.update_instant {
-                        let now = SystemTime::now();
-                        let duration_secs = now
-                            .duration_since(update_instant)
-                            .unwrap_or_default()
-                            .as_secs();
+        if let Ok(local_cfg) = LocalConfig::read().await
+            && let Some(local_dir) = current_local_path()
+            && let Ok(latest_info) = LatestInfo::read_from(LatestInfo::latest_info_path(
+                &local_dir,
+                &local_cfg.current_account(),
+            ))
+            .await
+            && let Some(update_instant) = latest_info.update_instant
+        {
+            let now = SystemTime::now();
+            let duration_secs = now
+                .duration_since(update_instant)
+                .unwrap_or_default()
+                .as_secs();
 
-                        if duration_secs > required_outdated_minutes as u64 * 60 {
-                            // Update
-                            // This will change the current current_dir
-                            jv_update(UpdateArgs {
-                                help: false,
-                                silent: true,
-                            })
-                            .await
-                        }
-                    }
-                }
-            };
+            if duration_secs > required_outdated_minutes as u64 * 60 {
+                // Update
+                // This will change the current current_dir
+                jv_update(UpdateArgs {
+                    help: false,
+                    silent: true,
+                })
+                .await
+            }
         };
     }
 
@@ -946,12 +945,12 @@ async fn main() {
                 return;
             };
 
-            if let Ok(ids) = dir.account_ids() {
-                if ids.len() < 1 {
-                    println!();
-                    println!("{}", t!("jv.tip.no_account").trim().yellow());
-                    return;
-                }
+            if let Ok(ids) = dir.account_ids()
+                && ids.is_empty()
+            {
+                println!();
+                println!("{}", t!("jv.tip.no_account").trim().yellow());
+                return;
             }
 
             // Check if the workspace has a registered account (account = unknown)
@@ -964,25 +963,23 @@ async fn main() {
             if local_cfg.current_account() == "unknown" {
                 println!();
                 println!("{}", t!("jv.tip.no_account_set").trim().yellow());
-            } else {
-                if dir
-                    .account_ids()
-                    .ok()
-                    .map(|ids| !ids.contains(&local_cfg.current_account()))
-                    .unwrap_or(false)
-                {
-                    println!();
-                    println!(
-                        "{}",
-                        t!(
-                            "jv.tip.account_not_exist",
-                            account = local_cfg.current_account()
-                        )
-                        .trim()
-                        .yellow()
-                    );
-                    return;
-                }
+            } else if dir
+                .account_ids()
+                .ok()
+                .map(|ids| !ids.contains(&local_cfg.current_account()))
+                .unwrap_or(false)
+            {
+                println!();
+                println!(
+                    "{}",
+                    t!(
+                        "jv.tip.account_not_exist",
+                        account = local_cfg.current_account()
+                    )
+                    .trim()
+                    .yellow()
+                );
+                return;
             }
 
             // Outdated
@@ -1414,7 +1411,7 @@ async fn main() {
             let _ = correct_current_dir();
             if let Ok(local_config) = LocalConfig::read().await {
                 let sheet_name = local_config.sheet_in_use().clone().unwrap_or_default();
-                if sheet_name.len() > 0 {
+                if !sheet_name.is_empty() {
                     println!("{}", sheet_name);
                     return;
                 }
@@ -1650,19 +1647,17 @@ async fn jv_here(args: HereArgs) {
                     let mut holder = None;
 
                     // Get mapping info (only for files)
-                    if !is_dir {
-                        if let Some(mapping) = cached_sheet.mapping().get(&current_path) {
-                            let id = mapping.id.clone();
-                            if let Some(latest_version) = latest_file_data.file_version(&id) {
-                                current_version = latest_version.clone();
-                            }
-                            if let Some(file_holder) = latest_file_data.file_holder(&id) {
-                                holder = Some(file_holder.clone());
-                            }
-
-                            // Check if file is modified
-                            modified = analyzed.modified.contains(&current_path);
+                    if !is_dir && let Some(mapping) = cached_sheet.mapping().get(&current_path) {
+                        let id = mapping.id.clone();
+                        if let Some(latest_version) = latest_file_data.file_version(&id) {
+                            current_version = latest_version.clone();
                         }
+                        if let Some(file_holder) = latest_file_data.file_holder(&id) {
+                            holder = Some(file_holder.clone());
+                        }
+
+                        // Check if file is modified
+                        modified = analyzed.modified.contains(&current_path);
                     }
 
                     // Remove from remote files list
@@ -1673,7 +1668,7 @@ async fn jv_here(args: HereArgs) {
                         mapping: if is_dir {
                             "".to_string()
                         } else {
-                            fmt_path_str(&current_path.display().to_string()).unwrap_or_default()
+                            fmt_path_str(current_path.display().to_string()).unwrap_or_default()
                         },
                         name: file_name.clone(),
                         current_version,
@@ -1703,7 +1698,7 @@ async fn jv_here(args: HereArgs) {
 
                 let holder = latest_file_data.file_holder(&metadata.id).cloned();
                 json_result.items.push(HereJsonResultItem {
-                    mapping: fmt_path_str(&current_path.display().to_string()).unwrap_or_default(),
+                    mapping: fmt_path_str(current_path.display().to_string()).unwrap_or_default(),
                     name: name.clone(),
                     current_version: metadata.version,
                     size: 0,
@@ -1928,18 +1923,16 @@ async fn jv_here(args: HereArgs) {
                                     .truecolor(128, 128, 128)
                                     .to_string();
                             }
+                        } else if modified {
+                            editing = t!("jv.success.here.append_info.editing.modified")
+                                .trim()
+                                .cyan()
+                                .to_string();
                         } else {
-                            if modified {
-                                editing = t!("jv.success.here.append_info.editing.modified")
-                                    .trim()
-                                    .cyan()
-                                    .to_string();
-                            } else {
-                                editing = t!("jv.success.here.append_info.editing.can_edit")
-                                    .trim()
-                                    .green()
-                                    .to_string();
-                            }
+                            editing = t!("jv.success.here.append_info.editing.can_edit")
+                                .trim()
+                                .green()
+                                .to_string();
                         }
                     }
 
@@ -2171,7 +2164,7 @@ async fn jv_status(args: StatusArgs) {
                     if let Ok(mapping) = local_sheet.mapping_data(&path) {
                         let vfid = mapping.mapping_vfid();
                         let ver = mapping.version_when_updated();
-                        if let Some(latest_version) = latest_file_data.file_version(&vfid) {
+                        if let Some(latest_version) = latest_file_data.file_version(vfid) {
                             ver == latest_version
                         } else {
                             true
@@ -2296,7 +2289,7 @@ async fn jv_status(args: StatusArgs) {
                     if let Ok(mapping) = local_sheet.mapping_data(path) {
                         let vfid = mapping.mapping_vfid();
                         let ver = mapping.version_when_updated();
-                        if let Some(latest_version) = latest_file_data.file_version(&vfid) {
+                        if let Some(latest_version) = latest_file_data.file_version(vfid) {
                             ver == latest_version
                         } else {
                             true
@@ -2416,30 +2409,28 @@ async fn jv_status(args: StatusArgs) {
             ))
             .trim()
         );
+    } else if in_ref_sheet {
+        println!(
+            "{}",
+            md(t!(
+                "jv.success.status.no_changes_in_reference_sheet",
+                sheet_name = sheet_name,
+                h = h,
+                m = m,
+                s = s
+            ))
+        );
     } else {
-        if in_ref_sheet {
-            println!(
-                "{}",
-                md(t!(
-                    "jv.success.status.no_changes_in_reference_sheet",
-                    sheet_name = sheet_name,
-                    h = h,
-                    m = m,
-                    s = s
-                ))
-            );
-        } else {
-            println!(
-                "{}",
-                md(t!(
-                    "jv.success.status.no_changes",
-                    sheet_name = sheet_name,
-                    h = h,
-                    m = m,
-                    s = s
-                ))
-            );
-        }
+        println!(
+            "{}",
+            md(t!(
+                "jv.success.status.no_changes",
+                sheet_name = sheet_name,
+                h = h,
+                m = m,
+                s = s
+            ))
+        );
     }
 
     if in_ref_sheet && !is_host_mode {
@@ -2543,7 +2534,7 @@ async fn jv_info(args: InfoArgs) {
         return;
     };
 
-    if query_file_paths.len() < 1 {
+    if query_file_paths.is_empty() {
         return;
     }
     // File to query
@@ -2771,7 +2762,7 @@ async fn jv_info(args: InfoArgs) {
                 }
             } else {
                 // Multi-line output
-                if histories.len() > 0 {
+                if !histories.is_empty() {
                     println!();
                 }
                 for (version, description) in histories {
@@ -3003,7 +2994,6 @@ async fn jv_sheet_use(args: SheetUseArgs) {
                     "{}",
                     md(t!("jv.fail.use.sheet_not_exists", name = args.sheet_name))
                 );
-                return;
             }
             std::io::ErrorKind::DirectoryNotEmpty => {
                 eprintln!(
@@ -3013,7 +3003,6 @@ async fn jv_sheet_use(args: SheetUseArgs) {
                         name = args.sheet_name
                     ))
                 );
-                return;
             }
             _ => {
                 handle_err(e.into());
@@ -3049,11 +3038,11 @@ async fn jv_sheet_exit(_args: SheetExitArgs) -> Result<(), ()> {
                     return Err(());
                 }
             };
-            return Ok(());
+            Ok(())
         }
         Err(e) => {
             handle_err(e.into());
-            return Err(());
+            Err(())
         }
     }
 }
@@ -3398,7 +3387,7 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
             );
 
             // Suggestion1: Confirm Erased
-            if align_tasks.erased.len() > 0 {
+            if !align_tasks.erased.is_empty() {
                 println!(
                     "\n{}",
                     md(t!(
@@ -3408,7 +3397,7 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
                 )
             } else
             // Suggestion2: Confirm Lost
-            if align_tasks.lost.len() > 0 {
+            if !align_tasks.lost.is_empty() {
                 println!(
                     "\n{}",
                     md(t!(
@@ -3418,7 +3407,7 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
                 )
             } else
             // Suggestion3: Confirm Moved
-            if align_tasks.moved.len() > 0 {
+            if !align_tasks.moved.is_empty() {
                 println!(
                     "\n{}",
                     md(t!(
@@ -3555,9 +3544,8 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
                 Ok(_) => {}
                 Err(e) => {
                     eprintln!("{}", md(t!("jv.fail.write_cfg", error = e.to_string())));
-                    return;
                 }
-            };
+            }
         }
     }
     // Lost: match or confirm mode
@@ -3596,16 +3584,16 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
                 .created
                 .iter()
                 .find(|p| p.0.starts_with(&to))
-                .map(|found| found.clone())
+                .cloned()
                 .into_iter()
                 .collect();
 
-            if selected_lost_mapping.len() < 1 {
+            if selected_lost_mapping.is_empty() {
                 eprintln!("{}", md(t!("jv.fail.sheet.align.no_lost_matched")));
                 return;
             }
 
-            if created_file.len() < 1 {
+            if created_file.is_empty() {
                 eprintln!("{}", md(t!("jv.fail.sheet.align.no_created_matched")));
                 return;
             }
@@ -3646,9 +3634,8 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
                 Ok(_) => {}
                 Err(e) => {
                     eprintln!("{}", md(t!("jv.fail.write_cfg", error = e.to_string())));
-                    return;
                 }
-            };
+            }
         }
     }
     // Erased: confirm mode
@@ -3709,7 +3696,6 @@ async fn jv_sheet_align(args: SheetAlignArgs) {
                     return;
                 }
             };
-            return;
         }
     }
 }
@@ -3793,7 +3779,7 @@ async fn jv_track(args: TrackFileArgs) {
                             ))
                         );
 
-                        if skipped.len() > 0 {
+                        if !skipped.is_empty() {
                             println!(
                                 "\n{}",
                                 md(t!(
@@ -3939,13 +3925,12 @@ async fn get_update_info(
 ) -> HashMap<PathBuf, (NextVersion, UpdateDescription)> {
     let mut result = HashMap::new();
 
-    if files.len() == 1 {
-        if let (Some(desc), Some(ver)) = (&args.desc, &args.next_version) {
-            if let Some(file) = files.iter().next() {
-                result.insert(file.clone(), (ver.clone(), desc.clone()));
-                return result;
-            }
-        }
+    if files.len() == 1
+        && let (Some(desc), Some(ver)) = (&args.desc, &args.next_version)
+        && let Some(file) = files.iter().next()
+    {
+        result.insert(file.clone(), (ver.clone(), desc.clone()));
+        return result;
     }
     if args.work {
         return start_update_editor(workspace, files, &args).await;
@@ -3989,11 +3974,11 @@ async fn start_update_editor(
         return HashMap::new();
     };
     // Has unsolved moves, skip
-    if analyzed.lost.len() > 0 || analyzed.moved.len() > 0 {
+    if !analyzed.lost.is_empty() || !analyzed.moved.is_empty() {
         return HashMap::new();
     }
     // No modified, skip
-    if analyzed.modified.len() < 1 {
+    if analyzed.modified.is_empty() {
         return HashMap::new();
     }
     // No sheet, skip
@@ -4008,10 +3993,10 @@ async fn start_update_editor(
         .iter()
         .filter_map(|file| {
             if analyzed.modified.contains(file) {
-                if let Some(mapping_item) = cached_sheet.mapping().get(file) {
-                    if let Some(latest_version) = latest_file_data.file_version(&mapping_item.id) {
-                        return Some((file.clone(), latest_version.clone()));
-                    }
+                if let Some(mapping_item) = cached_sheet.mapping().get(file)
+                    && let Some(latest_version) = latest_file_data.file_version(&mapping_item.id)
+                {
+                    return Some((file.clone(), latest_version.clone()));
                 }
                 None
             } else {
@@ -4501,7 +4486,7 @@ async fn jv_change_edit_right(
                 success_hold,
                 success_throw,
             } => {
-                if success_hold.len() > 0 && success_throw.len() == 0 {
+                if !success_hold.is_empty() && success_throw.is_empty() {
                     println!(
                         "{}",
                         md(t!(
@@ -4509,7 +4494,7 @@ async fn jv_change_edit_right(
                             num = success_hold.len()
                         ))
                     )
-                } else if success_hold.len() == 0 && success_throw.len() > 0 {
+                } else if success_hold.is_empty() && !success_throw.is_empty() {
                     println!(
                         "{}",
                         md(t!(
@@ -4517,7 +4502,7 @@ async fn jv_change_edit_right(
                             num = success_throw.len()
                         ))
                     )
-                } else if success_hold.len() > 0 && success_throw.len() > 0 {
+                } else if !success_hold.is_empty() && !success_throw.is_empty() {
                     println!(
                         "{}",
                         md(t!(
@@ -4563,13 +4548,11 @@ async fn jv_move(args: MoveMappingArgs) {
 
     let to_pattern = if args.to_mapping_pattern.is_some() {
         args.to_mapping_pattern.unwrap()
+    } else if args.erase {
+        "".to_string()
     } else {
-        if args.erase {
-            "".to_string()
-        } else {
-            eprintln!("{}", md(t!("jv.fail.move.no_target_dir")));
-            return;
-        }
+        eprintln!("{}", md(t!("jv.fail.move.no_target_dir")));
+        return;
     };
 
     let is_to_pattern_a_dir = to_pattern.ends_with('/') || to_pattern.ends_with('\\');
@@ -4946,30 +4929,30 @@ async fn share_see(share_id: String, args: ShareMappingArgs) {
         return;
     };
 
-    if let Some(shares) = latest_info.shares_in_my_sheets.get(&sheet_name) {
-        if let Some(share) = shares.get(&share_id) {
-            if args.json_output {
-                let result = SeeShareResult {
-                    share_id: share_id.clone(),
-                    sharer: share.sharer.clone(),
-                    description: share.description.clone(),
-                    mappings: share.mappings.clone(),
-                };
-                print_json(result, args.pretty);
-                return;
-            }
-
-            println!(
-                "{}",
-                md(t!(
-                    "jv.success.share.content",
-                    share_id = share_id,
-                    sharer = share.sharer,
-                    description = share.description,
-                    mappings = render_share_path_tree(&share.mappings)
-                ))
-            );
+    if let Some(shares) = latest_info.shares_in_my_sheets.get(&sheet_name)
+        && let Some(share) = shares.get(&share_id)
+    {
+        if args.json_output {
+            let result = SeeShareResult {
+                share_id: share_id.clone(),
+                sharer: share.sharer.clone(),
+                description: share.description.clone(),
+                mappings: share.mappings.clone(),
+            };
+            print_json(result, args.pretty);
+            return;
         }
+
+        println!(
+            "{}",
+            md(t!(
+                "jv.success.share.content",
+                share_id = share_id,
+                sharer = share.sharer,
+                description = share.description,
+                mappings = render_share_path_tree(&share.mappings)
+            ))
+        );
     }
 }
 
@@ -5175,8 +5158,7 @@ async fn share_out(
     let contains_in_other_sheet = latest_info
         .invisible_sheets
         .iter()
-        .find(|info| info.sheet_name == to_sheet)
-        .is_some();
+        .any(|info| info.sheet_name == to_sheet);
     if !contains_in_my_sheet && !contains_in_other_sheet {
         eprintln!(
             "{}",
@@ -5307,7 +5289,7 @@ async fn start_share_editor(
         .iter()
         .map(|p| {
             if local_sheet.mapping_data(p).is_err() {
-                format!("# {}", p.display().to_string())
+                format!("# {}", p.display())
             } else {
                 p.display().to_string()
             }
@@ -5508,7 +5490,7 @@ async fn jv_account_as(user_dir: UserDirectory, args: SetLocalWorkspaceAccountAr
         return;
     };
 
-    if let Err(_) = local_cfg.set_current_account(member.id()) {
+    if local_cfg.set_current_account(member.id()).is_err() {
         eprintln!("{}", md(t!("jv.fail.account.as")));
         return;
     };
@@ -5981,7 +5963,7 @@ async fn get_globber(
 }
 
 fn get_local_files(current: &PathBuf, items: &mut HashSet<GlobItem>) {
-    if let Ok(entries) = std::fs::read_dir(&current) {
+    if let Ok(entries) = std::fs::read_dir(current) {
         for entry in entries.flatten() {
             let path = entry.path();
             let name = path
@@ -5992,10 +5974,8 @@ fn get_local_files(current: &PathBuf, items: &mut HashSet<GlobItem>) {
 
             if path.is_file() {
                 items.insert(GlobItem::File(name));
-            } else if path.is_dir() {
-                if name != CLIENT_FOLDER_WORKSPACE_ROOT_NAME {
-                    items.insert(GlobItem::Directory(name));
-                }
+            } else if path.is_dir() && name != CLIENT_FOLDER_WORKSPACE_ROOT_NAME {
+                items.insert(GlobItem::Directory(name));
             }
         }
     }
@@ -6137,12 +6117,11 @@ fn mapping_names_here(
         while let Some(parent) = current.parent() {
             if parent == relative_path {
                 // This is a parent directory, not the file itself
-                if current != f.as_path() {
-                    if let Some(dir_name) = current.file_name() {
-                        if let Some(dir_str) = dir_name.to_str() {
-                            dirs_set.insert(format!("{}/", dir_str));
-                        }
-                    }
+                if current != f.as_path()
+                    && let Some(dir_name) = current.file_name()
+                    && let Some(dir_str) = dir_name.to_str()
+                {
+                    dirs_set.insert(format!("{}/", dir_str));
                 }
                 break;
             }

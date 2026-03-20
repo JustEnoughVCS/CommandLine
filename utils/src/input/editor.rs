@@ -30,10 +30,7 @@ pub async fn input_with_editor_cutsom(
     let status = Command::new(editor).arg(cache_path).status().await?;
 
     if !status.success() {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "Editor exited with non-zero status",
-        ));
+        return Err(std::io::Error::other("Editor exited with non-zero status"));
     }
 
     // Read the modified content
@@ -42,14 +39,7 @@ pub async fn input_with_editor_cutsom(
     // Remove comment lines and trim
     let processed_content: String = content
         .lines()
-        .filter_map(|line| {
-            let trimmed = line.trim();
-            if trimmed.starts_with(comment_prefix) {
-                None
-            } else {
-                Some(line)
-            }
-        })
+        .filter(|line| !line.trim().starts_with(comment_prefix))
         .collect::<Vec<&str>>()
         .join("\n");
 

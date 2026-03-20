@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use just_fmt::pascal_case;
 use just_template::{Template, tmpl, tmpl_param};
@@ -6,7 +6,7 @@ use just_template::{Template, tmpl, tmpl_param};
 use crate::constants::{COMMAND_LIST, COMMAND_LIST_TEMPLATE, COMMANDS_PATH, REGISTRY_TOML};
 
 /// Generate registry file from Registry.toml configuration using just_template
-pub async fn generate_commands_file(repo_root: &PathBuf) {
+pub async fn generate_commands_file(repo_root: &Path) {
     let template_path = repo_root.join(COMMAND_LIST_TEMPLATE);
     let output_path = repo_root.join(COMMAND_LIST);
     let config_path = repo_root.join(REGISTRY_TOML);

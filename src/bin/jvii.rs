@@ -85,6 +85,7 @@ impl Editor {
         })
     }
 
+    #[allow(clippy::explicit_counter_loop)]
     fn show_message(&mut self, message: &str, stdout: &mut io::Stdout) -> io::Result<()> {
         let (width, height) = self.terminal_size;
         let message_line = height - 2;
@@ -100,18 +101,18 @@ impl Editor {
             let mut _chars_count = 0;
             let mut current_width = 0;
             let mut byte_pos = 0;
+
             for c in message.chars() {
                 let char_width = if c.is_ascii() { 1 } else { 2 };
                 if current_width + char_width > width as usize {
                     break;
                 }
                 current_width += char_width;
-                _chars_count += 1;
                 byte_pos += c.len_utf8();
             }
             &message[..byte_pos]
         } else {
-            &message
+            message
         };
         stdout.queue(Print(display_message))?;
         stdout.queue(style::ResetColor)?;
@@ -253,6 +254,7 @@ impl Editor {
         self.modified = true;
     }
 
+    #[allow(clippy::explicit_counter_loop)]
     fn render(&self, stdout: &mut io::Stdout) -> io::Result<()> {
         // Clear screen
         stdout.queue(Clear(ClearType::All))?;

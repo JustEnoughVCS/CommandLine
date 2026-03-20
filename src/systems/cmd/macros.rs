@@ -149,7 +149,7 @@ macro_rules! command_template {
                 input: In,
                 collect: Collect,
             ) -> Result<
-                crate::systems::cmd::cmd_system::AnyOutput,
+                $crate::systems::cmd::cmd_system::AnyOutput,
                 $crate::systems::cmd::errors::CmdExecuteError,
             > {
                 exec(input, collect).await
@@ -188,7 +188,7 @@ macro_rules! cmd_output {
 macro_rules! early_cmd_output {
     ($t:ty => $v:expr) => {{
         let checked_value: $t = $v;
-        Err(crate::systems::cmd::errors::CmdPrepareError::EarlyOutput((
+        Err($crate::systems::cmd::errors::CmdPrepareError::EarlyOutput((
             Box::new(checked_value) as Box<dyn std::any::Any + Send + 'static>,
             std::any::TypeId::of::<$t>(),
         )))

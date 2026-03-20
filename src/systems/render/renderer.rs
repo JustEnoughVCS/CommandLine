@@ -20,7 +20,7 @@ pub struct JVRenderResult {
 
 impl Display for JVRenderResult {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}\n", self.render_text.trim())
+        writeln!(f, "{}", self.render_text.trim())
     }
 }
 

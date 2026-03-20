@@ -57,7 +57,7 @@ async fn collect(args: &Arg, ctx: &JVCommandContext) -> Result<Collect, CmdPrepa
         ReadSheetDataError::IOErr(error) => CmdPrepareError::Io(error),
     })?;
 
-    Ok(Collect { sheet: sheet })
+    Ok(Collect { sheet })
 }
 
 #[exec]

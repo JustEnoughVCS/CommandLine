@@ -21,5 +21,5 @@ pub fn comp(ctx: CompletionContext) -> Option<Vec<String>> {
         return Some(vec![]);
     }
 
-    return None;
+    None
 }

@@ -8,7 +8,7 @@ use crate::systems::cmd::errors::CmdProcessError;
 use crate::systems::render::renderer::JVRenderResult;
 
 pub async fn jv_cmd_process(
-    args: &Vec<String>,
+    args: &[String],
     ctx: JVCommandContext,
     renderer_override: String,
 ) -> Result<JVRenderResult, CmdProcessError> {
@@ -22,7 +22,7 @@ pub async fn jv_cmd_process(
 }
 
 async fn process(
-    args: &Vec<String>,
+    args: &[String],
     ctx: JVCommandContext,
     renderer_override: String,
 ) -> Result<JVRenderResult, CmdProcessError> {
@@ -48,7 +48,7 @@ async fn process(
         0 => {
             // No matching node found
             error!("{}", t!("verbose.cmd_match_no_node"));
-            return Err(CmdProcessError::NoMatchingCommand);
+            Err(CmdProcessError::NoMatchingCommand)
         }
         1 => {
             let matched_prefix = matching_nodes[0];
@@ -60,7 +60,7 @@ async fn process(
             );
 
             let prefix_len = matched_prefix.split_whitespace().count();
-            let trimmed_args: Vec<String> = args.into_iter().cloned().skip(prefix_len).collect();
+            let trimmed_args: Vec<String> = args.iter().skip(prefix_len).cloned().collect();
             return jv_cmd_process_node(matched_prefix, trimmed_args, ctx, renderer_override).await;
         }
         _ => {
@@ -84,7 +84,7 @@ async fn process(
             );
 
             let prefix_len = matched_prefix.split_whitespace().count();
-            let trimmed_args: Vec<String> = args.into_iter().cloned().skip(prefix_len).collect();
+            let trimmed_args: Vec<String> = args.iter().skip(prefix_len).cloned().collect();
             return jv_cmd_process_node(matched_prefix, trimmed_args, ctx, renderer_override).await;
         }
     }

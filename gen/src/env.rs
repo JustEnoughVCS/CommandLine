@@ -5,17 +5,13 @@ pub fn get_author() -> Result<String, Box<dyn std::error::Error>> {
     let cargo_toml_content = std::fs::read_to_string(cargo_toml_path)?;
     let cargo_toml: toml::Value = toml::from_str(&cargo_toml_content)?;
 
-    if let Some(package) = cargo_toml.get("package") {
-        if let Some(authors) = package.get("authors") {
-            if let Some(authors_array) = authors.as_array() {
-                if let Some(first_author) = authors_array.get(0) {
-                    if let Some(author_str) = first_author.as_str() {
+    if let Some(package) = cargo_toml.get("package")
+        && let Some(authors) = package.get("authors")
+            && let Some(authors_array) = authors.as_array()
+                && let Some(first_author) = authors_array.first()
+                    && let Some(author_str) = first_author.as_str() {
                         return Ok(author_str.to_string());
                     }
-                }
-            }
-        }
-    }
 
     Err("Author not found in Cargo.toml".into())
 }
@@ -25,13 +21,11 @@ pub fn get_site() -> Result<String, Box<dyn std::error::Error>> {
     let cargo_toml_content = std::fs::read_to_string(cargo_toml_path)?;
     let cargo_toml: toml::Value = toml::from_str(&cargo_toml_content)?;
 
-    if let Some(package) = cargo_toml.get("package") {
-        if let Some(homepage) = package.get("homepage") {
-            if let Some(site_str) = homepage.as_str() {
+    if let Some(package) = cargo_toml.get("package")
+        && let Some(homepage) = package.get("homepage")
+            && let Some(site_str) = homepage.as_str() {
                 return Ok(site_str.to_string());
             }
-        }
-    }
 
     Err("Homepage not found in Cargo.toml".into())
 }
@@ -85,15 +79,12 @@ pub fn get_version() -> String {
         Err(_) => return "unknown".to_string(),
     };
 
-    if let Some(workspace) = cargo_toml.get("workspace") {
-        if let Some(package) = workspace.get("package") {
-            if let Some(version) = package.get("version") {
-                if let Some(version_str) = version.as_str() {
+    if let Some(workspace) = cargo_toml.get("workspace")
+        && let Some(package) = workspace.get("package")
+            && let Some(version) = package.get("version")
+                && let Some(version_str) = version.as_str() {
                     return version_str.to_string();
                 }
-            }
-        }
-    }
 
     "unknown".to_string()
 }

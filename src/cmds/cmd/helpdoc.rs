@@ -38,7 +38,7 @@ async fn collect(_args: &Arg, _ctx: &JVCommandContext) -> Result<Collect, CmdPre
 
 #[exec]
 async fn exec(input: In, _collect: Collect) -> Result<AnyOutput, CmdExecuteError> {
-    helpdoc_viewer::display_with_lang(&input.name.as_str(), &input.lang.as_str()).await;
+    helpdoc_viewer::display_with_lang(input.name.as_str(), input.lang.as_str()).await;
     cmd_output!(JVNoneOutput => JVNoneOutput)
 }
 

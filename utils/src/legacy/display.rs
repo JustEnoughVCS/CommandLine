@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 use colored::*;
 use just_enough_vcs::lib::data::sheet::SheetMappingMetadata;
 use std::{

@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use just_template::{Template, tmpl_param};
 
@@ -8,7 +8,7 @@ use crate::{
 };
 
 /// Generate Inno Setup installer script (Windows only) using just_template
-pub async fn generate_installer_script(repo_root: &PathBuf) {
+pub async fn generate_installer_script(repo_root: &Path) {
     let template_path = repo_root.join(SETUP_JV_CLI_ISS_TEMPLATE);
     let output_path = repo_root.join(SETUP_JV_CLI_ISS);
 

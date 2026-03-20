@@ -147,7 +147,7 @@ pub fn markdown(text: impl AsRef<str>) -> String {
             line_result.push_str(&indent);
             line_result.push_str(&processed_line);
         } else {
-            line_result.push_str(" ");
+            line_result.push(' ');
         }
 
         if !line_result.is_empty() {
@@ -218,8 +218,8 @@ fn process_line(line: &str) -> String {
         }
 
         // Check for color tag start [[color]]
-        if i + 1 < chars.len() && chars[i] == '[' && chars[i + 1] == '[' {
-            if let Some(end) = find_tag_end(&chars, i) {
+        if i + 1 < chars.len() && chars[i] == '[' && chars[i + 1] == '['
+            && let Some(end) = find_tag_end(&chars, i) {
                 let tag_content: String = chars[i + 2..end].iter().collect();
 
                 // Check if it's a closing tag [[/]]
@@ -232,11 +232,10 @@ fn process_line(line: &str) -> String {
                 i = end + 2;
                 continue;
             }
-        }
 
         // Check for bold **text**
-        if i + 1 < chars.len() && chars[i] == '*' && chars[i + 1] == '*' {
-            if let Some(end) = find_matching(&chars, i + 2, "**") {
+        if i + 1 < chars.len() && chars[i] == '*' && chars[i + 1] == '*'
+            && let Some(end) = find_matching(&chars, i + 2, "**") {
                 let bold_text: String = chars[i + 2..end].iter().collect();
                 let mut formatted_text = bold_text.bold().to_string();
                 apply_color_stack(&mut formatted_text, &color_stack);
@@ -244,11 +243,10 @@ fn process_line(line: &str) -> String {
                 i = end + 2;
                 continue;
             }
-        }
 
         // Check for italic *text*
-        if chars[i] == '*' {
-            if let Some(end) = find_matching(&chars, i + 1, "*") {
+        if chars[i] == '*'
+            && let Some(end) = find_matching(&chars, i + 1, "*") {
                 let italic_text: String = chars[i + 1..end].iter().collect();
                 let mut formatted_text = italic_text.italic().to_string();
                 apply_color_stack(&mut formatted_text, &color_stack);
@@ -256,11 +254,10 @@ fn process_line(line: &str) -> String {
                 i = end + 1;
                 continue;
             }
-        }
 
         // Check for underline _text_
-        if chars[i] == '_' {
-            if let Some(end) = find_matching(&chars, i + 1, "_") {
+        if chars[i] == '_'
+            && let Some(end) = find_matching(&chars, i + 1, "_") {
                 let underline_text: String = chars[i + 1..end].iter().collect();
                 let mut formatted_text = format!("\x1b[4m{}\x1b[0m", underline_text);
                 apply_color_stack(&mut formatted_text, &color_stack);
@@ -268,11 +265,10 @@ fn process_line(line: &str) -> String {
                 i = end + 1;
                 continue;
             }
-        }
 
         // Check for angle-bracketed content <text>
-        if chars[i] == '<' {
-            if let Some(end) = find_matching(&chars, i + 1, ">") {
+        if chars[i] == '<'
+            && let Some(end) = find_matching(&chars, i + 1, ">") {
                 // Include the angle brackets in the output
                 let angle_text: String = chars[i..=end].iter().collect();
                 let mut formatted_text = angle_text.cyan().to_string();
@@ -281,11 +277,10 @@ fn process_line(line: &str) -> String {
                 i = end + 1;
                 continue;
             }
-        }
 
         // Check for inline code `text`
-        if chars[i] == '`' {
-            if let Some(end) = find_matching(&chars, i + 1, "`") {
+        if chars[i] == '`'
+            && let Some(end) = find_matching(&chars, i + 1, "`") {
                 // Include the backticks in the output
                 let code_text: String = chars[i..=end].iter().collect();
                 let mut formatted_text = code_text.green().to_string();
@@ -294,7 +289,6 @@ fn process_line(line: &str) -> String {
                 i = end + 1;
                 continue;
             }
-        }
 
         // Regular character
         let mut current_char = chars[i].to_string();

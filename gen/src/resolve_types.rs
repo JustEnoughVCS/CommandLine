@@ -1,12 +1,12 @@
 use regex::Regex;
 
-pub fn resolve_type_paths(code: &String, type_names: Vec<String>) -> Option<Vec<String>> {
+pub fn resolve_type_paths(code: &str, type_names: Vec<String>) -> Option<Vec<String>> {
     let mut type_mappings = std::collections::HashMap::new();
 
     // Extract all use statements
     let use_re = Regex::new(r"use\s+([^;]*(?:\{[^}]*\}[^;]*)*);").ok()?;
     let mut use_statements = Vec::new();
-    for cap in use_re.captures_iter(&code) {
+    for cap in use_re.captures_iter(code) {
         use_statements.push(cap[1].to_string());
     }
 

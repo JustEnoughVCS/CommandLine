@@ -67,10 +67,7 @@ pub fn auto_update_outdate() -> i64 {
     }
 
     match std::env::var("JV_OUTDATED_MINUTES") {
-        Ok(value) => match value.trim().parse::<i64>() {
-            Ok(num) => num,
-            Err(_) => -1,
-        },
+        Ok(value) => value.trim().parse::<i64>().unwrap_or(-1),
         Err(_) => -1,
     }
 }

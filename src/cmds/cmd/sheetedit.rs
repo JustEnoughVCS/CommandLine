@@ -22,7 +22,7 @@ use cmd_system_macros::exec;
 use just_enough_vcs::system::sheet_system::{mapping::LocalMapping, sheet::SheetData};
 use just_fmt::fmt_path::{PathFormatError, fmt_path};
 use rust_i18n::t;
-use std::{borrow::Cow, path::PathBuf};
+use std::{borrow::Cow, path::Path};
 use tokio::fs::create_dir_all;
 
 pub struct JVSheeteditCommand;
@@ -58,10 +58,10 @@ async fn collect(args: &Arg, ctx: &JVCommandContext) -> Result<Collect, CmdPrepa
     let data = match (&args.file, &ctx.stdin_path) {
         (_, Some(stdin_path)) => tokio::fs::read(stdin_path)
             .await
-            .map_err(|e| CmdPrepareError::Io(e))?,
+            .map_err(CmdPrepareError::Io)?,
         (Some(file_path), None) => tokio::fs::read(file_path)
             .await
-            .map_err(|e| CmdPrepareError::Io(e))?,
+            .map_err(CmdPrepareError::Io)?,
         (None, None) => return early_cmd_output!(JVNoneOutput => JVNoneOutput),
     };
     Ok(Collect { data })
@@ -95,7 +95,7 @@ async fn exec(input: In, collect: Collect) -> Result<AnyOutput, CmdExecuteError>
     cmd_output!(JVNoneOutput => JVNoneOutput {})
 }
 
-fn build_template(file: &PathBuf, mappings: Vec<LocalMapping>) -> Cow<'static, str> {
+fn build_template(file: &Path, mappings: Vec<LocalMapping>) -> Cow<'static, str> {
     let mapping_table = render_pretty_mappings(&mappings);
     let template = t!(
         "sheetedit.editor",
@@ -121,13 +121,12 @@ fn render_pretty_mappings(mappings: &Vec<LocalMapping>) -> String {
         let mapping_str = mapping
             .to_string()
             .split(" ")
-            .into_iter()
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
         table.push_item(vec![
             format!(
                 "    {}      ",
-                mapping_str.get(0).unwrap_or(&String::default())
+                mapping_str.first().unwrap_or(&String::default())
             ), // Mapping
             format!("{} ", mapping_str.get(1).unwrap_or(&String::default())), // => & ==
             format!("{}      ", mapping_str.get(2).unwrap_or(&String::default())), // Index

@@ -13,7 +13,7 @@ pub async fn jv_cmd_process_node(
 >>>>>>>>>> command_match_arms
         _ => {}
     }
-    return Err(CmdProcessError::NoNodeFound(node.to_string()));
+    Err(CmdProcessError::NoNodeFound(node.to_string()))
 }
 
 /// Get all command nodes

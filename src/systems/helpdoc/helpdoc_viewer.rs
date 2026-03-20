@@ -251,10 +251,10 @@ impl HelpdocViewer {
         while !should_exit {
             self.draw()?;
 
-            if event::poll(std::time::Duration::from_millis(100))? {
-                if let Event::Key(key) = event::read()? {
-                    should_exit = self.handle_key(key);
-                }
+            if event::poll(std::time::Duration::from_millis(100))?
+                && let Event::Key(key) = event::read()?
+            {
+                should_exit = self.handle_key(key);
             }
         }
 
@@ -330,6 +330,7 @@ impl HelpdocViewer {
     }
 
     /// Recursively draw tree node
+    #[allow(clippy::too_many_arguments)]
     fn draw_tree_node(
         &self,
         node: &DocTreeNode,
@@ -442,8 +443,8 @@ impl HelpdocViewer {
         }
 
         // Display scroll position indicator
-        if content_lines.len() > height as usize && content_lines.len() > 0 {
-            let scroll_percent = if content_lines.len() > 0 {
+        if content_lines.len() > height as usize && !content_lines.is_empty() {
+            let scroll_percent = if !content_lines.is_empty() {
                 (scroll_pos * 100) / content_lines.len()
             } else {
                 0
@@ -580,16 +581,13 @@ impl HelpdocViewer {
 
     /// Select current item
     fn select_item(&mut self) {
-        match self.focus {
-            FocusArea::Tree => {
-                // Update current document to the one selected in tree view
-                if let Some(doc) = self.doc_tree.flat_docs.get(self.tree_selection_index) {
-                    self.current_doc = doc.clone();
-                }
-                // Switch focus to content area
-                self.focus = FocusArea::Content;
+        if self.focus == FocusArea::Tree {
+            // Update current document to the one selected in tree view
+            if let Some(doc) = self.doc_tree.flat_docs.get(self.tree_selection_index) {
+                self.current_doc = doc.clone();
             }
-            _ => {}
+            // Switch focus to content area
+            self.focus = FocusArea::Content;
         }
     }
 

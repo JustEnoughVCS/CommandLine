@@ -79,7 +79,7 @@ pub fn build_env_logger(log_path: impl AsRef<Path>, logger_level: LoggerLevel) {
 
     builder
         .format(log_format)
-        .filter(None, level.clone())
+        .filter(None, level)
         .filter_module("just_enough_vcs", level)
         .target(combined_target)
         .init();

@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use just_template::{Template, tmpl};
 
@@ -7,7 +7,7 @@ use crate::constants::{
 };
 
 /// Generate renderer list file from Registry.toml configuration using just_template
-pub async fn generate_renderers_file(repo_root: &PathBuf) {
+pub async fn generate_renderers_file(repo_root: &Path) {
     let template_path = repo_root.join(OVERRIDE_RENDERER_DISPATCHER_TEMPLATE);
     let output_path = repo_root.join(OVERRIDE_RENDERER_DISPATCHER);
     let config_path = repo_root.join(REGISTRY_TOML);

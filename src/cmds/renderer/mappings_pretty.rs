@@ -14,7 +14,7 @@ use crate::{
 pub async fn render(data: &JVMappingsPrettyOutput) -> Result<JVRenderResult, CmdRenderError> {
     let mut r = JVRenderResult::default();
     let mappings = &data.mappings;
-    r_println!(r, "{}", render_pretty_mappings(&mappings));
+    r_println!(r, "{}", render_pretty_mappings(mappings));
     Ok(r)
 }
 
@@ -36,7 +36,6 @@ fn render_pretty_mappings(mappings: &Vec<LocalMapping>) -> String {
         let mapping_str = mapping
             .to_string()
             .split(" ")
-            .into_iter()
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
         table.push_item(vec![
@@ -45,8 +44,7 @@ fn render_pretty_mappings(mappings: &Vec<LocalMapping>) -> String {
             // Mapping
             format!(
                 " | {} ",
-                mapping_str
-                    .get(0)
+                mapping_str.first()
                     .unwrap_or(&String::default())
                     .bright_cyan()
             ),

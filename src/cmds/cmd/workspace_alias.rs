@@ -45,7 +45,7 @@ async fn prepare(args: &Arg, _ctx: &JVCommandContext) -> Result<In, CmdPrepareEr
 
     Ok(JVWorkspaceAliasInput {
         query: args.query,
-        mode: mode,
+        mode,
     })
 }
 
@@ -93,7 +93,7 @@ async fn exec(input: In, collect: Collect) -> Result<AnyOutput, CmdExecuteError>
                 "Alias query result - local: {}, remote: {:?}",
                 index, remote
             );
-            cmd_output!(JVAliasQueryOutput => JVAliasQueryOutput { local: index, remote: remote })
+            cmd_output!(JVAliasQueryOutput => JVAliasQueryOutput { local: index, remote })
         }
         _ => {
             trace!("No alias query requested or no index source available");

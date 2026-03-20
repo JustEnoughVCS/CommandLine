@@ -69,9 +69,7 @@ impl Globber {
             }
         };
 
-        let pattern = if pattern.is_empty() {
-            "*".to_string()
-        } else if pattern == "." {
+        let pattern = if pattern.is_empty() || pattern == "." {
             "*".to_string()
         } else if pattern.ends_with(SPLIT_STR) {
             format!("{}*", pattern)
@@ -182,7 +180,7 @@ impl<T: AsRef<str>> From<T> for Globber {
     }
 }
 
-#[derive(Debug, Clone, Hash)]
+#[derive(Debug, Clone)]
 pub enum GlobItem {
     File(String),
     Directory(String),
@@ -203,6 +201,21 @@ impl std::fmt::Display for GlobItem {
         match self {
             GlobItem::File(name) => write!(f, "{}", name),
             GlobItem::Directory(name) => write!(f, "{}", name),
+        }
+    }
+}
+
+impl std::hash::Hash for GlobItem {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        match self {
+            GlobItem::File(name) => {
+                state.write_u8(0);
+                name.hash(state);
+            }
+            GlobItem::Directory(name) => {
+                state.write_u8(1);
+                name.hash(state);
+            }
         }
     }
 }

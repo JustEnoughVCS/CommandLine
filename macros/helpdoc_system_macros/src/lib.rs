@@ -2,7 +2,6 @@ use proc_macro::TokenStream;
 use quote::quote;
 use std::fs;
 use std::path::Path;
-use syn;
 
 #[proc_macro]
 pub fn generate_helpdoc_mapping(_input: TokenStream) -> TokenStream {
@@ -46,10 +45,10 @@ fn scan_directory(dir: &Path, entries: &mut Vec<(String, String)>, base_dir: &Pa
 
             if path.is_dir() {
                 scan_directory(&path, entries, base_dir);
-            } else if let Some(extension) = path.extension() {
-                if extension == "md" {
-                    if let Ok(relative_path) = path.strip_prefix(base_dir) {
-                        if let Some(file_stem) = path.file_stem() {
+            } else if let Some(extension) = path.extension()
+                && extension == "md"
+                    && let Ok(relative_path) = path.strip_prefix(base_dir)
+                        && let Some(file_stem) = path.file_stem() {
                             let file_stem_str = file_stem.to_string_lossy();
 
                             if let Some(dot_pos) = file_stem_str.rfind('.') {
@@ -74,9 +73,6 @@ fn scan_directory(dir: &Path, entries: &mut Vec<(String, String)>, base_dir: &Pa
                                 entries.push((full_doc_name, lang.to_string()));
                             }
                         }
-                    }
-                }
-            }
         }
     }
 }
@@ -168,9 +164,7 @@ pub fn generate_helpdoc_test(_input: TokenStream) -> TokenStream {
         let test_name_str = format!(
             "test_doc_{}_{}",
             doc_name
-                .replace('/', "_")
-                .replace('.', "_")
-                .replace('-', "_"),
+                .replace(['/', '.', '-'], "_"),
             lang.replace('-', "_")
         );
         let test_name = syn::Ident::new(&test_name_str, proc_macro2::Span::call_site());

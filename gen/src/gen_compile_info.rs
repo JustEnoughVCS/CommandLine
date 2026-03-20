@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use just_template::{Template, tmpl_param};
 
@@ -8,7 +8,7 @@ use crate::{
 };
 
 /// Generate compile info using just_template
-pub async fn generate_compile_info(repo_root: &PathBuf) {
+pub async fn generate_compile_info(repo_root: &Path) {
     // Read the template code
     let template_code = tokio::fs::read_to_string(repo_root.join(COMPILE_INFO_RS_TEMPLATE))
         .await

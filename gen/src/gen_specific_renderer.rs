@@ -1,4 +1,7 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
 
 use just_template::{Template, tmpl};
 use regex::Regex;
@@ -11,7 +14,7 @@ use crate::{
 const RENDERER_TYPE_PREFIX: &str = "crate::";
 
 /// Generate specific renderer matching file using just_template
-pub async fn generate_specific_renderer(repo_root: &PathBuf) {
+pub async fn generate_specific_renderer(repo_root: &Path) {
     // Matches: HashMap<RendererTypeFullName, OutputTypeFullName>
     let mut renderer_matches: HashMap<String, String> = HashMap::new();
 
@@ -49,14 +52,12 @@ pub async fn generate_specific_renderer(repo_root: &PathBuf) {
 
 fn collect_renderers(dir_path: &PathBuf, matches: &mut HashMap<String, String>) {
     if let Ok(entries) = std::fs::read_dir(dir_path) {
-        for entry in entries {
-            if let Ok(entry) = entry {
-                let path = entry.path();
-                if path.is_dir() {
-                    collect_renderers(&path, matches);
-                } else if path.is_file() && path.extension().map_or(false, |ext| ext == "rs") {
-                    process_rs_file(&path, matches);
-                }
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                collect_renderers(&path, matches);
+            } else if path.is_file() && path.extension().is_some_and(|ext| ext == "rs") {
+                process_rs_file(&path, matches);
             }
         }
     }
@@ -78,14 +79,14 @@ fn process_rs_file(file_path: &PathBuf, matches: &mut HashMap<String, String>) {
     let full_renderer_type = build_full_renderer_type(file_path, &renderer_type);
     let full_output_type = resolve_type_paths(&content, vec![output_type])
         .unwrap()
-        .get(0)
+        .first()
         .unwrap()
         .clone();
 
     matches.insert(full_renderer_type, full_output_type);
 }
 
-fn build_full_renderer_type(file_path: &PathBuf, renderer_type: &str) -> String {
+fn build_full_renderer_type(file_path: &Path, renderer_type: &str) -> String {
     let relative_path = file_path
         .strip_prefix(std::env::current_dir().unwrap())
         .unwrap_or(file_path);
@@ -110,7 +111,7 @@ fn build_full_renderer_type(file_path: &PathBuf, renderer_type: &str) -> String 
     format!("{}{}::{}", RENDERER_TYPE_PREFIX, module_path, renderer_type)
 }
 
-pub fn get_renderer_types(code: &String) -> Option<(String, String)> {
+pub fn get_renderer_types(code: &str) -> Option<(String, String)> {
     let renderer_re = Regex::new(r"#\[result_renderer\(([^)]+)\)\]").unwrap();
 
     let func_re =
