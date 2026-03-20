@@ -10,5 +10,5 @@ __  --query  <local_id>  # Query remote ID for local ID
 
 ## Aliases
 __   -i <local_id> --to <remote_id>
-__   -q <local_id>
+__   -Q <local_id>
 __   -e <local_id>
