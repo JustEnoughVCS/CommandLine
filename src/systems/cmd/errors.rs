@@ -1,5 +1,3 @@
-use just_enough_vcs::lib::data::{member::MemberId, sheet::SheetName};
-
 use crate::systems::cmd::cmd_system::AnyOutput;
 
 #[derive(thiserror::Error, Debug)]
@@ -9,31 +7,6 @@ pub enum CmdPrepareError {
 
     #[error("{0}")]
     Error(String),
-
-    // Workspace Reader Errors
-    #[error("LocalWorkspace not found")]
-    LocalWorkspaceNotFound,
-
-    #[error("LocalConfig not found")]
-    LocalConfigNotFound,
-
-    #[error("LatestInfo not found")]
-    LatestInfoNotFound,
-
-    #[error("LatestFileData of {0} not found")]
-    LatestFileDataNotExist(MemberId),
-
-    #[error("CachedSheet `{0}` not found")]
-    CachedSheetNotFound(SheetName),
-
-    #[error("LocalSheet `{0}/{1}` not found")]
-    LocalSheetNotFound(MemberId, SheetName),
-
-    #[error("LocalStatusAnalyzeFailed")]
-    LocalStatusAnalyzeFailed,
-
-    #[error("No sheet in use")]
-    NoSheetInUse,
 
     #[error("Error occurred and returned early")]
     EarlyOutput(AnyOutput),

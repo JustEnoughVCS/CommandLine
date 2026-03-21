@@ -5,8 +5,7 @@ use std::{
 };
 
 use cli_utils::{
-    display::markdown::Markdown,
-    legacy::{display::md, env::current_locales, levenshtein_distance},
+    display::markdown::Markdown, env::locales::current_locales, math::levenshtein_distance,
 };
 use just_progress::{
     progress,
@@ -193,17 +192,27 @@ async fn main() {
                         handle_render_error(cmd_render_error);
                     }
                     CmdProcessError::Error(error) => {
-                        eprintln!("{}", md(t!("process_error.other", error = error)));
+                        eprintln!(
+                            "{}",
+                            t!("process_error.other", error = error)
+                                .to_string()
+                                .markdown()
+                        );
                     }
                     CmdProcessError::NoNodeFound(node) => {
-                        eprintln!("{}", md(t!("process_error.no_node_found", node = node)));
+                        eprintln!(
+                            "{}",
+                            t!("process_error.no_node_found", node = node)
+                                .to_string()
+                                .markdown()
+                        );
                     }
                     CmdProcessError::NoMatchingCommand => {
                         handle_no_matching_command_error(args);
                     }
                     CmdProcessError::ParseError(help) => {
                         if help.trim().is_empty() {
-                            eprintln!("{}", md(t!("process_error.parse_error")));
+                            eprintln!("{}", t!("process_error.parse_error").to_string().markdown());
                         } else {
                             eprintln!("{}", help)
                         }
@@ -211,11 +220,16 @@ async fn main() {
                     CmdProcessError::RendererOverrideButRequestHelp => {
                         eprintln!(
                             "{}",
-                            md(t!("process_error.renderer_override_but_request_help"))
+                            t!("process_error.renderer_override_but_request_help")
+                                .to_string()
+                                .markdown()
                         );
                     }
                     CmdProcessError::DowncastFailed => {
-                        eprintln!("{}", md(t!("process_error.downcast_failed")));
+                        eprintln!(
+                            "{}",
+                            t!("process_error.downcast_failed").to_string().markdown()
+                        );
                     }
                 }
             }
@@ -282,14 +296,21 @@ fn handle_no_matching_command_error(args: Vec<String>) {
         }
     }
     if similar_nodes.is_empty() {
-        eprintln!("{}", md(t!("process_error.no_matching_command")));
+        eprintln!(
+            "{}",
+            t!("process_error.no_matching_command")
+                .to_string()
+                .markdown()
+        );
     } else {
         eprintln!(
             "{}",
-            md(t!(
+            t!(
                 "process_error.no_matching_command_but_similar",
                 similars = similar_nodes[0]
-            ))
+            )
+            .to_string()
+            .markdown()
         );
     }
 }
@@ -299,54 +320,18 @@ fn handle_prepare_error(cmd_prepare_error: CmdPrepareError) {
         CmdPrepareError::Io(error) => {
             eprintln!(
                 "{}",
-                md(t!("prepare_error.io", error = display_io_error(error)))
+                t!("prepare_error.io", error = display_io_error(error))
+                    .to_string()
+                    .markdown()
             );
         }
         CmdPrepareError::Error(msg) => {
-            eprintln!("{}", md(t!("prepare_error.error", error = msg)));
-        }
-        CmdPrepareError::LocalWorkspaceNotFound => {
-            eprintln!("{}", md(t!("prepare_error.local_workspace_not_found")));
-        }
-        CmdPrepareError::LocalConfigNotFound => {
-            eprintln!("{}", md(t!("prepare_error.local_config_not_found")));
-        }
-        CmdPrepareError::LatestInfoNotFound => {
-            eprintln!("{}", md(t!("prepare_error.latest_info_not_found")));
-        }
-        CmdPrepareError::LatestFileDataNotExist(member_id) => {
             eprintln!(
                 "{}",
-                md(t!(
-                    "prepare_error.latest_file_data_not_exist",
-                    member_id = member_id
-                ))
+                t!("prepare_error.error", error = msg)
+                    .to_string()
+                    .markdown()
             );
-        }
-        CmdPrepareError::CachedSheetNotFound(sheet_name) => {
-            eprintln!(
-                "{}",
-                md(t!(
-                    "prepare_error.cached_sheet_not_found",
-                    sheet_name = sheet_name
-                ))
-            );
-        }
-        CmdPrepareError::LocalSheetNotFound(member_id, sheet_name) => {
-            eprintln!(
-                "{}",
-                md(t!(
-                    "prepare_error.local_sheet_not_found",
-                    member_id = member_id,
-                    sheet_name = sheet_name
-                ))
-            );
-        }
-        CmdPrepareError::LocalStatusAnalyzeFailed => {
-            eprintln!("{}", md(t!("prepare_error.local_status_analyze_failed")));
-        }
-        CmdPrepareError::NoSheetInUse => {
-            eprintln!("{}", md(t!("prepare_error.no_sheet_in_use")));
         }
         CmdPrepareError::EarlyOutput(_) => {
             // Early output is not an error
@@ -362,12 +347,19 @@ fn handle_execute_error(cmd_execute_error: CmdExecuteError) {
         CmdExecuteError::Io(error) => {
             eprintln!(
                 "{}",
-                md(t!("execute_error.io", error = display_io_error(error)))
+                t!("execute_error.io", error = display_io_error(error))
+                    .to_string()
+                    .markdown()
             );
         }
         CmdExecuteError::Prepare(cmd_prepare_error) => handle_prepare_error(cmd_prepare_error),
         CmdExecuteError::Error(msg) => {
-            eprintln!("{}", md(t!("execute_error.error", error = msg)));
+            eprintln!(
+                "{}",
+                t!("execute_error.error", error = msg)
+                    .to_string()
+                    .markdown()
+            );
         }
     }
 }
@@ -377,37 +369,46 @@ fn handle_render_error(cmd_render_error: CmdRenderError) {
         CmdRenderError::Io(error) => {
             eprintln!(
                 "{}",
-                md(t!("render_error.io", error = display_io_error(error)))
+                t!("render_error.io", error = display_io_error(error))
+                    .to_string()
+                    .markdown()
             );
         }
         CmdRenderError::Prepare(cmd_prepare_error) => handle_prepare_error(cmd_prepare_error),
         CmdRenderError::Execute(cmd_execute_error) => handle_execute_error(cmd_execute_error),
         CmdRenderError::Error(msg) => {
-            eprintln!("{}", md(t!("render_error.error", error = msg)));
+            eprintln!(
+                "{}",
+                t!("render_error.error", error = msg).to_string().markdown()
+            );
         }
         CmdRenderError::SerializeFailed(error) => {
             eprintln!(
                 "{}",
-                md(t!(
-                    "render_error.serialize_failed",
-                    error = error.to_string()
-                ))
+                t!("render_error.serialize_failed", error = error.to_string())
+                    .to_string()
+                    .markdown()
             );
         }
         CmdRenderError::RendererNotFound(renderer_name) => {
             eprintln!(
                 "{}",
-                md(t!(
+                t!(
                     "render_error.renderer_not_found",
                     renderer_name = renderer_name
-                ))
+                )
+                .to_string()
+                .markdown()
             );
         }
         CmdRenderError::TypeMismatch {
             expected: _,
             actual: _,
         } => {
-            eprintln!("{}", md(t!("render_error.type_mismatch")));
+            eprintln!(
+                "{}",
+                t!("render_error.type_mismatch").to_string().markdown()
+            );
         }
     }
 }
