@@ -4,6 +4,7 @@ macro_rules! special_flag {
         let flag = $flag;
         let found = $args.iter().any(|arg| arg == flag);
         $args.retain(|arg| arg != flag);
+        log::trace!("special_flag: flag='{}', found={}", flag, found);
         found
     }};
 }
@@ -28,6 +29,7 @@ macro_rules! special_argument {
             }
             i += 1;
         }
+        log::trace!("special_argument: flag='{}', value={:?}", flag, value);
         value
     }};
 }
