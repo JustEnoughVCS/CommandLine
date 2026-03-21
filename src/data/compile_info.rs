@@ -1,0 +1,25 @@
+#[derive(serde::Serialize)]
+pub struct CompileInfo {
+    pub date: String,
+    pub target: String,
+    pub platform: String,
+    pub toolchain: String,
+
+    pub cli_version: String,
+    pub build_branch: String,
+    pub build_commit: String,
+}
+
+impl Default for CompileInfo {
+    fn default() -> Self {
+        Self {
+            date: "<<<date>>>".to_string(),
+            target: "<<<target>>>".to_string(),
+            platform: "<<<platform>>>".to_string(),
+            toolchain: "<<<toolchain>>>".to_string(),
+            cli_version: "<<<version>>>".to_string(),
+            build_branch: "<<<branch>>>".to_string(),
+            build_commit: "<<<commit>>>".to_string(),
+        }
+    }
+}

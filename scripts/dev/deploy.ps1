@@ -35,22 +35,6 @@ if (-not (Test-Path $coreLibPath)) {
     exit 1
 }
 
-# Test core library
-Write-Host "Testing Core Library `".\..\VersionControl\Cargo.toml`""
-cargo test --manifest-path ..\VersionControl\Cargo.toml --workspace --quiet > $null 2>&1
-if ($LASTEXITCODE -ne 0) {
-    Write-Warning "Core library tests failed. Aborting build."
-    exit 1
-}
-
-# Test workspace
-Write-Host "Testing Command Line `".\Cargo.toml`""
-cargo test --workspace --quiet > $null 2>&1
-if ($LASTEXITCODE -ne 0) {
-    Write-Warning "Workspace tests failed. Aborting build."
-    exit 1
-}
-
 # Check if main git worktree is clean
 $gitStatus = git status --porcelain
 if ($gitStatus) {
@@ -64,6 +48,22 @@ $coreGitStatus = git status --porcelain
 Pop-Location
 if ($coreGitStatus) {
     Write-Warning "Core library git worktree is not clean. Commit or stash changes before building."
+    exit 1
+}
+
+# Test core library
+Write-Host "Testing Core Library `".\..\VersionControl\Cargo.toml`""
+cargo test --manifest-path ..\VersionControl\Cargo.toml --workspace --quiet > $null 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Warning "Core library tests failed. Aborting build."
+    exit 1
+}
+
+# Test workspace
+Write-Host "Testing Command Line `".\Cargo.toml`""
+cargo test --workspace --quiet > $null 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Warning "Workspace tests failed. Aborting build."
     exit 1
 }
 

@@ -21,7 +21,6 @@
 /deploy/
 
 # Generated from templates
-/src/data/compile_info.rs
 /scripts/setup/windows/setup_jv_cli.iss
 _*.rs
 
