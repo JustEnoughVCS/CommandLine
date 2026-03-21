@@ -4,7 +4,10 @@ use std::{
     process::exit,
 };
 
-use cli_utils::legacy::{display::md, env::current_locales, levenshtein_distance};
+use cli_utils::{
+    display::markdown::Markdown,
+    legacy::{display::md, env::current_locales, levenshtein_distance},
+};
 use just_progress::{
     progress,
     renderer::{ProgressSimpleRenderer, RendererTheme},
@@ -112,10 +115,15 @@ async fn main() {
     }
 
     // Handle help when no arguments provided
-    if args.is_empty() && help {
-        warn!("{}", t!("verbose.no_arguments"));
-        helpdoc_viewer::display_with_lang(DEFAULT_HELPDOC, &lang).await;
-        exit(1);
+    if args.is_empty() {
+        if help {
+            warn!("{}", t!("verbose.no_arguments"));
+            helpdoc_viewer::display_with_lang(DEFAULT_HELPDOC, &lang).await;
+            exit(1);
+        } else {
+            eprintln!("{}", t!("process_error.empty_input").to_string().markdown());
+            exit(1);
+        }
     }
 
     info!("{}", t!("verbose.user_input", command = args.join(" ")));
@@ -222,9 +230,10 @@ async fn main() {
         if !r.is_empty() {
             print!("{}", r);
             if let Err(e) = io::stdout().flush().await
-                && !no_error_logs {
-                    display_io_error(e);
-                }
+                && !no_error_logs
+            {
+                display_io_error(e);
+            }
         }
     }
 }

@@ -1,4 +1,8 @@
 process_error:
+  empty_input: |
+    欢迎使用 JustEnoughVCS 命令行程序！
+    您可以使用 `jvn helpdoc` 以查阅_可用命令_
+
   no_matching_command: |
     无法匹配该命令，使用 `jvn -h` 查看帮助
 

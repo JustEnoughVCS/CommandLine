@@ -18,6 +18,10 @@ banner: |
   __  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒      %{banner_line_3}
 
 process_error:
+  empty_input: |
+    Welcome to the JVCS CLI!
+    You can use `jvn helpdoc` to view _available commands_
+
   no_matching_command: |
     No matching command found!
     Use `jvn -h` to get help
