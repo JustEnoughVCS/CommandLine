@@ -59,9 +59,13 @@ async fn collect(args: &Arg, ctx: &JVCommandContext) -> Result<Collect, CmdPrepa
         (_, Some(stdin_path)) => tokio::fs::read(stdin_path)
             .await
             .map_err(CmdPrepareError::Io)?,
-        (Some(file_path), None) => tokio::fs::read(file_path)
-            .await
-            .map_err(CmdPrepareError::Io)?,
+        (Some(file_path), None) => match tokio::fs::read(file_path).await {
+            Ok(data) => data,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                SheetData::empty().as_bytes().to_vec()
+            }
+            Err(e) => return Err(CmdPrepareError::Io(e)),
+        },
         (None, None) => return early_cmd_output!(JVNoneOutput => JVNoneOutput),
     };
     Ok(Collect { data })
