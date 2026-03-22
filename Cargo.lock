@@ -313,7 +313,9 @@ version = "0.1.0"
 dependencies = [
  "asset_system",
  "just_fmt",
+ "serde",
  "size",
+ "thiserror",
  "tokio",
 ]
 
