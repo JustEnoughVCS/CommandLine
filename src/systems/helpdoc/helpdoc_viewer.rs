@@ -5,7 +5,7 @@ use cli_utils::{
 };
 use crossterm::{
     cursor::{Hide, MoveTo, Show},
-    event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
+    event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers},
     execute,
     style::{Color, Print, ResetColor, SetBackgroundColor, SetForegroundColor},
     terminal::{
@@ -247,14 +247,22 @@ impl HelpdocViewer {
         execute!(stdout(), EnterAlternateScreen, Hide)?;
 
         let mut should_exit = false;
+        let mut needs_redraw = true;
 
         while !should_exit {
-            self.draw()?;
+            if needs_redraw {
+                self.draw()?;
+                needs_redraw = false;
+            }
 
             if event::poll(std::time::Duration::from_millis(100))?
                 && let Event::Key(key) = event::read()?
             {
-                should_exit = self.handle_key(key);
+                match self.handle_key(key) {
+                    Some(true) => should_exit = true,
+                    Some(false) => needs_redraw = true,
+                    None => {} // No action needed
+                }
             }
         }
 
@@ -352,7 +360,7 @@ impl HelpdocViewer {
         let indent = "  ".repeat(depth);
         let suffix = if node.children.is_empty() { "" } else { "/" };
 
-        // If this is the currently selected document, highlight it (white background, black text)
+        // If this is the currently selected document, highlight it
         let is_selected = node.path == self.current_doc;
 
         if is_selected && self.focus == FocusArea::Tree {
@@ -364,7 +372,6 @@ impl HelpdocViewer {
                 SetBackgroundColor(Color::White),
                 Print(" ".repeat(width as usize)),
                 MoveTo(x, line_y),
-                SetForegroundColor(Color::Black),
             )?;
         } else {
             // Normal display
@@ -372,14 +379,14 @@ impl HelpdocViewer {
                 stdout(),
                 MoveTo(x, line_y),
                 SetForegroundColor(Color::White),
-                SetBackgroundColor(Color::Black),
+                SetBackgroundColor(Color::Reset),
             )?;
         }
 
         // Display node name
         let display_text = format!("{}  {}{}", indent, node.name, suffix);
         execute!(stdout(), Print(display_text))?;
-        execute!(stdout(), ResetColor, SetBackgroundColor(Color::Black))?;
+        execute!(stdout(), ResetColor, SetBackgroundColor(Color::Reset))?;
 
         // Recursively draw child nodes
         if !node.children.is_empty() {
@@ -408,7 +415,7 @@ impl HelpdocViewer {
         let (fg_color, bg_color) = if self.focus == FocusArea::Content {
             (Color::Black, Color::White)
         } else {
-            (Color::Yellow, Color::Black)
+            (Color::Yellow, Color::Reset)
         };
 
         execute!(
@@ -489,9 +496,13 @@ impl HelpdocViewer {
     }
 
     /// Handle key input
-    fn handle_key(&mut self, key: KeyEvent) -> bool {
+    fn handle_key(&mut self, key: KeyEvent) -> Option<bool> {
+        if key.kind != KeyEventKind::Press {
+            return None;
+        }
+
         match key.code {
-            KeyCode::Char('q') | KeyCode::Esc => return true,
+            KeyCode::Char('q') | KeyCode::Esc => return Some(true),
             KeyCode::Char(' ') => self.toggle_focus(),
             KeyCode::Left => self.move_left(),
             KeyCode::Right => self.move_right(),
@@ -500,9 +511,9 @@ impl HelpdocViewer {
             KeyCode::Char('g') if key.modifiers == KeyModifiers::NONE => self.go_to_top(),
             KeyCode::Char('G') if key.modifiers == KeyModifiers::SHIFT => self.go_to_bottom(),
             KeyCode::Enter => self.select_item(),
-            _ => {}
+            _ => return None,
         }
-        false
+        Some(false)
     }
 
     /// Toggle focus area
