@@ -31,7 +31,10 @@ const GLOBAL_FLAGS: &[&str] = &[
     "-v",
 ];
 
-const LANGUAGES: [&str; 2] = ["en", "zh-CN"];
+const LANGUAGES: [&str; 2] = [
+    "en",    // English
+    "zh-CN", // 简体中文
+];
 
 fn main() {
     // If not in release mode, initialize env_logger to capture logs

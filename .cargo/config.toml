@@ -29,8 +29,8 @@ to = "comp/jvn_bash.sh"
 platform = [ "linux", "macos" ]
 
 [copies.completion_jvn_zsh]
-from = "scripts/deploy/completions/zsh.sh"
-to = "comp/jvn_zsh.sh"
+from = "scripts/deploy/completions/zsh.zsh"
+to = "comp/jvn_zsh.zsh"
 platform = [ "linux", "macos" ]
 
 [copies.completion_jvn_fish]
@@ -40,8 +40,18 @@ platform = [ "linux", "macos" ]
 
 # Entries
 [copies.entry_bash]
-from = "scripts/deploy/jvn.sh"
-to = "jvn.sh"
+from = "scripts/deploy/jvn_bash.sh"
+to = "jvn_bash.sh"
+platform = [ "linux", "macos" ]
+
+[copies.entry_zsh]
+from = "scripts/deploy/jvn_zsh.zsh"
+to = "jvn_zsh.zsh"
+platform = [ "linux", "macos" ]
+
+[copies.entry_fish]
+from = "scripts/deploy/jvn_fish.fish"
+to = "jvn_fish.fish"
 platform = [ "linux", "macos" ]
 
 ##################

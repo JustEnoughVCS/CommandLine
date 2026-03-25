@@ -1,65 +1,47 @@
 #!/usr/bin/env bash
 _jvn_bash_completion() {
-    local cur prev words cword
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+    local prev=""
+    [ $COMP_CWORD -gt 0 ] && prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    local line="${COMP_LINE}"
-    local point="${COMP_POINT}"
+    local word_index=$((COMP_CWORD + 1))
 
-    if [ "${point}" -gt "${#line}" ]; then
-        point="${#line}"
-    fi
+    local args=()
+    args+=(-f="${COMP_LINE//-/^}")
+    args+=(-C="$COMP_POINT")
+    args+=(-w="${cur//-/^}")
+    args+=(-p="${prev//-/^}")
+    args+=(-c="${COMP_WORDS[0]//-/^}")
+    args+=(-i="$word_index")
 
-    words=($line)
-    cword=0
-
-    local i=0
-    local pos=0
-    for word in "${words[@]}"; do
-        local word_start=$pos
-        local word_end=$((pos + ${#word}))
-
-        if [ "${point}" -ge "${word_start}" ] && [ "${point}" -le "${word_end}" ]; then
-            cword=$i
-            cur="${word}"
-            break
-        fi
-
-        pos=$((pos + ${#word} + 1))
-        i=$((i + 1))
+    for word in "${COMP_WORDS[@]}"; do
+        args+=(-a="${word//-/^}")
     done
-
-    if [ "${point}" -gt "${pos}" ]; then
-        cword=${#words[@]}
-        cur=""
-    fi
-
-    if [ "${cword}" -gt 0 ]; then
-        prev="${words[$((cword-1))]}"
-    else
-        prev=""
-    fi
-
-    local args=(
-        -f "${COMP_LINE//-/^}"
-        -C "$COMP_POINT"
-        -w "${cur//-/^}"
-        -p "${prev//-/^}"
-        -c "${words[0]}"
-        -i "$cword"
-        -a "${words[@]//-/^}"
-    )
 
     local suggestions
     if suggestions=$(jvn_comp "${args[@]}" 2>/dev/null); then
-        if [ "$suggestions" = "_file_" ]; then
-            compopt -o default
-            COMPREPLY=()
-        else
-            mapfile -t COMPREPLY < <(printf '%s\n' "$suggestions")
+        if [ $? -eq 0 ]; then
+            if [ "$suggestions" = "_file_" ]; then
+                compopt -o default
+                COMPREPLY=()
+                return
+            fi
+
+            if [ -n "$suggestions" ]; then
+                local -a all_suggestions filtered
+                mapfile -t all_suggestions < <(printf '%s\n' "$suggestions")
+
+                for suggestion in "${all_suggestions[@]}"; do
+                    [ -z "$cur" ] || [[ "$suggestion" == "$cur"* ]] && filtered+=("$suggestion")
+                done
+
+                [ ${#filtered[@]} -gt 0 ] && COMPREPLY=("${filtered[@]}")
+                return
+            fi
         fi
-    else
-        COMPREPLY=()
     fi
+
+    COMPREPLY=()
 }
 
 complete -F _jvn_bash_completion jvn
