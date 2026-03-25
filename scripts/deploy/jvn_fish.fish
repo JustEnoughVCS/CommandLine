@@ -2,8 +2,8 @@
 set SCRIPT_DIR (dirname (status --current-filename))
 
 # Completion script
-if test -f "$SCRIPT_DIR/comp/jvn_fish.fish"
-    source "$SCRIPT_DIR/comp/jvn_fish.fish"
+if test -f "$SCRIPT_DIR/comp/comp.fish"
+    source "$SCRIPT_DIR/comp/comp.fish"
 end
 
 # Environment

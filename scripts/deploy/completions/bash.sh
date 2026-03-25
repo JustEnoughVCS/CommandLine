@@ -13,6 +13,7 @@ _jvn_bash_completion() {
     args+=(-p="${prev//-/^}")
     args+=(-c="${COMP_WORDS[0]//-/^}")
     args+=(-i="$word_index")
+    args+=(-F="bash")
 
     for word in "${COMP_WORDS[@]}"; do
         args+=(-a="${word//-/^}")

@@ -41,18 +41,31 @@ fn main() {
     #[cfg(debug_assertions)]
     init_env_logger();
 
+    // Check if help flag is present in arguments
+    let args: Vec<String> = std::env::args().collect();
+    if args.iter().any(|arg| arg == "-h" || arg == "--help") {
+        println!(
+            "{}",
+            include_str!("../../resources/other/jvn_comp_help.txt").trim()
+        );
+        std::process::exit(0);
+    }
+
     // Get context parameters from clap
     let ctx = match CompletionContext::try_parse() {
-        Ok(args) => CompletionContext {
-            // In completion scripts, "-" is replaced with "^", need to convert back here
-            command_line: args.command_line.replace('^', "-"),
-            cursor_position: args.cursor_position,
-            current_word: args.current_word.replace('^', "-"),
-            previous_word: args.previous_word.replace('^', "-"),
-            command_name: args.command_name.replace('^', "-"),
-            word_index: args.word_index,
-            all_words: args.all_words.iter().map(|w| w.replace('^', "-")).collect(),
-        },
+        Ok(args) => {
+            CompletionContext {
+                // In completion scripts, "-" is replaced with "^", need to convert back here
+                command_line: args.command_line.replace('^', "-"),
+                cursor_position: args.cursor_position,
+                current_word: args.current_word.replace('^', "-"),
+                previous_word: args.previous_word.replace('^', "-"),
+                command_name: args.command_name.replace('^', "-"),
+                word_index: args.word_index,
+                all_words: args.all_words.iter().map(|w| w.replace('^', "-")).collect(),
+                shell_flag: args.shell_flag,
+            }
+        }
         Err(e) => {
             // An error occurred, collecting information for output
             error!(
@@ -69,14 +82,21 @@ fn main() {
     trace_ctx(&ctx);
 
     trace!("Try using specific completion");
-    let result = comp(&ctx);
-    if let Some(suggestions) = result {
-        handle_comp_result(&Some(suggestions));
-    } else {
-        trace!("Using default completion");
-        let result = default_comp(&ctx);
-        handle_comp_result(&result);
-    }
+    let specific_result = comp(&ctx);
+    trace!("Using default completion");
+    let default_result = default_comp(&ctx);
+
+    let combined_result = match (specific_result, default_result) {
+        (None, None) => None,
+        (Some(s), None) => Some(s),
+        (None, Some(d)) => Some(d),
+        (Some(mut s), Some(d)) => {
+            s.extend(d);
+            Some(s)
+        }
+    };
+
+    handle_comp_result(&combined_result);
 }
 
 fn default_comp(ctx: &CompletionContext) -> Option<Vec<String>> {
@@ -290,6 +310,7 @@ fn trace_ctx(ctx: &CompletionContext) {
     log::trace!("command_name={}", ctx.command_name);
     log::trace!("word_index={}", ctx.word_index);
     log::trace!("all_words={:?}", ctx.all_words);
+    log::trace!("shell_flag={:?}", ctx.shell_flag);
 }
 
 #[cfg(debug_assertions)]

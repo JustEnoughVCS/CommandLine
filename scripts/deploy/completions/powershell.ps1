@@ -25,6 +25,7 @@ Register-ArgumentCompleter -CommandName jvn -ScriptBlock {
         "-c", $commandName
         "-i", ($words.Count - 1).ToString()
         "-a", ($words | ForEach-Object { $_ -replace '-', '^' })
+        "-F", "powershell"
     )
 
     $suggestions = jvn_comp $args 2>$null

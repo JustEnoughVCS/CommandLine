@@ -9,8 +9,8 @@ fi
 
 # Completion script
 if [ -n "$BASH_VERSION" ]; then
-    if [ -f "$SCRIPT_DIR/comp/jvn_bash.sh" ]; then
-        source "$SCRIPT_DIR/comp/jvn_bash.sh"
+    if [ -f "$SCRIPT_DIR/comp/comp.sh" ]; then
+        source "$SCRIPT_DIR/comp/comp.sh"
     else
         echo "Error: Completion script not found at $SCRIPT_DIR/comp/jvn_bash.sh" >&2
     fi

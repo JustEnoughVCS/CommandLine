@@ -4,12 +4,10 @@ use crate::systems::comp::context::CompletionContext;
 
 pub fn comp(ctx: CompletionContext) -> Option<Vec<String>> {
     if ctx.current_word.starts_with('-') {
-        return Some(string_vec![
-            "-i", "--insert", "-Q", "--query", "-e", "--erase", "--to",
-        ]);
+        return Some(string_vec!["-e", "--editor"]);
     }
 
-    if ctx.previous_word == "--to" {
+    if ctx.previous_word == "-e" || ctx.previous_word == "--editor" {
         return Some(vec![]);
     }
 

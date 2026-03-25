@@ -1,7 +1,7 @@
 $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 # Completion
-$completionScript = Join-Path $SCRIPT_DIR "comp\jvn_pwsl.ps1"
+$completionScript = Join-Path $SCRIPT_DIR "comp\comp.ps1"
 if (Test-Path $completionScript) {
     . $completionScript
 }

@@ -25,17 +25,17 @@ binaries = [
 # Completions
 [copies.completion_jvn_bash]
 from = "scripts/deploy/completions/bash.sh"
-to = "comp/jvn_bash.sh"
+to = "comp/comp.sh"
 platform = [ "linux", "macos" ]
 
 [copies.completion_jvn_zsh]
 from = "scripts/deploy/completions/zsh.zsh"
-to = "comp/jvn_zsh.zsh"
+to = "comp/comp.zsh"
 platform = [ "linux", "macos" ]
 
 [copies.completion_jvn_fish]
 from = "scripts/deploy/completions/fish.fish"
-to = "comp/jvn_fish.fish"
+to = "comp/comp.fish"
 platform = [ "linux", "macos" ]
 
 # Entries
@@ -61,7 +61,7 @@ platform = [ "linux", "macos" ]
 # Completions
 [copies.completion_jvn_powershell]
 from = "scripts/deploy/completions/powershell.ps1"
-to = "comp/jvn_pwsl.ps1"
+to = "comp/comp.ps1"
 platform = [ "windows" ]
 
 # Entries

@@ -2,8 +2,8 @@
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Completion script
-if [ -f "$SCRIPT_DIR/comp/jvn_zsh.zsh" ]; then
-    source "$SCRIPT_DIR/comp/jvn_zsh.zsh"
+if [ -f "$SCRIPT_DIR/comp/comp.zsh" ]; then
+    source "$SCRIPT_DIR/comp/comp.zsh"
 fi
 
 # Environment

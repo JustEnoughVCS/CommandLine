@@ -1,4 +1,12 @@
-use clap::Parser;
+use clap::{Parser, ValueEnum};
+
+#[derive(ValueEnum, Debug, Clone, Copy)]
+pub enum ShellFlag {
+    Zsh,
+    Bash,
+    Fish,
+    Powershell,
+}
 
 #[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about = None)]
@@ -30,4 +38,8 @@ pub struct CompletionContext {
     /// All words
     #[arg(short = 'a', long, num_args = 1..)]
     pub all_words: Vec<String>,
+
+    /// Flag to indicate completion context
+    #[arg(short = 'F', long, value_enum)]
+    pub shell_flag: ShellFlag,
 }

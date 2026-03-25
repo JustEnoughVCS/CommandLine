@@ -67,6 +67,9 @@ function __jvn_fish_complete
         set -a args -a ""
     end
 
+    # Add shell type argument
+    set -a args -F "fish"
+
     # Call jvn_comp and handle output
     set -l output
     if not jvn_comp $args 2>/dev/null | read -z output

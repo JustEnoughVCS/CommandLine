@@ -1,0 +1,13 @@
+Usage:
+jvn_comp [-f | --command-line <content>]
+         [-C | --cursor-position <position>]
+         [-w | --current-word <word>]
+         [-p | --previous-word <word>]
+         [-c | --command-name <name>]
+         [-i | --word-index <index>]
+         [-a | --all-words <word: ?>]
+         [-F | --shell-flag <bash/fish/powershell/zsh>]
+
+This program generates completion suggestions
+  for the `jvn` command,
+to be used with completion scripts.

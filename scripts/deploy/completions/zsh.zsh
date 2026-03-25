@@ -22,6 +22,7 @@ _jvn_completion() {
         -c "$command_name"
         -i "$word_index"
         -a "${(@)words//-/^}"
+        -F "zsh"
     )
 
     suggestions=$(jvn_comp "${args[@]}" 2>/dev/null)
