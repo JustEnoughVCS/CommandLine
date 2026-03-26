@@ -1,0 +1,6 @@
+sheetdump:
+  comp:
+    no_sort: |
+      不排序输出结果
+    no_pretty: |
+      启用简易输出

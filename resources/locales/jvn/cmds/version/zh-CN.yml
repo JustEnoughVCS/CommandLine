@@ -18,3 +18,9 @@ version:
 
       __  核心库：[[cyan]]%{core_branch}[[/]] (Commit: %{core_commit})
       __  命令行：[[cyan]]%{cli_branch}[[/]] (Commit: %{cli_commit})
+
+  comp:
+    with_compile_info: |
+      显示编译信息
+    no_banner: |
+      不显示横幅

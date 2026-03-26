@@ -24,3 +24,7 @@ sheetedit:
     no_file_input: |
       没有指定需要解析的文件
       使用 `jvn sheetedit <文件>` 来编辑
+
+  comp:
+    editor: |
+      指定特定的编辑器

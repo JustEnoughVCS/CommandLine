@@ -1,15 +1,20 @@
-use cli_utils::string_vec;
+use comp_system_macros::{file_suggest, suggest};
+use rust_i18n::t;
 
-use crate::systems::comp::context::CompletionContext;
+use crate::systems::comp::{context::CompletionContext, result::CompletionResult};
 
-pub fn comp(ctx: CompletionContext) -> Option<Vec<String>> {
+pub fn comp(ctx: CompletionContext) -> CompletionResult {
     if ctx.current_word.starts_with('-') {
-        return Some(string_vec!["-e", "--editor"]);
+        return suggest!(
+            "-e" = t!("sheetedit.comp.editor").trim(),
+            "--editor" = t!("sheetedit.comp.editor").trim(),
+        )
+        .into();
     }
 
     if ctx.previous_word == "-e" || ctx.previous_word == "--editor" {
-        return Some(vec![]);
+        return suggest!().into();
     }
 
-    None
+    file_suggest!()
 }

@@ -25,3 +25,7 @@ sheetedit:
     no_file_input: |
       No file specified for parsing
       Use `jvn sheetedit <sheet_file>` to edit
+
+  comp:
+    editor: |
+      Specify a specific editor

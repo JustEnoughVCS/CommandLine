@@ -41,17 +41,17 @@ platform = [ "linux", "macos" ]
 # Entries
 [copies.entry_bash]
 from = "scripts/deploy/jvn_bash.sh"
-to = "jvn_bash.sh"
+to = "jvn.sh"
 platform = [ "linux", "macos" ]
 
 [copies.entry_zsh]
 from = "scripts/deploy/jvn_zsh.zsh"
-to = "jvn_zsh.zsh"
+to = "jvn.zsh"
 platform = [ "linux", "macos" ]
 
 [copies.entry_fish]
 from = "scripts/deploy/jvn_fish.fish"
-to = "jvn_fish.fish"
+to = "jvn.fish"
 platform = [ "linux", "macos" ]
 
 ##################
@@ -66,7 +66,7 @@ platform = [ "windows" ]
 
 # Entries
 [copies.entry_powershell]
-from = "scripts/deploy/jvn.ps1"
+from = "scripts/deploy/jvn_powershell.ps1"
 to = "jvn.ps1"
 platform = [ "windows" ]
 

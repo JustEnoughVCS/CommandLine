@@ -9,3 +9,13 @@ workspace_sheet:
     exactly_one_required: |
         需要指定 `--new`、`--delete`、`--list-all` 或 `--print-path` 中的任意符号
         您可以使用 `jvn helpdoc commands/workspace/sheet` 来查看使用方式
+
+  comp:
+    list_all: |
+      列出所有结构表
+    print_path: |
+      打印指定结构表的文件路径
+    new: |
+      创建一个新的结构表
+    delete: |
+      删除一个结构表

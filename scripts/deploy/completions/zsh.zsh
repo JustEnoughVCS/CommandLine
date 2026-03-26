@@ -34,10 +34,29 @@ _jvn_completion() {
         if [[ "${completions[1]}" == "_file_" ]]; then
             shift completions
             _files
-        elif (( $+functions[_describe] )); then
-            _describe 'jvn commands' completions
         else
-            compadd -a completions
+            local -a parsed_completions
+            for item in "${completions[@]}"; do
+                if [[ "$item" =~ '^([^$]+)\$\((.+)\)$' ]]; then
+                    parsed_completions+=("${match[1]}:${match[2]}")
+                else
+                    parsed_completions+=("$item")
+                fi
+            done
+
+            if (( $+functions[_describe] )); then
+                _describe 'jvn commands' parsed_completions
+            else
+                local -a simple_completions
+                for item in "${parsed_completions[@]}"; do
+                    if [[ "$item" =~ '^([^:]+):(.+)$' ]]; then
+                        simple_completions+=("${match[1]}")
+                    else
+                        simple_completions+=("$item")
+                    fi
+                done
+                compadd -a simple_completions
+            fi
         fi
     fi
 }

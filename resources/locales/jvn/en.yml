@@ -381,3 +381,23 @@ verbose:
 
   cmd_process_exec: Entering execution phase
   cmd_process_exec_failed: Execution phase failed!
+
+global_flag:
+  confirm: |
+    Confirm all operations without prompting
+  help: |
+    Show help information
+  lang: |
+    Set language
+  no_error_logs: |
+    Disable error output
+  no_progress: |
+    Disable progress bar
+  quiet: |
+    Suppress all non-error output
+  renderer: |
+    Specify output renderer
+  verbose: |
+    Enable verbose output
+  version: |
+    Show version information

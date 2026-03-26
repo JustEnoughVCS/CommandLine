@@ -1,0 +1,6 @@
+sheetdump:
+  comp:
+    no_sort: |
+      Output results without sorting
+    no_pretty: |
+      Enable simplified output

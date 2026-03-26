@@ -9,3 +9,13 @@ workspace_sheet:
     exactly_one_required: |
         Exactly one of `--new`, `--delete`, `--list-all`, or `--print-path` is required.
         You can use `jvn helpdoc commands/workspace/sheet` to view usage.
+
+  comp:
+    list_all: |
+      List all structure sheets
+    print_path: |
+      Print the file path of the specified structure sheet
+    new: |
+      Create a new structure sheet
+    delete: |
+      Delete a structure sheet

@@ -15,6 +15,7 @@ members = [
     "utils/",
     "tools/build_helper",
     "macros/cmd_system_macros",
+    "macros/comp_system_macros",
     "macros/helpdoc_system_macros",
     "macros/render_system_macros",
 ]
@@ -61,6 +62,7 @@ serde = { version = "1", features = ["derive"] }
 cli_utils = { path = "utils" }
 just_enough_vcs = { path = "../VersionControl", features = ["all"] }
 cmd_system_macros = { path = "macros/cmd_system_macros" }
+comp_system_macros = { path = "macros/comp_system_macros" }
 helpdoc_system_macros = { path = "macros/helpdoc_system_macros" }
 render_system_macros = { path = "macros/render_system_macros" }
 

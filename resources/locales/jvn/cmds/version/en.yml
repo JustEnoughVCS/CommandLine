@@ -18,3 +18,9 @@ version:
 
       __      CORE：[[cyan]]%{core_branch}[[/]] (Commit: %{core_commit})
       __       CLI：[[cyan]]%{cli_branch}[[/]] (Commit: %{cli_commit})
+
+  comp:
+    with_compile_info: |
+      Show compile info
+    no_banner: |
+      Do not show banner

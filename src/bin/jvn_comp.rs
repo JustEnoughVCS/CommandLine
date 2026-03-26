@@ -1,45 +1,68 @@
 use std::{fs::OpenOptions, process::exit};
 
 use clap::Parser;
+use cli_utils::env::locales::current_locales;
+use comp_system_macros::{file_suggest, suggest};
 use env_logger::Target;
 use jvcli::systems::{
     cmd::_commands::jv_cmd_nodes,
     comp::{
         _comps::{jv_cmd_comp_nodes, match_comp},
-        context::CompletionContext,
+        context::{CompletionContext, ShellFlag},
+        result::{CompletionResult, CompletionSuggestion},
     },
     render::renderer::jv_override_renderers,
 };
 #[cfg(debug_assertions)]
 use log::debug;
+#[cfg(debug_assertions)]
 use log::{LevelFilter, error, trace};
+use rust_i18n::{set_locale, t};
 
-const GLOBAL_FLAGS: &[&str] = &[
-    "--confirm",
-    "-C",
-    "--help",
-    "-h",
-    "--lang",
-    "--no-error-logs",
-    "--no-progress",
-    "--quiet",
-    "-q",
-    "--renderer",
-    "--verbose",
-    "-V",
-    "--version",
-    "-v",
-];
+rust_i18n::i18n!("resources/locales/jvn", fallback = "en");
 
-const LANGUAGES: [&str; 2] = [
-    "en",    // English
-    "zh-CN", // 简体中文
-];
+macro_rules! global_flags_suggest {
+    () => {
+        suggest!(
+            "--confirm" = t!("global_flag.confirm").trim(),
+            "-C" = t!("global_flag.confirm").trim(),
+            "--help" = t!("global_flag.help").trim(),
+            "-h" = t!("global_flag.help").trim(),
+            "--lang" = t!("global_flag.lang").trim(),
+            "--no-error-logs" = t!("global_flag.no_error_logs").trim(),
+            "--no-progress" = t!("global_flag.no_progress").trim(),
+            "--quiet" = t!("global_flag.quiet").trim(),
+            "-q" = t!("global_flag.quiet").trim(),
+            "--renderer" = t!("global_flag.renderer").trim(),
+            "--verbose" = t!("global_flag.verbose").trim(),
+            "-V" = t!("global_flag.verbose").trim(),
+            "--version" = t!("global_flag.version").trim(),
+            "-v" = t!("global_flag.version").trim(),
+        )
+        .into()
+    };
+}
+
+macro_rules! language_suggest {
+    () => {
+        // Sort in A - Z order
+        suggest!(
+            // English
+            "en" = "English",
+            // Simplified Chinese
+            "zh-CN" = "简体中文"
+        )
+        .into()
+    };
+}
 
 fn main() {
     // If not in release mode, initialize env_logger to capture logs
     #[cfg(debug_assertions)]
     init_env_logger();
+
+    let lang = current_locales();
+    set_locale(&lang);
 
     // Check if help flag is present in arguments
     let args: Vec<String> = std::env::args().collect();
@@ -68,6 +91,7 @@ fn main() {
         }
         Err(e) => {
             // An error occurred, collecting information for output
+            #[cfg(debug_assertions)]
             error!(
                 "Error: {}, origin=\"{}\"",
                 e,
@@ -81,42 +105,56 @@ fn main() {
     #[cfg(debug_assertions)]
     trace_ctx(&ctx);
 
-    trace!("Try using specific completion");
-    let specific_result = comp(&ctx);
-    trace!("Using default completion");
+    #[cfg(debug_assertions)]
+    trace!("Generate specific completion");
+    let specific_result = specific_comp(&ctx);
+
+    #[cfg(debug_assertions)]
+    trace!("Generate default completion");
     let default_result = default_comp(&ctx);
 
+    #[cfg(debug_assertions)]
+    trace!("specific_result: {}", specific_result.to_string());
+    #[cfg(debug_assertions)]
+    trace!("default_result: {}", default_result.to_string());
+
     let combined_result = match (specific_result, default_result) {
-        (None, None) => None,
-        (Some(s), None) => Some(s),
-        (None, Some(d)) => Some(d),
-        (Some(mut s), Some(d)) => {
+        (CompletionResult::FileCompletion, CompletionResult::FileCompletion) => {
+            CompletionResult::file_comp()
+        }
+        (CompletionResult::Suggestions(s), CompletionResult::FileCompletion) => {
+            CompletionResult::Suggestions(s)
+        }
+        (CompletionResult::FileCompletion, CompletionResult::Suggestions(d)) => {
+            CompletionResult::Suggestions(d)
+        }
+        (CompletionResult::Suggestions(mut s), CompletionResult::Suggestions(d)) => {
             s.extend(d);
-            Some(s)
+            CompletionResult::Suggestions(s)
         }
     };
 
-    handle_comp_result(&combined_result);
+    handle_comp_result(combined_result, &ctx);
 }
 
-fn default_comp(ctx: &CompletionContext) -> Option<Vec<String>> {
+fn default_comp(ctx: &CompletionContext) -> CompletionResult {
     if ctx.current_word.starts_with('-') {
-        return Some(GLOBAL_FLAGS.iter().map(|s| s.to_string()).collect());
+        return global_flags_suggest!();
     }
 
     // Match and comp Override Renderers
     if ctx.previous_word == "--renderer" {
-        return Some(jv_override_renderers());
+        return jv_override_renderers().into();
     }
 
     if ctx.previous_word == "--lang" {
-        return Some(LANGUAGES.iter().map(|s| s.to_string()).collect());
+        return language_suggest!();
     }
 
-    None
+    file_suggest!()
 }
 
-fn comp(ctx: &CompletionContext) -> Option<Vec<String>> {
+fn specific_comp(ctx: &CompletionContext) -> CompletionResult {
     let args: Vec<String> = ctx.all_words.iter().skip(1).cloned().collect();
     let nodes = jv_cmd_comp_nodes();
     let command = format!("{} ", args.join(" "));
@@ -137,23 +175,39 @@ fn comp(ctx: &CompletionContext) -> Option<Vec<String>> {
 
     let match_node: Option<String> = match matching_nodes.len() {
         0 => {
-            if let Some(result) = try_comp_cmd_nodes(ctx) {
-                return Some(result);
+            #[cfg(debug_assertions)]
+            trace!("No matching nodes found, trying command nodes");
+            let r = try_comp_cmd_nodes(ctx);
+            if r.is_suggestion() {
+                #[cfg(debug_assertions)]
+                trace!("try_comp_cmd_nodes returned suggestions");
+                return r;
             }
+            #[cfg(debug_assertions)]
+            trace!("try_comp_cmd_nodes returned file completion");
             // No matching node found
             None
         }
         1 => {
             // Single matching node found
+            #[cfg(debug_assertions)]
+            trace!("Single matching node found: {}", matching_nodes[0]);
             Some(matching_nodes[0].clone())
         }
         _ => {
             // Multiple matching nodes found
             // Find the node with the longest length (most specific match)
-            matching_nodes
+            #[cfg(debug_assertions)]
+            trace!("Multiple matching nodes found: {:?}", matching_nodes);
+            let longest_node = matching_nodes
                 .iter()
                 .max_by_key(|node| node.len())
-                .map(|node| node.to_string())
+                .map(|node| node.to_string());
+            #[cfg(debug_assertions)]
+            if let Some(ref node) = longest_node {
+                trace!("Selected longest node: {}", node);
+            }
+            longest_node
         }
     };
 
@@ -163,17 +217,29 @@ fn comp(ctx: &CompletionContext) -> Option<Vec<String>> {
         None => trace!("No completions matched."),
     }
 
-    let match_node = match_node?;
+    let match_node = match match_node {
+        Some(node) => node,
+        None => {
+            #[cfg(debug_assertions)]
+            trace!("No match node found, returning file completion");
+            return file_suggest!();
+        }
+    };
 
-    match_comp(match_node, ctx.clone())
+    #[cfg(debug_assertions)]
+    trace!("Calling match_comp with node: {}", match_node);
+    let result = match_comp(match_node, ctx.clone());
+    #[cfg(debug_assertions)]
+    trace!("match_comp returned: {}", result.to_string());
+    result
 }
 
-fn try_comp_cmd_nodes(ctx: &CompletionContext) -> Option<Vec<String>> {
+fn try_comp_cmd_nodes(ctx: &CompletionContext) -> CompletionResult {
     let cmd_nodes = jv_cmd_nodes();
 
     // If the current position is less than 1, do not perform completion
     if ctx.word_index < 1 {
-        return None;
+        return file_suggest!();
     };
 
     // Get the current input path
@@ -226,7 +292,7 @@ fn try_comp_cmd_nodes(ctx: &CompletionContext) -> Option<Vec<String>> {
                     "try_comp_cmd_nodes: current word suggestions = {:?}",
                     suggestions
                 );
-                return Some(suggestions);
+                return suggestions.into();
             }
         }
 
@@ -279,26 +345,66 @@ fn try_comp_cmd_nodes(ctx: &CompletionContext) -> Option<Vec<String>> {
     debug!("try_comp_cmd_nodes: suggestions = {:?}", suggestions);
 
     if suggestions.is_empty() {
-        None
+        file_suggest!()
     } else {
-        Some(suggestions)
+        suggestions.into()
     }
 }
 
-fn handle_comp_result(r: &Option<Vec<String>>) {
+fn handle_comp_result(r: CompletionResult, ctx: &CompletionContext) {
     match r {
-        Some(suggestions) => {
-            suggestions
-                .iter()
-                .for_each(|suggest| println!("{}", suggest));
-            exit(0)
-        }
-        None => {
-            // Output "_file_" to notify the completion script to perform "file completion"
+        CompletionResult::FileCompletion => {
             println!("_file_");
             exit(0)
         }
+        CompletionResult::Suggestions(suggestions) => match ctx.shell_flag {
+            ShellFlag::Zsh => print_suggest_with_description(suggestions),
+            ShellFlag::Fish => print_suggest_with_description_fish(suggestions),
+            _ => print_suggest(suggestions),
+        },
     }
+}
+
+fn print_suggest(mut suggestions: Vec<CompletionSuggestion>) {
+    suggestions.sort();
+    #[cfg(debug_assertions)]
+    trace!("print_suggest suggestions: {:?}", suggestions);
+    suggestions
+        .iter()
+        .for_each(|suggest| println!("{}", suggest.suggest));
+    exit(0)
+}
+
+fn print_suggest_with_description(mut suggestions: Vec<CompletionSuggestion>) {
+    suggestions.sort();
+    #[cfg(debug_assertions)]
+    trace!(
+        "print_suggest_with_description suggestions: {:?}",
+        suggestions
+    );
+    suggestions
+        .iter()
+        .for_each(|suggest| match &suggest.description {
+            Some(desc) => println!("{}$({})", suggest.suggest, desc),
+            None => println!("{}", suggest.suggest),
+        });
+    exit(0)
+}
+
+fn print_suggest_with_description_fish(mut suggestions: Vec<CompletionSuggestion>) {
+    suggestions.sort();
+    #[cfg(debug_assertions)]
+    trace!(
+        "print_suggest_with_description_fish suggestions: {:?}",
+        suggestions
+    );
+    suggestions
+        .iter()
+        .for_each(|suggest| match &suggest.description {
+            Some(desc) => println!("{}\t{}", suggest.suggest, desc),
+            None => println!("{}", suggest.suggest),
+        });
+    exit(0)
 }
 
 #[cfg(debug_assertions)]

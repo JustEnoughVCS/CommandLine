@@ -1,13 +1,17 @@
-use crate::systems::{comp::context::CompletionContext, helpdoc};
+use comp_system_macros::file_suggest;
 
-pub fn comp(ctx: CompletionContext) -> Option<Vec<String>> {
+use crate::systems::{
+    comp::{context::CompletionContext, result::CompletionResult},
+    helpdoc,
+};
+
+pub fn comp(ctx: CompletionContext) -> CompletionResult {
     if ctx.previous_word == "helpdoc" {
-        return Some(
-            helpdoc::get_helpdoc_list()
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
-        );
+        return helpdoc::get_helpdoc_list()
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>()
+            .into();
     }
-    None
+    file_suggest!()
 }

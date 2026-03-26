@@ -9,3 +9,9 @@ workspace_alias:
       Local index `~%{local}` is mapped to `%{remote}`
     no_map: |
       Local index `~%{local}` has no mapping
+
+  comp:
+    insert: Insert alias
+    query: Query alias
+    erase: Delete alias
+    to: Remote index

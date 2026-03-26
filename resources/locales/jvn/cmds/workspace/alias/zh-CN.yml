@@ -9,3 +9,9 @@ workspace_alias:
       本地索引 `~%{local}` 被指向 `%{remote}`
     no_map: |
       本地索引 `~%{local}` 不存在指向
+
+  comp:
+    insert: 插入别名
+    query: 查询别名
+    erase: 删除别名
+    to: 远程索引

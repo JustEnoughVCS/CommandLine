@@ -358,3 +358,23 @@ verbose:
 
   cmd_process_exec: 进入执行阶段
   cmd_process_exec_failed: 执行阶段失败！
+
+global_flag:
+  confirm: |
+    确认所有操作，无需提示
+  help: |
+    显示帮助信息
+  lang: |
+    设置语言
+  no_error_logs: |
+    禁用错误输出
+  no_progress: |
+    禁用进度条
+  quiet: |
+    抑制所有非错误输出
+  renderer: |
+    指定输出渲染器
+  verbose: |
+    启用详细输出
+  version: |
+    显示版本信息

@@ -421,6 +421,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "comp_system_macros"
+version = "0.1.1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "config_system"
 version = "0.1.0"
 dependencies = [
@@ -1181,6 +1190,7 @@ dependencies = [
  "cli_utils",
  "cmd_system_macros",
  "colored",
+ "comp_system_macros",
  "crossterm",
  "env_logger",
  "helpdoc_system_macros",
