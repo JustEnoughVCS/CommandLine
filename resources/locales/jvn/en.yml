@@ -384,20 +384,20 @@ verbose:
 
 global_flag:
   confirm: |
-    Confirm all operations without prompting
+    [GLOBAL] Confirm all operations without prompting
   help: |
-    Show help information
+    [GLOBAL] Show help information
   lang: |
-    Set language
+    [GLOBAL] Set language
   no_error_logs: |
-    Disable error output
+    [GLOBAL] Disable error output
   no_progress: |
-    Disable progress bar
+    [GLOBAL] Disable progress bar
   quiet: |
-    Suppress all non-error output
+    [GLOBAL] Suppress all non-error output
   renderer: |
-    Specify output renderer
+    [GLOBAL] Specify output renderer
   verbose: |
-    Enable verbose output
+    [GLOBAL] Enable verbose output
   version: |
-    Show version information
+    [GLOBAL] Show version information

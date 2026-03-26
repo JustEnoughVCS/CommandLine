@@ -10,7 +10,7 @@ pub fn comp(ctx: CompletionContext) -> CompletionResult {
             "-A" = t!("workspace_sheet.comp.list_all").trim(),
             "--list-all" = t!("workspace_sheet.comp.list_all").trim(),
             "-p" = t!("workspace_sheet.comp.print_path").trim(),
-            "--print-path" = t!("workspace.sheet.comp.print_path").trim(),
+            "--print-path" = t!("workspace_sheet.comp.print_path").trim(),
             "-n" = t!("workspace_sheet.comp.new").trim(),
             "--new" = t!("workspace_sheet.comp.new").trim(),
             "-d" = t!("workspace_sheet.comp.delete").trim(),
