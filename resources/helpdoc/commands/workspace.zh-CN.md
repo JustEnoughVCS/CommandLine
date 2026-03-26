@@ -19,3 +19,14 @@ jvn workspace sheet <参数: ?>
 
 > 您可以使用如下查询详细用例
 > `jvn helpdoc commands/workspace/sheet`
+
+### 操作 ID 别名
+操作或读取_当前工作区_下的 `ID 别名映射`
+jvn workspace alias <参数: ?>
+
+> 您可以使用如下查询详细用例
+> `jvn helpdoc commands/workspace/alias`
+
+### 查询工作区所在目录
+打印_当前工作区_的目录
+jvn workspace here

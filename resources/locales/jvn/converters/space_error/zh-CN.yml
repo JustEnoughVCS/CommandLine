@@ -1,0 +1,4 @@
+space_error:
+  space_not_found: 空间未找到
+  path_fmt_error: |
+      路径格式错误: %{error}

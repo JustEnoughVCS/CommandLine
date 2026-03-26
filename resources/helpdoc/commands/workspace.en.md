@@ -19,3 +19,14 @@ jvn workspace sheet <arguments: ?>
 
 > You can use the following to query detailed usage examples
 > `jvn helpdoc commands/workspace/sheet`
+
+### Operate ID Alias
+Operate or read the `ID alias mapping` under the _current workspace_
+jvn workspace alias <arguments: ?>
+
+> You can use the following to query detailed usage examples
+> `jvn helpdoc commands/workspace/alias`
+
+### Query Workspace Directory
+Print the directory of the _current workspace_
+jvn workspace here
