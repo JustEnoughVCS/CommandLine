@@ -114,9 +114,9 @@ fn main() {
     let default_result = default_comp(&ctx);
 
     #[cfg(debug_assertions)]
-    trace!("specific_result: {}", specific_result.to_string());
+    trace!("specific_result: {}", specific_result);
     #[cfg(debug_assertions)]
-    trace!("default_result: {}", default_result.to_string());
+    trace!("default_result: {}", default_result);
 
     let combined_result = match (specific_result, default_result) {
         (CompletionResult::FileCompletion, CompletionResult::FileCompletion) => {
@@ -230,7 +230,7 @@ fn specific_comp(ctx: &CompletionContext) -> CompletionResult {
     trace!("Calling match_comp with node: {}", match_node);
     let result = match_comp(match_node, ctx.clone());
     #[cfg(debug_assertions)]
-    trace!("match_comp returned: {}", result.to_string());
+    trace!("match_comp returned: {}", result);
     result
 }
 
