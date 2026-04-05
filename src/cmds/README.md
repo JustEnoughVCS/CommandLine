@@ -89,30 +89,42 @@ pub struct JVSumOutput {
 - Implements command auto-completion
 - Naming: Same as command name
 - Location: `src/cmds/comp/{command_name}.rs`
-- Function signature must be `pub fn comp(ctx: CompletionContext) -> Option<Vec<String>>`
+- Function signature must be `pub fn comp(ctx: CompletionContext) -> CompletionResult`
 
-Example: helpdoc command completion script
+Example: workspace_alias command completion script
 ```rust
-// src/cmds/comp/helpdoc.rs
-use crate::systems::{comp::context::CompletionContext, helpdoc};
+// src/cmds/comp/workspace_alias.rs
+use comp_system_macros::{file_suggest, suggest};
+use rust_i18n::t;
 
-pub fn comp(ctx: CompletionContext) -> Option<Vec<String>> {
-    if ctx.previous_word == "helpdoc" {
-        return Some(
-            helpdoc::get_helpdoc_list()
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
-        );
+use crate::systems::comp::{context::CompletionContext, result::CompletionResult};
+
+pub fn comp(ctx: CompletionContext) -> CompletionResult {
+    if ctx.current_word.starts_with('-') {
+        return suggest!(
+            "-i" = t!("workspace_alias.comp.insert").trim(),
+            "--insert" = t!("workspace_alias.comp.insert").trim(),
+            "-Q" = t!("workspace_alias.comp.query").trim(),
+            "--query" = t!("workspace_alias.comp.query").trim(),
+            "-e" = t!("workspace_alias.comp.erase").trim(),
+            "--erase" = t!("workspace_alias.comp.erase").trim(),
+            "--to" = t!("workspace_alias.comp.to").trim()
+        )
+        .into();
     }
-    None
+
+    if ctx.previous_word == "--to" {
+        return suggest!().into();
+    }
+
+    file_suggest!()
 }
 ```
 
 **Completion Script Return Value Explanation:**
-- Return `None`: System will suggest file list
-- Return `Some(Vec::new())`: No suggestions
-- Return `Some(vec!["suggestion1", "suggestion2"])`: Suggest specific content
+- Return `file_suggest!()`: System will suggest file list
+- Return `suggest!().into()`: No suggestions
+- Return `suggest!("--show-desc" = "desc", "--no-desc").into()`: Suggest specific content
 
 ## Command Execution Phases
 
@@ -219,6 +231,12 @@ pub async fn render(data: &JVSumOutput) -> Result<JVRenderResult, CmdRenderError
    - Create `.rs` files in respective dirs
    - Impl Argument, Input, Collect, Output structs
 
+   You can use the following components as default structures:
+   - JVEmptyArgument
+   - JVEmptyInput
+   - JVEmptyCollect
+   - JVNoneOutput
+
 3. **Implement Command Logic**
    - Create cmd impl file in `cmd/` dir
    - Use cmd template (view via `cargo doc --no-deps`)
@@ -230,7 +248,7 @@ pub async fn render(data: &JVSumOutput) -> Result<JVRenderResult, CmdRenderError
 
 5. **Implement Completion Script (Optional)**
    - Create completion script file in `comp/` dir
-   - Implement `comp` function with signature `pub fn comp(ctx: CompletionContext) -> Option<Vec<String>>`
+   - Implement `comp` function with signature `pub fn comp(ctx: CompletionContext) -> CompletionResult`
 
 6. **Test Command**
    - Use `cargo build` to check compile errors

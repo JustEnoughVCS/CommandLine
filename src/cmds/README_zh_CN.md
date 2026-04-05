@@ -89,30 +89,43 @@ pub struct JVSumOutput {
 - 实现命令的自动补全功能
 - 命名规范：与命令同名
 - 位置：`src/cmds/comp/{command_name}.rs`
-- 函数签名必须为 `pub fn comp(ctx: CompletionContext) -> Option<Vec<String>>`
+- 函数签名必须为 `pub fn comp(ctx: CompletionContext) -> CompletionResult`
 
-示例：helpdoc 命令的补全脚本
+示例：workspace_alias 命令的补全脚本
 ```rust
-// src/cmds/comp/helpdoc.rs
-use crate::systems::{comp::context::CompletionContext, helpdoc};
+// src/cmds/comp/workspace_alias.rs
+use comp_system_macros::{file_suggest, suggest};
+use rust_i18n::t;
 
-pub fn comp(ctx: CompletionContext) -> Option<Vec<String>> {
-    if ctx.previous_word == "helpdoc" {
-        return Some(
-            helpdoc::get_helpdoc_list()
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
-        );
+use crate::systems::comp::{context::CompletionContext, result::CompletionResult};
+
+pub fn comp(ctx: CompletionContext) -> CompletionResult {
+    if ctx.current_word.starts_with('-') {
+        return suggest!(
+            "-i" = t!("workspace_alias.comp.insert").trim(),
+            "--insert" = t!("workspace_alias.comp.insert").trim(),
+            "-Q" = t!("workspace_alias.comp.query").trim(),
+            "--query" = t!("workspace_alias.comp.query").trim(),
+            "-e" = t!("workspace_alias.comp.erase").trim(),
+            "--erase" = t!("workspace_alias.comp.erase").trim(),
+            "--to" = t!("workspace_alias.comp.to").trim()
+        )
+        .into();
     }
-    None
+
+    if ctx.previous_word == "--to" {
+        return suggest!().into();
+    }
+
+    file_suggest!()
 }
 ```
 
 **补全脚本返回值说明：**
-- 返回 `None`：系统会建议文件列表
-- 返回 `Some(Vec::new())`：不进行任何建议
-- 返回 `Some(vec!["suggestion1", "suggestion2"])`：建议具体内容
+
+- 返回 `file_suggest!()`：系统会建议文件列表
+- 返回 `suggest!().into()`：不进行任何建议
+- 返回 `suggest!("--show-desc" = "desc", "--no-desc").into()`：建议具体内容
 
 ## 命令执行阶段
 
@@ -214,25 +227,33 @@ pub async fn render(data: &JVSumOutput) -> Result<JVRenderResult, CmdRenderError
 1. **规划命令结构**
    - 确定命令名称和参数
    - 设计输入/输出数据结构
-
+   
 2. **创建组件文件**
    - 在相应目录创建 `.rs` 文件
    - 实现 Argument、Input、Collect、Output 结构体
-
-3. **实现命令逻辑**
+   
+   可以使用如下组件作为默认结构：
+   
+   - JVEmptyArgument
+   - JVEmptyInput
+   - JVEmptyCollect
+   - JVNoneOutput
+   
+3. **实现命令逻辑**  
    - 在 `cmd/` 目录创建命令实现文件
    - 使用命令模板（通过 `cargo doc --no-deps` 生成文档查看完整模板）
    - 实现 `prepare`、`collect`、`exec` 函数
-
+   
 4. **实现渲染器**
    - 在 `renderer/` 目录创建渲染器文件
    - 使用 `#[result_renderer]` 宏
 
 5. **实现补全脚本 (可选)**
    - 在 `comp/` 目录创建补全脚本文件
-   - 实现 `comp` 函数，签名必须为 `pub fn comp(ctx: CompletionContext) -> Option<Vec<String>>`
-
+   - 实现 `comp` 函数，签名必须为 `pub fn comp(ctx: CompletionContext) -> CompletionResult`
+   
 6. **测试命令**
+   
    - 使用 `cargo build` 检查编译错误
    - 运行命令测试功能
 

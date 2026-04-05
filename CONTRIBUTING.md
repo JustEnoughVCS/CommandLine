@@ -37,6 +37,14 @@ cd VersionControl
 
 
 
+#### Related Articles
+
+- [Command Dev Guide](./src/cmds/README_en.md)
+- [Helpdoc Translation or Contribution Guide](./resources/CONTRIBUTE_HELPDOC_en.md)
+- [I18n Guide](./resources/CONTRIBUTE_LOCALES_en.md)
+
+
+
 ### Building and Testing
 
 Use `scripts/dev/dev_deploy.sh` (or `.ps1`) for test builds. The build artifacts are located in the `.temp/deploy/` directory.
@@ -83,41 +91,6 @@ source ~/.../JustEnoughVCS/CommandLine/.temp/deploy/jv_cli.sh
 -   **Rust Version**: It is recommended to use `rustc 1.92.0 (ded5c06cf 2025-12-08) (stable)`.
 -   **File Size**: **Strictly prohibit** committing binary files larger than 1MB to the repository. If necessary, please discuss it first in an [Issue](https://github.com/JustEnoughVCS/CommandLine/issues).
 -   **Core Library Modifications**: If you need to modify the core library, please refer to the `CONTRIBUTING.md` document in the [VersionControl](https://github.com/JustEnoughVCS/VersionControl) repository.
-
-
-
-## Standards
-
-### Code Structure
-
-A complete command consists of the following components, organized by module:
-
-| Module | Path | Description |
-|--------|------|-------------|
-| **Command Definition** | `src/cmds/cmd/` | The main logic implementation of the command. |
-| **Argument Definition** | `src/cmds/arg/` | Defines command-line inputs using `clap`. |
-| **Input Data** | `src/cmds/in/` | User input data during command execution. |
-| **Collected Data** | `src/cmds/collect/` | Data collected locally during command execution. |
-| **Converter** | `src/cmds/converter/` | Converter between core library types and command-line types. |
-| **Output Data** | `src/cmds/out/` | The command's output data. |
-| **Renderer** | `src/cmds/renderer/` | The default presentation method for data. |
-| **Override Renderer** | `src/cmds/override/renderer/` | Customizable data presentation methods. |
-
-
-
-### Naming Conventions
-
-- **File Naming**: Refer to the implementation of `src/cmds/cmd/sheetdump.rs`, i.e., use the command name as the filename.
-- **Multi-level Subcommands**: In the `cmds` directory, use the `sub_subsub.rs` format for filenames (e.g., `sheet_drop.rs`).
-- **Struct Naming**:
-				- Command Struct: `JV{Subcmd}{Subsubcmd}Command` (e.g., `JVSheetDropCommand`).
-				- Other component structs follow the same pattern:
-								- `JV{XXX}Argument`
-								- `JV{XXX}Input`
-								- `JV{XXX}Output`
-								- `JV{XXX}Collect`
-								- `JV{XXX}Converter`
-								- `JV{XXX}Renderer`
 
 
 

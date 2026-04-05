@@ -38,6 +38,14 @@ cd VersionControl
 
 
 
+#### 相关文章
+
+- [命令开发指南](./src/cmds/README_zh_CN.md)
+- [文档翻译或贡献指南](./resources/CONTRIBUTE_HELPDOC_zh_CN.md)
+- [本地化翻译指南](./resources/CONTRIBUTE_LOCALES_zh_CN.md)
+
+
+
 ### 构建&测试
 
 使用 `scripts/dev/dev_deploy.sh` (或 `.ps1`) 进行测试构建。构建产物位于 `.temp/deploy/` 目录。
@@ -86,41 +94,6 @@ sources ~/.../JustEnoughVCS/CommandLine/.temp/deploy/jv_cli.sh
 -   **核心库修改**: 如需修改核心库，请参考 [VersionControl](https://github.com/JustEnoughVCS/VersionControl) 仓库中的 `CONTRIBUTING.md` 文档
 
 
-
-## 规范
-
-### 代码结构
-
-一个完整的命令由以下几个部分组成，请按模块组织：
-
-| 模块 | 路径 | 说明 |
-|------|------|------|
-| **命令定义** | `src/cmds/cmd/` | 命令的主逻辑实现。 |
-| **参数定义** | `src/cmds/arg/` | 使用 `clap` 定义命令行输入。 |
-| **输入数据** | `src/cmds/in/` | 命令运行阶段的用户输入数据。 |
-| **收集数据** | `src/cmds/collect/` | 命令运行阶段从本地收集的数据。 |
-| **转换器** | `src/cmds/converter/` | 核心库类型和命令行类型的转换器。 |
-| **输出数据** | `src/cmds/out/` | 命令的输出数据。 |
-| **渲染器** | `src/cmds/renderer/` | 数据的默认呈现方式。 |
-| **覆盖渲染器** | `src/cmds/override/renderer/` | 可自定义的数据呈现方式。 |
-
-
-
-### 命名规范
-
-- **文件命名**: 请参考 `src/cmds/cmd/sheetdump.rs` 的实现，使用命令名称作为文件名
-- **多级子命令**: 在 `cmds` 目录下，使用 `sub_subsub.rs` 格式命名文件（例如：`sheet_drop.rs`）
-- **结构体命名**:
-    - 命令结构体: `JV{Subcmd}{Subsubcmd}Command` (例如：`JVSheetDropCommand`)
-    - 其他组件结构体遵循相同模式：
-        - `JV{XXX}Argument`
-        - `JV{XXX}Input`
-        - `JV{XXX}Output`
-        - `JV{XXX}Collect`
-        - `JV{XXX}Converter`
-        - `JV{XXX}Renderer`
-        
-        
 
 ### 其他开发约定
 - **工具函数**: 可复用的功能应置于 `utils/` 目录下（例如 `utils/feat.rs`），测试代码应直接写在对应的功能文件内
