@@ -8,6 +8,9 @@
 pub struct JVWorkspaceSheetArgument {
     pub name: Option<String>,
 
+    #[arg(short = 'a', long = "active")]
+    pub active: bool,
+
     #[arg(short = 'n', long = "new")]
     pub new: bool,
 

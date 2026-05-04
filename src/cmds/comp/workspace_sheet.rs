@@ -7,6 +7,8 @@ use crate::systems::comp::{context::CompletionContext, result::CompletionResult}
 pub fn comp(ctx: CompletionContext) -> CompletionResult {
     if ctx.current_word.starts_with('-') {
         return suggest!(
+            "-a" = t!("workspace_sheet.comp.active").trim(),
+            "--active" = t!("workspace_sheet.comp.active").trim(),
             "-A" = t!("workspace_sheet.comp.list_all").trim(),
             "--list-all" = t!("workspace_sheet.comp.list_all").trim(),
             "-p" = t!("workspace_sheet.comp.print_path").trim(),
@@ -23,7 +25,9 @@ pub fn comp(ctx: CompletionContext) -> CompletionResult {
         return suggest!().into();
     }
 
-    if ctx.previous_word == "--list-all"
+    if ctx.previous_word == "--active"
+        || ctx.previous_word == "-a"
+        || ctx.previous_word == "--list-all"
         || ctx.previous_word == "-A"
         || ctx.previous_word == "--print-path"
         || ctx.previous_word == "-p"

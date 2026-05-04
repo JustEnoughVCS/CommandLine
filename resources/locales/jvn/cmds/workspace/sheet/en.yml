@@ -1,5 +1,7 @@
 workspace_sheet:
   error:
+    sheet_name_required_for_active: |
+        Sheet name is required for `--active`
     sheet_name_required_for_new: |
         Sheet name is required for `--new`
     sheet_name_required_for_delete: |
@@ -11,11 +13,13 @@ workspace_sheet:
         You can use `jvn helpdoc commands/workspace/sheet` to view usage.
 
   comp:
+    active: |
+      Activate a specified struct sheet
     list_all: |
-      List all structure sheets
+      List all struct sheets
     print_path: |
-      Print the file path of the specified structure sheet
+      Print the file path of the specified struct sheet
     new: |
-      Create a new structure sheet
+      Create a new struct sheet
     delete: |
-      Delete a structure sheet
+      Delete a struct sheet

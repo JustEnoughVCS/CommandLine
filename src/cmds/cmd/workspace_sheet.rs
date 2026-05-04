@@ -3,7 +3,9 @@ use crate::{
     cmds::{
         arg::workspace_sheet::JVWorkspaceSheetArgument,
         collect::workspace::JVWorkspaceCollect,
-        converter::make_sheet_error::MakeSheetErrorConverter,
+        converter::{
+            make_sheet_error::MakeSheetErrorConverter, space_error::JVSpaceErrorConverter,
+        },
         r#in::workspace_sheet::JVWorkspaceSheetInput,
         out::{none::JVNoneOutput, path::JVPathOutput, string_vcs::JVStringVecOutput},
     },
@@ -31,8 +33,24 @@ async fn help_str() -> String {
 }
 
 async fn prepare(_args: &Arg, _ctx: &JVCommandContext) -> Result<In, CmdPrepareError> {
-    let input = match (_args.new, _args.delete, _args.list_all, _args.print_path) {
-        (true, false, false, false) => {
+    let input = match (
+        _args.active,
+        _args.new,
+        _args.delete,
+        _args.list_all,
+        _args.print_path,
+    ) {
+        (true, false, false, false, false) => {
+            let name = _args.name.as_ref().ok_or_else(|| {
+                CmdPrepareError::Error(
+                    t!("workspace_sheet.error.sheet_name_required_for_active")
+                        .trim()
+                        .to_string(),
+                )
+            })?;
+            JVWorkspaceSheetInput::Active(name.clone())
+        }
+        (false, true, false, false, false) => {
             let name = _args.name.as_ref().ok_or_else(|| {
                 CmdPrepareError::Error(
                     t!("workspace_sheet.error.sheet_name_required_for_new")
@@ -42,7 +60,7 @@ async fn prepare(_args: &Arg, _ctx: &JVCommandContext) -> Result<In, CmdPrepareE
             })?;
             JVWorkspaceSheetInput::Add(name.clone())
         }
-        (false, true, false, false) => {
+        (false, false, true, false, false) => {
             let name = _args.name.as_ref().ok_or_else(|| {
                 CmdPrepareError::Error(
                     t!("workspace_sheet.error.sheet_name_required_for_delete")
@@ -52,8 +70,8 @@ async fn prepare(_args: &Arg, _ctx: &JVCommandContext) -> Result<In, CmdPrepareE
             })?;
             JVWorkspaceSheetInput::Delete(name.clone())
         }
-        (false, false, true, false) => JVWorkspaceSheetInput::ListAll,
-        (false, false, false, true) => {
+        (false, false, false, true, false) => JVWorkspaceSheetInput::ListAll,
+        (false, false, false, false, true) => {
             let name = _args.name.as_ref().ok_or_else(|| {
                 CmdPrepareError::Error(
                     t!("workspace_sheet.error.sheet_name_required_for_print_path")
@@ -83,6 +101,11 @@ async fn collect(_args: &Arg, _ctx: &JVCommandContext) -> Result<Collect, CmdPre
 #[exec]
 async fn exec(input: In, collect: Collect) -> Result<AnyOutput, CmdExecuteError> {
     match input {
+        JVWorkspaceSheetInput::Active(sheet_name) => {
+            if let Err(e) = collect.manager.edit_using_sheet_name(sheet_name).await {
+                return Err(JVSpaceErrorConverter::to_exec_error(e));
+            }
+        }
         JVWorkspaceSheetInput::Add(sheet_name) => {
             if let Err(e) = collect.manager.make_sheet(sheet_name).await {
                 return Err(MakeSheetErrorConverter::to_exec_error(e));

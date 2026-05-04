@@ -1,5 +1,7 @@
 workspace_sheet:
   error:
+    sheet_name_required_for_active: |
+        对于符号 `--active`，需要显式指定 `结构表` 名称
     sheet_name_required_for_new: |
         对于符号 `--new`，需要显式指定 `结构表` 名称
     sheet_name_required_for_delete: |
@@ -11,6 +13,8 @@ workspace_sheet:
         您可以使用 `jvn helpdoc commands/workspace/sheet` 来查看使用方式
 
   comp:
+    active: |
+      激活指定的结构表
     list_all: |
       列出所有结构表
     print_path: |

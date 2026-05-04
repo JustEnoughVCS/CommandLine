@@ -68,7 +68,6 @@ prepare_error:
     %{error}
 
   error: |
-    Unknown error in preparation phase!
     %{error}
 
   local_workspace_not_found: |

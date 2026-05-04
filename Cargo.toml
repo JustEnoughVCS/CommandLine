@@ -35,7 +35,6 @@ panic = "unwind"
 [profile.release]
 opt-level = "z"
 debug = false
-split-defoinfo = "off"
 codegen-units = 1
 incremental = false
 lto = "thin"

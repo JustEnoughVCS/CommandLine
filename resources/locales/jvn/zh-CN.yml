@@ -48,7 +48,6 @@ prepare_error:
     %{error}
 
   error: |
-    命令在准备阶段发生错误！
     %{error}
 
   local_workspace_not_found: |
